@@ -1,0 +1,23 @@
+{
+  "output_dir": "output",
+  "log_dir": "logs",
+  "timeout_seconds": 60,
+  "common_ports": [80, 443, 8080, 8443],
+  "tool_bins": {
+    "subfinder": "subfinder",
+    "assetfinder": "assetfinder",
+    "amass": "amass",
+    "httpx": "httpx",
+    "naabu": "naabu",
+    "nmap": "nmap",
+    "whatweb": "WhatWeb",
+    "katana": "katana",
+    "gau": "gau",
+    "waybackurls": "waybackurls",
+    "uro": "uro",
+    "qsreplace": "qsreplace",
+    "nuclei": "nuclei",
+    "dalfox": "dalfox",
+    "ffuf": "ffuf"
+  }
+}
