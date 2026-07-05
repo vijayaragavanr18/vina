@@ -10,7 +10,6 @@ import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
 
 from ..core.storage import JsonStore
 from ..scanners.web.gau import GauResult
@@ -177,8 +176,8 @@ class Aggregator:
 
         # Naabu records
         for port_str in naabu.open_ports:
-            host = self._parse_open_port_host(port_str)
-            port = self._parse_open_port_port(port_str)
+            host = Aggregator._parse_open_port_host(port_str)
+            port = Aggregator._parse_open_port_port(port_str)
             if host and port is not None:
                 _port(host, port)
 
@@ -242,11 +241,7 @@ class Aggregator:
                 key = (host.lower(), port, protocol)
                 if key not in seen:
                     seen.add(key)
-                    services.append(
-                        AggregatedService(
-                            host=host, port=port, protocol=protocol
-                        )
-                    )
+                    services.append(AggregatedService(host=host, port=port, protocol=protocol))
 
         # Nmap services (override Naabu when version info exists)
         for svc in nmap.services:
@@ -271,15 +266,9 @@ class Aggregator:
                         and existing.port == svc.port
                         and existing.protocol == svc.protocol
                     ):
-                        existing.service = (
-                            svc.service or existing.service
-                        )
-                        existing.product = (
-                            svc.product or existing.product
-                        )
-                        existing.version = (
-                            svc.version or existing.version
-                        )
+                        existing.service = svc.service or existing.service
+                        existing.product = svc.product or existing.product
+                        existing.version = svc.version or existing.version
                         break
 
         services.sort(key=lambda s: (s.host.lower(), s.port, s.protocol))
@@ -336,15 +325,9 @@ class Aggregator:
                 key = (rec.host.lower(), tech_name.lower())
                 if key not in seen:
                     seen.add(key)
-                    technologies.append(
-                        AggregatedTechnology(
-                            host=rec.host, name=tech_name
-                        )
-                    )
+                    technologies.append(AggregatedTechnology(host=rec.host, name=tech_name))
 
-        technologies.sort(
-            key=lambda t: (t.host.lower(), t.name.lower())
-        )
+        technologies.sort(key=lambda t: (t.host.lower(), t.name.lower()))
         return technologies
 
     @staticmethod
@@ -399,9 +382,7 @@ class Aggregator:
             "alive_hosts": result.alive_hosts,
             "services": [self._service_to_dict(s) for s in result.services],
             "endpoints": [self._endpoint_to_dict(e) for e in result.endpoints],
-            "technologies": [
-                self._technology_to_dict(t) for t in result.technologies
-            ],
+            "technologies": [self._technology_to_dict(t) for t in result.technologies],
             "historical_urls": result.historical_urls,
         }
         return self.store.save("web/summary.json", payload)

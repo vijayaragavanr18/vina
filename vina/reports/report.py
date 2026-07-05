@@ -7,18 +7,17 @@ and aggregated findings.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from ..core.aggregator import AggregatorStats, FindingAggregator
-from ..core.correlation import AttackPath, CorrelationEngine, compute_correlation_stats, correlate
+from ..core.correlation import AttackPath, CorrelationEngine, compute_correlation_stats
 from ..core.exploitability import ExploitabilityAssessment, ExploitabilitySummary, compute_exploitability_summary
-from ..core.knowledge import EnrichmentEngine, KnowledgeRule, enrich_all
+from ..core.knowledge import EnrichmentEngine
 from ..core.vuln_intel import VulnerabilityMatch, VulnStats, compute_vuln_stats
-from ..models.findings import Finding, severity_key
+from ..models.findings import Finding
 from ..models.stages import StageResult
-from ..plugins.hooks import HookPoint
 from ..plugins.registry import get_registry
 from .html import render_html
 from .markdown import render_markdown
@@ -31,6 +30,7 @@ def _build_enrichment_engine() -> EnrichmentEngine:
     if not extra:
         return EnrichmentEngine()
     from ..core.knowledge import ALL_RULES
+
     return EnrichmentEngine(rules=list(ALL_RULES) + extra)
 
 
@@ -41,6 +41,7 @@ def _build_correlation_engine() -> CorrelationEngine:
     if not extra:
         return CorrelationEngine()
     from ..core.correlation import _CORRELATION_RULES
+
     return CorrelationEngine(rules=list(_CORRELATION_RULES) + extra)
 
 
@@ -103,7 +104,7 @@ def generate_json_report(
     result: dict[str, Any] = {
         "report_type": "vina-json",
         "version": "2.1",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "target": target,
         "pipeline": {
             "started_at": started_at.isoformat() if started_at else "",
@@ -156,13 +157,17 @@ def generate_json_report(
         },
         "vulnerabilities": vstats.top_cves,
         "components": [
-            {"cve": m.vulnerability.cve, "component": m.component.name, "installed": m.component.version, "fixed": m.fixed_version}
+            {
+                "cve": m.vulnerability.cve,
+                "component": m.component.name,
+                "installed": m.component.version,
+                "fixed": m.fixed_version,
+            }
             for m in (vuln_matches or [])
         ],
         "stages": _stage_rows(stage_results),
         "findings_by_severity": {
-            sev: [f.to_dict() for f in flist]
-            for sev, flist in aggregator.group_by_severity().items()
+            sev: [f.to_dict() for f in flist] for sev, flist in aggregator.group_by_severity().items()
         },
     }
 
@@ -269,9 +274,18 @@ def generate_reports(
 
     if "json" in formats:
         data = generate_json_report(
-            target, findings, stage_results, stats, aggregator,
-            started_at, finished_at, enrich=enrich, correlate_enabled=correlate_enabled,
-            attack_paths=computed_paths, vuln_matches=vuln_matches, vuln_stats=vstats,
+            target,
+            findings,
+            stage_results,
+            stats,
+            aggregator,
+            started_at,
+            finished_at,
+            enrich=enrich,
+            correlate_enabled=correlate_enabled,
+            attack_paths=computed_paths,
+            vuln_matches=vuln_matches,
+            vuln_stats=vstats,
             exploitability_assessments=exp_assessments,
             exploitability_summary=exp_summary,
         )

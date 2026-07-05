@@ -6,13 +6,12 @@ import logging
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
 from urllib.parse import parse_qsl, urlparse
 
 from ...core.config import AppConfig
 from ...core.runner import CommandResult
 from ...models.common import TargetInput
-from ...models.findings import Finding, make_finding
+from ...models.findings import Finding
 from ...modules.common import ModuleContext
 
 logger = logging.getLogger(__name__)
@@ -89,33 +88,23 @@ class GauModule:
                 if had_fatal:
                     break
 
-                result = await self.context.runner.run(
+                cmd_result = await self.context.runner.run(
                     executable,
                     [hostname],
                     timeout_seconds=self.context.timeout_seconds,
                 )
-                last_result = result
+                last_result = cmd_result
 
-                if result.stdout:
-                    all_stdout_parts.append(result.stdout)
+                if cmd_result.stdout:
+                    all_stdout_parts.append(cmd_result.stdout)
 
-                if result.missing_executable:
-                    warnings.append(
-                        f"Missing executable: {executable}"
-                    )
+                if cmd_result.missing_executable:
+                    warnings.append(f"Missing executable: {executable}")
                     had_fatal = True
-                elif result.timed_out:
-                    warnings.append(
-                        f"GAU timed out for {hostname} after "
-                        f"{self.context.timeout_seconds} seconds"
-                    )
-                elif (
-                    result.returncode not in (0, None)
-                ):
-                    warnings.append(
-                        f"GAU failed for {hostname} with exit "
-                        f"code {result.returncode}"
-                    )
+                elif cmd_result.timed_out:
+                    warnings.append(f"GAU timed out for {hostname} after {self.context.timeout_seconds} seconds")
+                elif cmd_result.returncode not in (0, None):
+                    warnings.append(f"GAU failed for {hostname} with exit code {cmd_result.returncode}")
 
             command_result = last_result or self._empty_command_result(executable)
             all_stdout = "\n".join(all_stdout_parts)
@@ -150,9 +139,7 @@ class GauModule:
         """Parse GAU line-based output into typed records."""
         gau_urls: list[GauUrl] = []
 
-        for line_number, raw_line in enumerate(
-            output.splitlines(), start=1
-        ):
+        for line_number, raw_line in enumerate(output.splitlines(), start=1):
             line = raw_line.strip()
             if not line:
                 continue
@@ -191,13 +178,7 @@ class GauModule:
 
         params: list[str] = []
         if query:
-            params = [
-                name
-                for name, _ in parse_qsl(
-                    query, keep_blank_values=True
-                )
-                if name
-            ]
+            params = [name for name, _ in parse_qsl(query, keep_blank_values=True) if name]
 
         return GauUrl(
             url=line,
@@ -227,28 +208,17 @@ class GauModule:
             return url_str.strip().lower()
 
         port = parsed.port
-        if port is not None:
-            if (scheme == "http" and port == 80) or (
-                scheme == "https" and port == 443
-            ):
-                port = None
+        if port is not None and ((scheme == "http" and port == 80) or (scheme == "https" and port == 443)):
+            port = None
 
         path = parsed.path
         while len(path) > 1 and path.endswith("//"):
             path = path[:-1]
         path = path.rstrip("/") if path != "/" else path
 
-        query_parts = parse_qsl(
-            parsed.query, keep_blank_values=True
-        )
+        query_parts = parse_qsl(parsed.query, keep_blank_values=True)
         query_parts.sort(key=lambda x: x[0])
-        query = (
-            "&".join(
-                f"{k}={v}" if v else k for k, v in query_parts
-            )
-            if query_parts
-            else ""
-        )
+        query = "&".join(f"{k}={v}" if v else k for k, v in query_parts) if query_parts else ""
 
         netloc = host
         if port is not None:
@@ -336,6 +306,6 @@ class GauModule:
 
 __all__ = [
     "GauModule",
-    "GauUrl",
     "GauResult",
+    "GauUrl",
 ]

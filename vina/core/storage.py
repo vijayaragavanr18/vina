@@ -4,18 +4,18 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, is_dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 
 def _serialize(value: Any) -> Any:
     if is_dataclass(value):
-        return asdict(value)
+        return asdict(cast(Any, value))
     if isinstance(value, Path):
         return str(value)
     if isinstance(value, datetime):
-        return value.astimezone(timezone.utc).isoformat()
+        return value.astimezone(UTC).isoformat()
     if isinstance(value, set):
         return sorted(value)
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")

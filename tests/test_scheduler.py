@@ -9,7 +9,9 @@ from vina.core.scheduler import PipelineScheduler, RetryConfig, SchedulerResult,
 from vina.models.stages import StageResult, StageState
 
 
-def _fake_stage(name: str, duration: float = 0.01, status: StageState = StageState.SUCCESS, record_count: int = 1) -> StageResult:
+def _fake_stage(
+    name: str, duration: float = 0.01, status: StageState = StageState.SUCCESS, record_count: int = 1
+) -> StageResult:
     return StageResult(
         name=name,
         status=status,
@@ -284,8 +286,6 @@ class PipelineSchedulerTests(unittest.IsolatedAsyncioTestCase):
             await PipelineScheduler().run(stages)
 
 
-
-
 # ------------------------------------------------------------------
 # Retry tests
 # ------------------------------------------------------------------
@@ -314,7 +314,9 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
         async def stage() -> StageResult:
             nonlocal call_count
             call_count += 1
-            return StageResult(name="slow", status=StageState.TIMEOUT, command="", exit_code=None, duration=0.05, record_count=0)
+            return StageResult(
+                name="slow", status=StageState.TIMEOUT, command="", exit_code=None, duration=0.05, record_count=0
+            )
 
         stages = [StageDef("slow", [], stage, retry=RetryConfig(max_retries=2, retry_delay_seconds=0.01))]
         await PipelineScheduler().run(stages)
@@ -328,7 +330,15 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
         async def stage() -> StageResult:
             nonlocal call_count
             call_count += 1
-            return StageResult(name="missing", status=StageState.MISSING_DEPENDENCY, command="", exit_code=None, duration=0.0, record_count=0, executable_missing=True)
+            return StageResult(
+                name="missing",
+                status=StageState.MISSING_DEPENDENCY,
+                command="",
+                exit_code=None,
+                duration=0.0,
+                record_count=0,
+                executable_missing=True,
+            )
 
         stages = [StageDef("missing", [], stage, retry=RetryConfig(max_retries=2))]
         await PipelineScheduler().run(stages)
@@ -341,7 +351,15 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
         async def stage() -> StageResult:
             nonlocal call_count
             call_count += 1
-            return StageResult(name="flaky", status=StageState.TIMEOUT, command="", exit_code=None, duration=0.01, record_count=0, warnings=["timed out"])
+            return StageResult(
+                name="flaky",
+                status=StageState.TIMEOUT,
+                command="",
+                exit_code=None,
+                duration=0.01,
+                record_count=0,
+                warnings=["timed out"],
+            )
 
         sd = StageDef("flaky", [], stage, retry=RetryConfig(max_retries=1, retry_delay_seconds=0.01))
         result = await PipelineScheduler().run([sd])
@@ -357,7 +375,15 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
             nonlocal call_count
             call_count += 1
             if call_count == 1:
-                return StageResult(name="flaky", status=StageState.TIMEOUT, command="", exit_code=None, duration=0.01, record_count=0, warnings=["timed out"])
+                return StageResult(
+                    name="flaky",
+                    status=StageState.TIMEOUT,
+                    command="",
+                    exit_code=None,
+                    duration=0.01,
+                    record_count=0,
+                    warnings=["timed out"],
+                )
             return _fake_stage("flaky")
 
         stages = [StageDef("flaky", [], stage, retry=RetryConfig(max_retries=2, retry_delay_seconds=0.01))]
@@ -373,7 +399,9 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
         async def stage() -> StageResult:
             nonlocal call_count
             call_count += 1
-            return StageResult(name="flaky", status=StageState.TIMEOUT, command="", exit_code=None, duration=0.01, record_count=0)
+            return StageResult(
+                name="flaky", status=StageState.TIMEOUT, command="", exit_code=None, duration=0.01, record_count=0
+            )
 
         stages = [StageDef("flaky", [], stage, retry=None)]
         await PipelineScheduler().run(stages)
@@ -387,10 +415,16 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
         async def stage() -> StageResult:
             nonlocal call_count
             call_count += 1
-            return StageResult(name="slow", status=StageState.TIMEOUT, command="", exit_code=None, duration=0.01, record_count=0)
+            return StageResult(
+                name="slow", status=StageState.TIMEOUT, command="", exit_code=None, duration=0.01, record_count=0
+            )
 
         started = time.monotonic()
-        stages = [StageDef("slow", [], stage, retry=RetryConfig(max_retries=2, retry_delay_seconds=0.05, exponential_backoff=True))]
+        stages = [
+            StageDef(
+                "slow", [], stage, retry=RetryConfig(max_retries=2, retry_delay_seconds=0.05, exponential_backoff=True)
+            )
+        ]
         await PipelineScheduler().run(stages)
         elapsed = time.monotonic() - started
         # delays: 0.05 + 0.1 = 0.15s minimum
@@ -406,7 +440,9 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
         async def stage() -> StageResult:
             nonlocal call_count
             call_count += 1
-            return StageResult(name="msg", status=StageState.TIMEOUT, command="", exit_code=None, duration=0.01, record_count=0)
+            return StageResult(
+                name="msg", status=StageState.TIMEOUT, command="", exit_code=None, duration=0.01, record_count=0
+            )
 
         buf = io.StringIO()
         sd = StageDef("msg", [], stage, retry=RetryConfig(max_retries=1, retry_delay_seconds=0.01), print_retry=True)

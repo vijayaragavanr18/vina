@@ -10,18 +10,15 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from .datasets import (
-    DVWA_SCENARIO,
-    JUICE_SHOP_SCENARIO,
-    METASPLOITABLE_OS_SCENARIO,
     MOCK_CVES,
 )
-from .fixtures import MockFindingFactory, make_mock_finding, make_mock_stage_result
-from .metrics import BenchmarkMetrics, MetricsCollector, compute_metrics, compare_cves
+from .fixtures import MockFindingFactory
+from .metrics import BenchmarkMetrics, compare_cves, compute_metrics
 from .runner import TestPipelineRunner, TestResult
 
 logger = logging.getLogger("vina.testing.benchmark")
@@ -128,7 +125,7 @@ class BenchmarkResult:
         status = "passed" if self.passed else "failed"
         sections = [
             "<!DOCTYPE html><html><head><meta charset='utf-8'>",
-            "<title>Benchmark: {}</title>".format(self.profile.name),
+            f"<title>Benchmark: {self.profile.name}</title>",
             "<style>body{font-family:sans-serif;margin:2em}.passed{color:green}.failed{color:red}</style>",
             "</head><body>",
             f"<h1>Benchmark: {self.profile.name}</h1>",
@@ -260,7 +257,7 @@ class BenchmarkRunner:
     def run_profile(
         self,
         profile: BenchmarkProfile,
-        force: bool = False,
+        _force: bool = False,
     ) -> BenchmarkResult:
         """Execute a single benchmark profile.
 
@@ -268,14 +265,11 @@ class BenchmarkRunner:
         deterministic mode with injected data.
         """
         logger.info("Running benchmark: %s", profile.name)
-        started_at = datetime.now(timezone.utc)
+        started_at = datetime.now(UTC)
         result = BenchmarkResult(profile=profile, started_at=started_at)
 
         try:
-            if profile.mock_findings:
-                test_result = self._run_mocked(profile)
-            else:
-                test_result = self._run_live(profile)
+            test_result = self._run_mocked(profile) if profile.mock_findings else self._run_live(profile)
 
             result.test_result = test_result
 
@@ -319,7 +313,7 @@ class BenchmarkRunner:
             result.errors.append(str(exc))
             result.passed = False
 
-        result.finished_at = datetime.now(timezone.utc)
+        result.finished_at = datetime.now(UTC)
         return result
 
     def _run_mocked(self, profile: BenchmarkProfile) -> TestResult:

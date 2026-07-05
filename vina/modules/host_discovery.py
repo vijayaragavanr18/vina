@@ -36,13 +36,18 @@ class HostDiscoveryModule:
         hosts: list[AliveHost] = []
         for item in parse_httpx(result.stdout):
             url = str(item.get("url") or item.get("input") or item.get("host"))
+            status_code_val = item.get("status-code")
+            title_val = item.get("title")
+            tech_val = item.get("tech")
             hosts.append(
                 AliveHost(
                     url=url,
                     source=result.command,
-                    status_code=item.get("status-code") if isinstance(item.get("status-code"), int) else None,
-                    title=item.get("title") if isinstance(item.get("title"), str) else None,
-                    technologies=[str(tech) for tech in item.get("tech") or [] if isinstance(tech, str)],
+                    status_code=status_code_val if isinstance(status_code_val, int) else None,
+                    title=title_val if isinstance(title_val, str) else None,
+                    technologies=[
+                        str(tech) for tech in (tech_val if isinstance(tech_val, list) else []) if isinstance(tech, str)
+                    ],
                 )
             )
         warnings = [result.stderr] if result.stderr and not result.succeeded else []

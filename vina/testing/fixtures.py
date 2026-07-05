@@ -7,7 +7,7 @@ benchmarks can run without real subprocess execution or network access.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -66,8 +66,8 @@ def make_mock_stage_result(
         warnings=warnings or [],
         timed_out=timed_out,
         executable_missing=executable_missing,
-        started_at=datetime.now(timezone.utc).isoformat(),
-        finished_at=datetime.now(timezone.utc).isoformat(),
+        started_at=datetime.now(UTC).isoformat(),
+        finished_at=datetime.now(UTC).isoformat(),
     )
 
 
@@ -98,7 +98,7 @@ class MockCommandRunner:
         self,
         command: str,
         args: tuple[str, ...] | None = None,
-        **kwargs: Any,
+        **_kwargs: Any,
     ) -> Any:
         self.executed_commands.append((command, tuple(args or ())))
         if command in self._results:
@@ -106,6 +106,7 @@ class MockCommandRunner:
         if self._default_result is not None:
             return self._default_result
         from ..core.runner import CommandResult
+
         return CommandResult(
             command=command,
             args=tuple(args or ()),
@@ -210,7 +211,7 @@ class MockFindingFactory:
         target: str = "localhost",
         package: str = "openssl",
         version: str = "1.1.1",
-        cve: str = "CVE-2024-0001",
+        _cve: str = "CVE-2024-0001",
     ) -> list[Finding]:
         return [
             make_mock_finding(

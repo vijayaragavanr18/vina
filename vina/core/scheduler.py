@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from ..models.stages import StageResult, StageState
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def _utc_now_iso8601() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 # Patterns in warning/error messages that indicate a transient failure
@@ -169,17 +169,13 @@ class PipelineScheduler:
         """
         stage_map: dict[str, StageDef] = {s.name: s for s in stages}
         completed: dict[str, StageResult] = {}
-        done_events: dict[str, asyncio.Event] = {
-            s.name: asyncio.Event() for s in stages
-        }
+        done_events: dict[str, asyncio.Event] = {s.name: asyncio.Event() for s in stages}
         results: list[StageResult] = []
         lock = asyncio.Lock()
         sem = asyncio.Semaphore(self.max_parallel)
 
         if not stages:
-            return SchedulerResult(
-                stage_results=[], total_duration=0.0, sequential_duration=0.0
-            )
+            return SchedulerResult(stage_results=[], total_duration=0.0, sequential_duration=0.0)
 
         # Validate dependency graph.
         for sd in stages:
@@ -212,9 +208,9 @@ class PipelineScheduler:
                     done_events[name].set()
                     results.append(stage)
 
-        started_perf = datetime.now(timezone.utc)
+        started_perf = datetime.now(UTC)
         await asyncio.gather(*[_run_one(s.name) for s in stages])
-        finished_perf = datetime.now(timezone.utc)
+        finished_perf = datetime.now(UTC)
 
         total_duration = (finished_perf - started_perf).total_seconds()
         sequential_duration = sum(s.duration for s in results)
@@ -257,9 +253,7 @@ class PipelineScheduler:
         try:
             return await sd.coro()
         except Exception as exc:
-            logger.exception(
-                "Stage %s raised an unhandled exception: %s", sd.name, exc
-            )
+            logger.exception("Stage %s raised an unhandled exception: %s", sd.name, exc)
             return StageResult(
                 name=sd.name,
                 status=StageState.FAILED,

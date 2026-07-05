@@ -17,12 +17,11 @@ from vina.plugins.exceptions import (
     PluginNotFoundError,
     PluginVersionError,
 )
-from vina.plugins.hooks import HookEvent, HookPoint, HookRegistration, get_all_hook_points, is_valid_hook_point
-from vina.plugins.loader import PluginLoader, LOCAL_PLUGIN_DIRS
+from vina.plugins.hooks import HookEvent, HookPoint, get_all_hook_points, is_valid_hook_point
+from vina.plugins.loader import PluginLoader
 from vina.plugins.plugin import Plugin, PluginMetadata
-from vina.plugins.registry import PluginRegistry, get_registry, reset_registry
+from vina.plugins.registry import get_registry, reset_registry
 from vina.plugins.sdk import Finding, make_finding
-
 
 # =========================================================================
 #  PluginMetadata
@@ -42,9 +41,15 @@ class TestPluginMetadata:
 
     def test_to_dict(self):
         m = PluginMetadata(
-            id="test", name="Test", version="1.0.0", author="me",
-            description="desc", license="MIT", homepage="https://example.com",
-            minimum_vina_version="0.2.0", categories=["scanner"],
+            id="test",
+            name="Test",
+            version="1.0.0",
+            author="me",
+            description="desc",
+            license="MIT",
+            homepage="https://example.com",
+            minimum_vina_version="0.2.0",
+            categories=["scanner"],
             dependencies=["other"],
         )
         d = m.to_dict()
@@ -54,12 +59,20 @@ class TestPluginMetadata:
         assert d["categories"] == ["scanner"]
 
     def test_from_dict(self):
-        m = PluginMetadata.from_dict({
-            "id": "p2", "name": "P2", "version": "2.0.0", "author": "a",
-            "description": "d", "license": "MIT", "homepage": "https://x",
-            "minimum_vina_version": "0.3.0", "categories": ["report"],
-            "dependencies": ["dep1"],
-        })
+        m = PluginMetadata.from_dict(
+            {
+                "id": "p2",
+                "name": "P2",
+                "version": "2.0.0",
+                "author": "a",
+                "description": "d",
+                "license": "MIT",
+                "homepage": "https://x",
+                "minimum_vina_version": "0.3.0",
+                "categories": ["report"],
+                "dependencies": ["dep1"],
+            }
+        )
         assert m.id == "p2"
         assert m.version == "2.0.0"
         assert m.categories == ["report"]
@@ -80,21 +93,27 @@ class TestPlugin:
     def test_default_enabled(self):
         class TestPluginImpl(Plugin):
             metadata = PluginMetadata(id="t1", name="T1", version="1.0.0")
+
         p = TestPluginImpl()
         assert p.enabled is True
 
     def test_lifecycle_methods(self):
         class LCPlugin(Plugin):
             metadata = PluginMetadata(id="lc", name="LC", version="1.0.0")
+
             def __init__(self):
                 super().__init__()
                 self.events = []
-            def on_load(self, ctx):
+
+            def on_load(self, _ctx):
                 self.events.append("load")
+
             def on_unload(self):
                 self.events.append("unload")
+
             def on_enable(self):
                 self.events.append("enable")
+
             def on_disable(self):
                 self.events.append("disable")
 
@@ -108,6 +127,7 @@ class TestPlugin:
     def test_registration_methods_default_none(self):
         class EmptyPlugin(Plugin):
             metadata = PluginMetadata(id="e", name="E", version="1.0.0")
+
         p = EmptyPlugin()
         assert p.register_scanners() is None
         assert p.register_enrichment_rules() is None
@@ -216,7 +236,7 @@ class _FailingHookPlugin(Plugin):
         }
 
     @staticmethod
-    def _fail_handler(event):
+    def _fail_handler(_event):
         raise RuntimeError("handler failed")
 
 
@@ -225,7 +245,16 @@ class _EnrichmentPlugin(Plugin):
 
     def register_enrichment_rules(self):
         from vina.core.knowledge import KnowledgeRule
-        return [KnowledgeRule(rule_id="PLUGIN-001", title_patterns=["plugin test"], explanation="x", security_impact="y", remediation="z")]
+
+        return [
+            KnowledgeRule(
+                rule_id="PLUGIN-001",
+                title_patterns=["plugin test"],
+                explanation="x",
+                security_impact="y",
+                remediation="z",
+            )
+        ]
 
 
 class _ScannerPlugin(Plugin):
@@ -234,6 +263,7 @@ class _ScannerPlugin(Plugin):
     def register_scanners(self):
         class CustomScanner:
             pass
+
         return [CustomScanner]
 
 
@@ -249,7 +279,17 @@ class _CorrelationPlugin(Plugin):
 
     def register_correlation_rules(self):
         from vina.core.correlation import CorrelationRule, FindingMatcher
-        return [CorrelationRule(rule_id="PLUGIN-CORR-001", title="Plugin rule", description="d", attack_type="privilege_escalation", severity="high", required_findings=[FindingMatcher(title_contains="test")])]
+
+        return [
+            CorrelationRule(
+                rule_id="PLUGIN-CORR-001",
+                title="Plugin rule",
+                description="d",
+                attack_type="privilege_escalation",
+                severity="high",
+                required_findings=[FindingMatcher(title_contains="test")],
+            )
+        ]
 
 
 class TestPluginRegistry:
@@ -372,7 +412,7 @@ class TestPluginRegistry:
         registry = get_registry()
         results = []
 
-        def handler(event):
+        def handler(_event):
             results.append("called")
             return "ok"
 
@@ -402,10 +442,10 @@ class TestPluginRegistry:
         registry = get_registry()
         order = []
 
-        def handler1(event):
+        def handler1(_event):
             order.append(1)
 
-        def handler2(event):
+        def handler2(_event):
             order.append(2)
 
         registry.add_hook("before_pipeline", handler2, priority=10, plugin_id="p2")
@@ -421,7 +461,7 @@ class TestPluginRegistry:
             calls.append(1)
             event.cancelled = True
 
-        def handler2(event):
+        def handler2(_event):
             calls.append(2)
 
         registry.add_hook("before_pipeline", handler1, plugin_id="p1")
@@ -549,12 +589,14 @@ class TestPluginLoader:
 class TestExamplePlugins:
     def test_example_scanner_can_instantiate(self):
         from plugins.example_scanner.plugin import ExampleScannerPlugin
+
         p = ExampleScannerPlugin()
         assert p.metadata.id == "example_scanner"
         assert p.metadata.categories == ["scanner", "example"]
 
     def test_example_scanner_registers_scanner(self):
         from plugins.example_scanner.plugin import ExampleScannerPlugin
+
         p = ExampleScannerPlugin()
         scanners = p.register_scanners()
         assert scanners is not None
@@ -562,6 +604,7 @@ class TestExamplePlugins:
 
     def test_example_scanner_registers_hooks(self):
         from plugins.example_scanner.plugin import ExampleScannerPlugin
+
         p = ExampleScannerPlugin()
         hooks = p.register_hooks()
         assert hooks is not None
@@ -571,6 +614,7 @@ class TestExamplePlugins:
     def test_example_scanner_hook_handlers(self):
         from plugins.example_scanner.plugin import ExampleScannerPlugin
         from vina.plugins.hooks import HookEvent
+
         p = ExampleScannerPlugin()
         hooks = p.register_hooks()
         event = HookEvent(hook_point=HookPoint.BEFORE_PIPELINE, data={})
@@ -579,12 +623,14 @@ class TestExamplePlugins:
 
     def test_example_report_can_instantiate(self):
         from plugins.example_report.plugin import ExampleReportPlugin
+
         p = ExampleReportPlugin()
         assert p.metadata.id == "example_report"
         assert p.metadata.categories == ["report", "example"]
 
     def test_example_report_registers_section(self):
         from plugins.example_report.plugin import ExampleReportPlugin
+
         p = ExampleReportPlugin()
         sections = p.register_report_sections()
         assert sections is not None
@@ -592,6 +638,7 @@ class TestExamplePlugins:
 
     def test_example_report_registers_hooks(self):
         from plugins.example_report.plugin import ExampleReportPlugin
+
         p = ExampleReportPlugin()
         hooks = p.register_hooks()
         assert hooks is not None
@@ -600,12 +647,14 @@ class TestExamplePlugins:
 
     def test_example_enrichment_can_instantiate(self):
         from plugins.example_enrichment.plugin import ExampleEnrichmentPlugin
+
         p = ExampleEnrichmentPlugin()
         assert p.metadata.id == "example_enrichment"
         assert p.metadata.categories == ["enrichment", "example"]
 
     def test_example_enrichment_registers_rules(self):
         from plugins.example_enrichment.plugin import ExampleEnrichmentPlugin
+
         p = ExampleEnrichmentPlugin()
         rules = p.register_enrichment_rules()
         assert rules is not None
@@ -614,6 +663,7 @@ class TestExamplePlugins:
 
     def test_example_enrichment_registers_hooks(self):
         from plugins.example_enrichment.plugin import ExampleEnrichmentPlugin
+
         p = ExampleEnrichmentPlugin()
         hooks = p.register_hooks()
         assert hooks is not None
@@ -622,8 +672,9 @@ class TestExamplePlugins:
 
     def test_example_enrichment_hook_tags_finding(self):
         from plugins.example_enrichment.plugin import ExampleEnrichmentPlugin
-        from vina.plugins.hooks import HookEvent
         from vina.models.findings import Finding
+        from vina.plugins.hooks import HookEvent
+
         p = ExampleEnrichmentPlugin()
         hooks = p.register_hooks()
         finding = Finding(title="example finding title")
@@ -640,26 +691,28 @@ class TestExamplePlugins:
 class TestSDKExports:
     def test_sdk_has_plugin(self):
         from vina.plugins.sdk import Plugin
+
         assert Plugin is not None
 
     def test_sdk_has_plugin_metadata(self):
         from vina.plugins.sdk import PluginMetadata
+
         assert PluginMetadata is not None
 
     def test_sdk_has_hook_point(self):
         from vina.plugins.sdk import HookPoint
+
         assert HookPoint is not None
 
     def test_sdk_has_finding(self):
-        from vina.plugins.sdk import Finding
         assert Finding is not None
 
     def test_sdk_has_make_finding(self):
-        from vina.plugins.sdk import make_finding
         assert make_finding is not None
 
     def test_package_exports(self):
         import vina.plugins
+
         assert hasattr(vina.plugins, "Plugin")
         assert hasattr(vina.plugins, "PluginMetadata")
         assert hasattr(vina.plugins, "PluginContext")
@@ -698,6 +751,7 @@ class TestVersionCompatibility:
     def test_load_class_version_match(self):
         class CompatPlugin(Plugin):
             metadata = PluginMetadata(id="compat", name="Compat", version="1.0.0", minimum_vina_version="0.1.0")
+
         loader = PluginLoader()
         p = loader.load_class(CompatPlugin)
         assert p.metadata.id == "compat"

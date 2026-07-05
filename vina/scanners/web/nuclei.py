@@ -5,9 +5,10 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 from ...core.config import AppConfig
 from ...core.runner import CommandResult
@@ -90,32 +91,19 @@ class NucleiModule:
                 timeout_seconds=self.context.timeout_seconds,
                 input_text="\n".join(url_strings) + "\n",
             )
-            findings = self._parse_output(
-                command_result.stdout, warnings
-            )
+            findings = self._parse_output(command_result.stdout, warnings)
 
         if command_result.missing_executable:
             warnings.append(f"Missing executable: {executable}")
         if command_result.timed_out:
-            warnings.append(
-                f"Nuclei timed out after "
-                f"{self.context.timeout_seconds} seconds"
-            )
+            warnings.append(f"Nuclei timed out after {self.context.timeout_seconds} seconds")
         if (
             command_result.returncode not in (0, None)
             and not command_result.timed_out
             and not command_result.missing_executable
         ):
-            warnings.append(
-                f"Nuclei failed with exit code "
-                f"{command_result.returncode}"
-            )
-        if (
-            url_strings
-            and not findings
-            and command_result.stdout.strip()
-            and not command_result.timed_out
-        ):
+            warnings.append(f"Nuclei failed with exit code {command_result.returncode}")
+        if url_strings and not findings and command_result.stdout.strip() and not command_result.timed_out:
             warnings.append("No valid JSON records were produced")
         if not findings:
             warnings.append("No findings discovered")
@@ -126,18 +114,20 @@ class NucleiModule:
         unified_findings: list[Finding] = []
         for nf in findings:
             description = nf.template_name or nf.template_id
-            unified_findings.append(make_finding(
-                title=f"Nuclei: {nf.template_id}",
-                description=description,
-                severity=nf.severity or "info",
-                category="vulnerability",
-                source_stage="nuclei",
-                target=target_input.root_domain or target_input.hostname or target_input.normalized,
-                evidence=nf.matched_url or "",
-                host=nf.host or "",
-                url=nf.matched_url or "",
-                tags=nf.tags,
-            ))
+            unified_findings.append(
+                make_finding(
+                    title=f"Nuclei: {nf.template_id}",
+                    description=description,
+                    severity=nf.severity or "info",
+                    category="vulnerability",
+                    source_stage="nuclei",
+                    target=target_input.root_domain or target_input.hostname or target_input.normalized,
+                    evidence=nf.matched_url or "",
+                    host=nf.host or "",
+                    url=nf.matched_url or "",
+                    tags=nf.tags,
+                )
+            )
 
         result = NucleiResult(
             target=target_input,
@@ -161,9 +151,7 @@ class NucleiModule:
         """Parse Nuclei JSON lines into typed records."""
         findings: list[NucleiFinding] = []
 
-        for line_number, raw_line in enumerate(
-            output.splitlines(), start=1
-        ):
+        for line_number, raw_line in enumerate(output.splitlines(), start=1):
             line = raw_line.strip()
             if not line:
                 continue
@@ -177,10 +165,7 @@ class NucleiModule:
                 continue
 
             if not isinstance(payload, Mapping):
-                msg = (
-                    f"Invalid JSON on line {line_number}: "
-                    f"expected object"
-                )
+                msg = f"Invalid JSON on line {line_number}: expected object"
                 logger.warning(msg)
                 warnings.append(msg)
                 continue
@@ -200,10 +185,7 @@ class NucleiModule:
         """Parse a single Nuclei JSON line into a NucleiFinding."""
         template_id = payload.get("template-id")
         if not template_id or not isinstance(template_id, str):
-            msg = (
-                f"Skipping record on line {line_number}: "
-                f"missing template-id"
-            )
+            msg = f"Skipping record on line {line_number}: missing template-id"
             logger.warning(msg)
             warnings.append(msg)
             return None
@@ -213,31 +195,17 @@ class NucleiModule:
         if isinstance(info, Mapping):
             info_dict = dict(info)
 
-        template_name = self._normalize_text(
-            info_dict.get("name")
-        ) or template_id
+        template_name = self._normalize_text(info_dict.get("name")) or template_id
 
-        severity = self._normalize_text(
-            info_dict.get("severity")
-        ) or self._normalize_text(payload.get("severity")) or "info"
+        severity = (
+            self._normalize_text(info_dict.get("severity")) or self._normalize_text(payload.get("severity")) or "info"
+        )
 
-        matched_url = self._normalize_text(
-            payload.get("matched-at")
-            or payload.get("url")
-            or payload.get("matched")
-        )
-        host = self._normalize_text(
-            payload.get("host")
-        )
-        protocol = self._normalize_text(
-            payload.get("type")
-        )
-        matcher_name = self._normalize_text(
-            payload.get("matcher-name")
-        )
-        timestamp = self._normalize_text(
-            payload.get("timestamp")
-        )
+        matched_url = self._normalize_text(payload.get("matched-at") or payload.get("url") or payload.get("matched"))
+        host = self._normalize_text(payload.get("host"))
+        protocol = self._normalize_text(payload.get("type"))
+        matcher_name = self._normalize_text(payload.get("matcher-name"))
+        timestamp = self._normalize_text(payload.get("timestamp"))
 
         tags = self._parse_tags(info_dict)
 
@@ -268,17 +236,9 @@ class NucleiModule:
         """Extract tags from the info dict, handling list or string."""
         tags_raw = info.get("tags")
         if isinstance(tags_raw, list):
-            return [
-                str(t).strip()
-                for t in tags_raw
-                if isinstance(t, (str, int, float))
-            ]
+            return [str(t).strip() for t in tags_raw if isinstance(t, (str, int, float))]
         if isinstance(tags_raw, str):
-            return [
-                t.strip()
-                for t in tags_raw.split(",")
-                if t.strip()
-            ]
+            return [t.strip() for t in tags_raw.split(",") if t.strip()]
         return []
 
     @staticmethod
@@ -320,9 +280,7 @@ class NucleiModule:
             "template_count": result.template_count,
             "warnings": result.warnings,
         }
-        return self.context.store.save(
-            "web/nuclei_findings.json", payload
-        )
+        return self.context.store.save("web/nuclei_findings.json", payload)
 
     def _print_summary(self, result: NucleiResult) -> None:
         """Print a concise summary of Nuclei results."""

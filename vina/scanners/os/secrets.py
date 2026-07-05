@@ -14,7 +14,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from ...core.config import AppConfig
-from ...core.runner import CommandResult
+from ...core.runner import CommandResult, classify_command_error
 from ...models.common import TargetInput
 from ...models.findings import Finding, make_finding
 from ...modules.common import ModuleContext
@@ -111,13 +111,13 @@ class SecretsModule:
             ("cat_ssh_id_rsa", self.config.tool_bin("cat", "cat"), ["/root/.ssh/id_rsa"]),
             ("cat_ssh_authorized", self.config.tool_bin("cat", "cat"), ["/root/.ssh/authorized_keys"]),
             ("cat_ssh_config", self.config.tool_bin("cat", "cat"), ["/root/.ssh/config"]),
-            ("find_pem", self.config.tool_bin("find", "find"), ["/", "-name", "*.pem", "-type", "f", "2>/dev/null"]),
-            ("find_key", self.config.tool_bin("find", "find"), ["/", "-name", "*.key", "-type", "f", "2>/dev/null"]),
+            ("find_pem", self.config.tool_bin("find", "find"), ["/", "-name", "*.pem", "-type", "f"]),
+            ("find_key", self.config.tool_bin("find", "find"), ["/", "-name", "*.key", "-type", "f"]),
             ("ls_ssl", self.config.tool_bin("ls", "ls"), ["-la", "/etc/ssl/private/"]),
             ("cat_mycnf", self.config.tool_bin("cat", "cat"), ["/root/.my.cnf"]),
             ("cat_netrc", self.config.tool_bin("cat", "cat"), ["/root/.netrc"]),
             ("cat_pgpass", self.config.tool_bin("cat", "cat"), ["/root/.pgpass"]),
-            ("find_env", self.config.tool_bin("find", "find"), ["/", "-name", ".env", "-type", "f", "2>/dev/null"]),
+            ("find_env", self.config.tool_bin("find", "find"), ["/", "-name", ".env", "-type", "f"]),
         ]
 
         results: dict[str, CommandResult] = {}
@@ -129,10 +129,7 @@ class SecretsModule:
             if cr.timed_out:
                 warnings.append(f"{name} timed out after {self.context.timeout_seconds}s")
             if cr.returncode not in (0, None) and not cr.timed_out and not cr.missing_executable:
-                stderr_snippet = cr.stderr.strip()[:120] if cr.stderr.strip() else ""
-                msg = f"{name} exited with code {cr.returncode}"
-                if stderr_snippet:
-                    msg += f": {stderr_snippet}"
+                _, msg = classify_command_error(name, cr)
                 warnings.append(msg)
 
         findings: list[Finding] = []
@@ -143,7 +140,9 @@ class SecretsModule:
         if not secret_files:
             warnings.append("No secrets or sensitive files could be found (access may be restricted)")
 
-        primary = results.get("find_pem") or results.get("find_key") or results.get("ls_ssh") or self._empty_command_result()
+        primary = (
+            results.get("find_pem") or results.get("find_key") or results.get("ls_ssh") or self._empty_command_result()
+        )
 
         result = SecretsResult(
             target=target_input,
@@ -162,7 +161,9 @@ class SecretsModule:
         self._print_summary(result)
         return result
 
-    def _analyze(self, results: dict[str, CommandResult], findings: list[Finding], target_str: str) -> tuple[list[SecretFile], list[str], list[str], list[str], list[str]]:
+    def _analyze(
+        self, results: dict[str, CommandResult], findings: list[Finding], target_str: str
+    ) -> tuple[list[SecretFile], list[str], list[str], list[str], list[str]]:
         secret_files: list[SecretFile] = []
         key_files: list[str] = []
         env_files: list[str] = []
@@ -185,16 +186,18 @@ class SecretsModule:
             if cr is not None and cr.succeeded and cr.stdout.strip():
                 secret_files.append(SecretFile(path=key_path, type="ssh-key", content_snippet=cr.stdout.strip()[:100]))
                 key_files.append(key_path)
-                findings.append(make_finding(
-                    title=f"SSH key found: {key_path}",
-                    description=f"Private SSH key or configuration file found at {key_path}",
-                    severity="high",
-                    category="secret",
-                    source_stage="secrets",
-                    target=target_str,
-                    evidence=key_path,
-                    recommendation=f"Protect {key_path} with strict permissions (chmod 600) and ensure it is encrypted",
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"SSH key found: {key_path}",
+                        description=f"Private SSH key or configuration file found at {key_path}",
+                        severity="high",
+                        category="secret",
+                        source_stage="secrets",
+                        target=target_str,
+                        evidence=key_path,
+                        recommendation=f"Protect {key_path} with strict permissions (chmod 600) and ensure it is encrypted",
+                    )
+                )
 
         # .env files
         cr_env = results.get("find_env")
@@ -204,16 +207,18 @@ class SecretsModule:
                 if path:
                     env_files.append(path)
                     secret_files.append(SecretFile(path=path, type="env-file"))
-                    findings.append(make_finding(
-                        title=f".env file found: {path}",
-                        description=f"Environment file found at {path} which may contain secrets",
-                        severity="high",
-                        category="secret",
-                        source_stage="secrets",
-                        target=target_str,
-                        evidence=path,
-                        recommendation="Ensure .env files are not accessible by unauthorized users and are excluded from version control",
-                    ))
+                    findings.append(
+                        make_finding(
+                            title=f".env file found: {path}",
+                            description=f"Environment file found at {path} which may contain secrets",
+                            severity="high",
+                            category="secret",
+                            source_stage="secrets",
+                            target=target_str,
+                            evidence=path,
+                            recommendation="Ensure .env files are not accessible by unauthorized users and are excluded from version control",
+                        )
+                    )
 
         # .pem and .key files from find
         for find_cmd, ftype in [("find_pem", "pem-cert"), ("find_key", "private-key")]:
@@ -228,16 +233,18 @@ class SecretsModule:
                         else:
                             cert_files.append(path)
                         sev = "high" if ftype == "private-key" else "medium"
-                        findings.append(make_finding(
-                            title=f"{ftype}: {path}",
-                            description=f"Found {ftype} file at {path}",
-                            severity=sev,
-                            category="secret",
-                            source_stage="secrets",
-                            target=target_str,
-                            evidence=path,
-                            recommendation=f"Protect {path} with appropriate permissions",
-                        ))
+                        findings.append(
+                            make_finding(
+                                title=f"{ftype}: {path}",
+                                description=f"Found {ftype} file at {path}",
+                                severity=sev,
+                                category="secret",
+                                source_stage="secrets",
+                                target=target_str,
+                                evidence=path,
+                                recommendation=f"Protect {path} with appropriate permissions",
+                            )
+                        )
 
         # Credential config files
         for cred_file in _CRED_CONFIG_FILES:
@@ -248,21 +255,30 @@ class SecretsModule:
                 cr = results.get(name)
             if cr is not None and cr.succeeded and cr.stdout.strip():
                 content = cr.stdout.strip()
-                secret_files.append(SecretFile(path=cred_file, type="credential-config", content_snippet=content[:100], contains_credential=True))
+                secret_files.append(
+                    SecretFile(
+                        path=cred_file,
+                        type="credential-config",
+                        content_snippet=content[:100],
+                        contains_credential=True,
+                    )
+                )
                 cred_files.append(cred_file)
                 # Check for credentials in content
                 matches = self._find_credentials(content)
                 if matches:
-                    findings.append(make_finding(
-                        title=f"Credentials in config: {cred_file}",
-                        description=f"Configuration file {cred_file} contains potential credentials",
-                        severity="critical",
-                        category="secret",
-                        source_stage="secrets",
-                        target=target_str,
-                        evidence=cred_file,
-                        recommendation=f"Remove hardcoded credentials from {cred_file}",
-                    ))
+                    findings.append(
+                        make_finding(
+                            title=f"Credentials in config: {cred_file}",
+                            description=f"Configuration file {cred_file} contains potential credentials",
+                            severity="critical",
+                            category="secret",
+                            source_stage="secrets",
+                            target=target_str,
+                            evidence=cred_file,
+                            recommendation=f"Remove hardcoded credentials from {cred_file}",
+                        )
+                    )
 
         return secret_files, key_files, env_files, cert_files, cred_files
 
@@ -306,7 +322,17 @@ class SecretsModule:
 
     @staticmethod
     def _empty_command_result() -> CommandResult:
-        return CommandResult(command="secrets", args=(), returncode=1, stdout="", stderr="", duration_seconds=0.0, timed_out=False, missing_executable=False, full_command="secrets")
+        return CommandResult(
+            command="secrets",
+            args=(),
+            returncode=1,
+            stdout="",
+            stderr="",
+            duration_seconds=0.0,
+            timed_out=False,
+            missing_executable=False,
+            full_command="secrets",
+        )
 
 
-__all__ = ["SecretsModule", "SecretFile", "SecretsResult"]
+__all__ = ["SecretFile", "SecretsModule", "SecretsResult"]

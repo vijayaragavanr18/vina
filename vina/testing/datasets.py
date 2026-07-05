@@ -209,7 +209,12 @@ MOCK_OSV_RESPONSE: dict[str, Any] = {
             "id": "CVE-2024-0001",
             "summary": "Test OSV entry",
             "aliases": ["CVE-2024-0001"],
-            "affected": [{"package": {"name": "openssl", "ecosystem": "PyPI"}, "ranges": [{"type": "SEMVER", "events": [{"introduced": "0"}, {"fixed": "1.1.1w"}]}]}],
+            "affected": [
+                {
+                    "package": {"name": "openssl", "ecosystem": "PyPI"},
+                    "ranges": [{"type": "SEMVER", "events": [{"introduced": "0"}, {"fixed": "1.1.1w"}]}],
+                }
+            ],
         }
     ]
 }
@@ -222,7 +227,14 @@ MOCK_GITHUB_ADVISORY_RESPONSE: list[dict[str, Any]] = [
         "severity": "CRITICAL",
         "identifiers": [{"value": "CVE-2024-0001", "type": "CVE"}],
         "published_at": "2024-01-01T00:00:00Z",
-        "vulnerabilities": [{"package": {"name": "openssl", "ecosystem": "PyPI"}, "severity": "CRITICAL", "vulnerable_version_range": "< 1.1.1w", "first_patched_version": "1.1.1w"}],
+        "vulnerabilities": [
+            {
+                "package": {"name": "openssl", "ecosystem": "PyPI"},
+                "severity": "CRITICAL",
+                "vulnerable_version_range": "< 1.1.1w",
+                "first_patched_version": "1.1.1w",
+            }
+        ],
     }
 ]
 
@@ -274,13 +286,13 @@ METASPLOITABLE_OS_SCENARIO: dict[str, Any] = {
 
 
 __all__ = [
-    "MOCK_CVES",
-    "MOCK_NVD_RESPONSE",
-    "MOCK_CISA_KEV_RESPONSE",
-    "MOCK_EPSS_CSV",
-    "MOCK_OSV_RESPONSE",
-    "MOCK_GITHUB_ADVISORY_RESPONSE",
     "DVWA_SCENARIO",
     "JUICE_SHOP_SCENARIO",
     "METASPLOITABLE_OS_SCENARIO",
+    "MOCK_CISA_KEV_RESPONSE",
+    "MOCK_CVES",
+    "MOCK_EPSS_CSV",
+    "MOCK_GITHUB_ADVISORY_RESPONSE",
+    "MOCK_NVD_RESPONSE",
+    "MOCK_OSV_RESPONSE",
 ]

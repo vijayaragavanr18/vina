@@ -9,6 +9,8 @@ Or import individual items::
     from vina.plugins.sdk import Plugin, PluginMetadata, PluginContext
 """
 
+# VINA types commonly needed by plugins
+from ..models.findings import Finding, FindingCategory, Severity, make_finding
 from .context import PluginContext
 from .exceptions import (
     PluginDependencyError,
@@ -23,34 +25,26 @@ from .hooks import HookEvent, HookPoint, HookRegistration, is_valid_hook_point
 from .plugin import Plugin, PluginMetadata
 from .registry import PluginRegistry, get_registry, reset_registry
 
-# VINA types commonly needed by plugins
-from ..models.findings import Finding, Severity, FindingCategory, make_finding
-
 __all__ = [
-    # Plugin base
-    "Plugin",
-    "PluginMetadata",
-    "PluginContext",
-    # Registry
-    "PluginRegistry",
-    "get_registry",
-    "reset_registry",
-    # Hooks
-    "HookPoint",
+    "Finding",
+    "FindingCategory",
     "HookEvent",
+    "HookPoint",
     "HookRegistration",
-    "is_valid_hook_point",
-    # Exceptions
-    "PluginError",
-    "PluginLoadError",
-    "PluginNotFoundError",
+    "Plugin",
+    "PluginContext",
     "PluginDependencyError",
     "PluginDisabledError",
+    "PluginError",
     "PluginHookError",
+    "PluginLoadError",
+    "PluginMetadata",
+    "PluginNotFoundError",
+    "PluginRegistry",
     "PluginVersionError",
-    # VINA types
-    "Finding",
     "Severity",
-    "FindingCategory",
+    "get_registry",
+    "is_valid_hook_point",
     "make_finding",
+    "reset_registry",
 ]

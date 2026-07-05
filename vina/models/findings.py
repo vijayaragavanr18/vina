@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -102,7 +102,7 @@ class Finding:
 
 
 def _utc_now_str() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def make_finding(
@@ -145,11 +145,11 @@ def make_finding(
 
 
 __all__ = [
+    "SEVERITY_LABELS",
+    "SEVERITY_ORDER",
     "Finding",
     "FindingCategory",
     "Severity",
-    "SEVERITY_ORDER",
-    "SEVERITY_LABELS",
-    "severity_key",
     "make_finding",
+    "severity_key",
 ]

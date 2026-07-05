@@ -36,33 +36,38 @@ class PortScanModule:
         ports: list[PortEntry] = []
         for item in parse_naabu(naabu_result.stdout):
             host = str(item.get("host"))
-            port = int(item.get("port"))
+            port_val = item.get("port")
+            port = int(str(port_val)) if port_val is not None else 0
+            service_val = item.get("service")
             ports.append(
                 PortEntry(
                     host=host,
                     port=port,
                     protocol=str(item.get("protocol") or "tcp"),
-                    service=str(item.get("service") or "") or None,
+                    service=str(service_val) if isinstance(service_val, str) else None,
                     source=naabu_result.command,
                 )
             )
 
         nmap_result = await self._run_nmap(hosts)
         for item in parse_nmap_grepable(nmap_result.stdout):
-            port = item.get("port")
-            if isinstance(port, int):
+            port_nm = item.get("port")
+            if isinstance(port_nm, int):
+                service_val = item.get("service")
                 ports.append(
                     PortEntry(
                         host=urls[0],
-                        port=port,
+                        port=port_nm,
                         protocol=str(item.get("protocol") or "tcp"),
-                        service=item.get("service") if isinstance(item.get("service"), str) else None,
+                        service=str(service_val) if isinstance(service_val, str) else None,
                         source=nmap_result.command,
                     )
                 )
 
         warnings = [result.stderr for result in (naabu_result, nmap_result) if result.stderr and not result.succeeded]
-        return PortScanResult(ports=self._dedupe_ports(ports), warnings=warnings, command_results=[naabu_result, nmap_result])
+        return PortScanResult(
+            ports=self._dedupe_ports(ports), warnings=warnings, command_results=[naabu_result, nmap_result]
+        )
 
     async def _run_nmap(self, hosts: list[AliveHost]):
         host = hosts[0].url

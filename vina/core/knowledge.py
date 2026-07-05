@@ -10,8 +10,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..models.findings import Finding, severity_key
-
+from ..models.findings import Finding
 
 # =========================================================================
 #  GTFOBins mapping
@@ -142,6 +141,7 @@ def _get_gtfo_bins_from_cmd(cmd: str) -> list[dict[str, str]]:
 #  MITRE ATT&CK constants
 # =========================================================================
 
+
 class MitreTechnique:
     """Common MITRE ATT&CK technique IDs and names."""
 
@@ -194,6 +194,7 @@ class MitreTechnique:
 # =========================================================================
 #  CIS Benchmark constants
 # =========================================================================
+
 
 class CisControl:
     """Common CIS Control references."""
@@ -303,6 +304,7 @@ class KnowledgeRule:
     Rules are matched against findings by checking whether any of the
     ``title_patterns`` appear (case-insensitive) in the finding title.
     """
+
     rule_id: str
     title_patterns: list[str]
     explanation: str
@@ -672,8 +674,7 @@ WRITABLE_RULES = [
         explanation="A cron job is configured to run as root. If the target script "
         "is world-writable or in a world-writable location, it can be modified "
         "by any user to execute arbitrary code as root.",
-        security_impact="Medium - Root cron jobs running from writable locations "
-        "allow privilege escalation.",
+        security_impact="Medium - Root cron jobs running from writable locations allow privilege escalation.",
         remediation="Verify the cron script is owned by root with permissions 700. "
         "Store cron scripts in /root/ or /usr/local/sbin/ with restricted permissions.",
         cis_control="CIS Ubuntu Benchmark 5.1.1 - Ensure cron daemon is enabled and running",
@@ -915,8 +916,7 @@ SERVICE_RULES = [
         title_patterns=["Enabled service:"],
         explanation="A network-accessible service is enabled and running. "
         "Each enabled service expands the attack surface.",
-        security_impact="Info - Documenting enabled services for inventory. Review "
-        "whether each service is necessary.",
+        security_impact="Info - Documenting enabled services for inventory. Review whether each service is necessary.",
         remediation="Disable unused services: systemctl disable <service>. "
         "Ensure required services are properly firewalled.",
         tags=["service", "systemd", "network", "inventory"],
@@ -933,8 +933,7 @@ CRON_RULES = [
     KnowledgeRule(
         rule_id="CRON-001",
         title_patterns=["Writable entries in /etc/cron."],
-        explanation="Writable entries were found in cron directories. "
-        "See WRITABLE-002 for details.",
+        explanation="Writable entries were found in cron directories. See WRITABLE-002 for details.",
         security_impact="High - World-writable cron files allow privilege escalation.",
         remediation="Ensure cron scripts are not world-writable and are owned by root.",
         cis_control="CIS Ubuntu Benchmark 5.1.1 - Ensure cron daemon is enabled and running",
@@ -956,8 +955,7 @@ SUSPICIOUS_BINARY_RULES = [
         explanation="A binary associated with privilege escalation via GTFOBins was found.",
         security_impact="High - This binary can be used to escalate privileges "
         "when SUID, capabilities, or sudo access is granted.",
-        remediation="Remove SUID bit or capabilities if not required. "
-        "Monitor usage of this binary in audit logs.",
+        remediation="Remove SUID bit or capabilities if not required. Monitor usage of this binary in audit logs.",
         references=["https://gtfobins.github.io/"],
         cis_control="CIS Control 4: Secure Configuration",
         mitre_attack=[MitreTechnique.T1548_001],
@@ -1024,6 +1022,7 @@ class EnrichedFinding:
     delegation (``__getattr__``), so this class can be used anywhere
     a ``Finding`` is expected.
     """
+
     finding: Finding
     explanation: str = ""
     security_impact: str = ""
@@ -1042,19 +1041,21 @@ class EnrichedFinding:
 
     def to_dict(self) -> dict[str, Any]:
         result = self.finding.to_dict()
-        result.update({
-            "explanation": self.explanation,
-            "security_impact": self.security_impact,
-            "remediation": self.remediation,
-            "enriched_references": self.enriched_references,
-            "cis_control": self.cis_control,
-            "mitre_attack": self.mitre_attack,
-            "cwe": self.cwe,
-            "enriched_tags": self.enriched_tags,
-            "gtfo_bins": self.gtfo_bins,
-            "cve_references": self.cve_references,
-            "confidence_score": self.confidence_score,
-        })
+        result.update(
+            {
+                "explanation": self.explanation,
+                "security_impact": self.security_impact,
+                "remediation": self.remediation,
+                "enriched_references": self.enriched_references,
+                "cis_control": self.cis_control,
+                "mitre_attack": self.mitre_attack,
+                "cwe": self.cwe,
+                "enriched_tags": self.enriched_tags,
+                "gtfo_bins": self.gtfo_bins,
+                "cve_references": self.cve_references,
+                "confidence_score": self.confidence_score,
+            }
+        )
         return result
 
     def has_enrichment(self) -> bool:
@@ -1098,56 +1099,90 @@ class EnrichmentEngine:
         GTFOBins binary paths.
         """
         enriched = EnrichedFinding(finding=finding)
-        matched_rules: list[KnowledgeRule] = []
-
-        for rule in self._rules:
-            if not self._rule_matches(rule, finding):
-                continue
-            matched_rules.append(rule)
+        matched_rules = [rule for rule in self._rules if self._rule_matches(rule, finding)]
 
         if not matched_rules:
             return enriched
 
-        # Merge enrichment from all matching rules (first match wins per field)
-        for rule in matched_rules:
-            if not enriched.explanation and rule.explanation:
-                enriched.explanation = rule.explanation
-            if not enriched.security_impact and rule.security_impact:
-                enriched.security_impact = rule.security_impact
-            if not enriched.remediation and rule.remediation:
-                enriched.remediation = rule.remediation
-            if rule.references:
-                enriched.enriched_references = list(set(enriched.enriched_references + rule.references))
-            if not enriched.cis_control and rule.cis_control:
-                enriched.cis_control = rule.cis_control
-            if rule.mitre_attack:
-                enriched.mitre_attack = list(set(enriched.mitre_attack + rule.mitre_attack))
-            if not enriched.cwe and rule.cwe:
-                enriched.cwe = rule.cwe
-            if rule.tags:
-                enriched.enriched_tags = list(set(enriched.enriched_tags + rule.tags))
-            if rule.confidence_score > enriched.confidence_score:
-                enriched.confidence_score = rule.confidence_score
-
-        # GTFOBins lookup from evidence
-        gtfo_matches = self._check_gtfobins(finding)
-        enriched.gtfo_bins = gtfo_matches
-        if gtfo_matches and not enriched.explanation:
-            enriched.explanation = SUSPICIOUS_BINARY_RULES[0].explanation
-        if gtfo_matches and not enriched.security_impact:
-            enriched.security_impact = SUSPICIOUS_BINARY_RULES[0].security_impact
-        if gtfo_matches and not enriched.remediation:
-            enriched.remediation = SUSPICIOUS_BINARY_RULES[0].remediation
-        if gtfo_matches and not enriched.cis_control:
-            enriched.cis_control = SUSPICIOUS_BINARY_RULES[0].cis_control
-        if gtfo_matches and not enriched.mitre_attack:
-            enriched.mitre_attack = list(SUSPICIOUS_BINARY_RULES[0].mitre_attack)
-        if gtfo_matches and not enriched.cwe:
-            enriched.cwe = SUSPICIOUS_BINARY_RULES[0].cwe
-        if gtfo_matches and enriched.confidence_score < SUSPICIOUS_BINARY_RULES[0].confidence_score:
-            enriched.confidence_score = SUSPICIOUS_BINARY_RULES[0].confidence_score
+        self._merge_rule_enrichment(enriched, matched_rules)
+        self._apply_gtfobins_fields(enriched, finding)
 
         return enriched
+
+    def _merge_rule_enrichment(
+        self,
+        enriched: EnrichedFinding,
+        matched_rules: list[KnowledgeRule],
+    ) -> None:
+        for rule in matched_rules:
+            self._apply_evidence_and_explanation(enriched, rule)
+            self._apply_remediation_info(enriched, rule)
+            self._apply_tags(enriched, rule)
+            self._apply_confidence_adjustment(enriched, rule)
+
+    @staticmethod
+    def _apply_evidence_and_explanation(
+        enriched: EnrichedFinding,
+        rule: KnowledgeRule,
+    ) -> None:
+        if not enriched.explanation and rule.explanation:
+            enriched.explanation = rule.explanation
+        if not enriched.security_impact and rule.security_impact:
+            enriched.security_impact = rule.security_impact
+        if rule.references:
+            enriched.enriched_references = list(set(enriched.enriched_references + rule.references))
+
+    @staticmethod
+    def _apply_remediation_info(
+        enriched: EnrichedFinding,
+        rule: KnowledgeRule,
+    ) -> None:
+        if not enriched.remediation and rule.remediation:
+            enriched.remediation = rule.remediation
+        if not enriched.cis_control and rule.cis_control:
+            enriched.cis_control = rule.cis_control
+        if rule.mitre_attack:
+            enriched.mitre_attack = list(set(enriched.mitre_attack + rule.mitre_attack))
+        if not enriched.cwe and rule.cwe:
+            enriched.cwe = rule.cwe
+
+    @staticmethod
+    def _apply_tags(enriched: EnrichedFinding, rule: KnowledgeRule) -> None:
+        if rule.tags:
+            enriched.enriched_tags = list(set(enriched.enriched_tags + rule.tags))
+
+    @staticmethod
+    def _apply_confidence_adjustment(
+        enriched: EnrichedFinding,
+        rule: KnowledgeRule,
+    ) -> None:
+        if rule.confidence_score > enriched.confidence_score:
+            enriched.confidence_score = rule.confidence_score
+
+    def _apply_gtfobins_fields(
+        self,
+        enriched: EnrichedFinding,
+        finding: Finding,
+    ) -> None:
+        gtfo_matches = self._check_gtfobins(finding)
+        enriched.gtfo_bins = gtfo_matches
+        if not gtfo_matches:
+            return
+        rule = SUSPICIOUS_BINARY_RULES[0]
+        if not enriched.explanation:
+            enriched.explanation = rule.explanation
+        if not enriched.security_impact:
+            enriched.security_impact = rule.security_impact
+        if not enriched.remediation:
+            enriched.remediation = rule.remediation
+        if not enriched.cis_control:
+            enriched.cis_control = rule.cis_control
+        if not enriched.mitre_attack:
+            enriched.mitre_attack = list(rule.mitre_attack)
+        if not enriched.cwe:
+            enriched.cwe = rule.cwe
+        if enriched.confidence_score < rule.confidence_score:
+            enriched.confidence_score = rule.confidence_score
 
     def enrich_all(self, findings: list[Finding]) -> list[EnrichedFinding]:
         """Apply enrichment to every finding in the list."""
@@ -1156,22 +1191,16 @@ class EnrichmentEngine:
     def _rule_matches(self, rule: KnowledgeRule, finding: Finding) -> bool:
         """Check if a rule matches a finding."""
         # Check source_stage filter
-        if rule.source_stages:
-            if finding.source_stage.lower() not in [s.lower() for s in rule.source_stages]:
-                return False
+        if rule.source_stages and finding.source_stage.lower() not in [s.lower() for s in rule.source_stages]:
+            return False
 
         # Check source_category filter
-        if rule.source_categories:
-            if finding.category.lower() not in [c.lower() for c in rule.source_categories]:
-                return False
+        if rule.source_categories and finding.category.lower() not in [c.lower() for c in rule.source_categories]:
+            return False
 
         # Check title patterns
         title_lower = finding.title.lower()
-        for pattern in rule.title_patterns:
-            if pattern.lower() in title_lower:
-                return True
-
-        return False
+        return any(pattern.lower() in title_lower for pattern in rule.title_patterns)
 
     @staticmethod
     def _check_gtfobins(finding: Finding) -> list[dict[str, str]]:
@@ -1210,12 +1239,12 @@ def enrich_all(findings: list[Finding]) -> list[EnrichedFinding]:
 
 __all__ = [
     "ALL_RULES",
+    "GTFOBINS_BINARIES",
+    "CisControl",
     "EnrichedFinding",
     "EnrichmentEngine",
-    "GTFOBINS_BINARIES",
     "KnowledgeRule",
     "MitreTechnique",
-    "CisControl",
     "enrich_all",
     "enrich_finding",
 ]

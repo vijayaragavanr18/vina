@@ -9,10 +9,10 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter
-from typing import Any
+from typing import Any, cast
 
 from ..core.aggregator import FindingAggregator
 from ..core.checkpoint import CheckpointManager
@@ -23,7 +23,6 @@ from ..core.scheduler import PipelineScheduler, RetryConfig, StageDef
 from ..core.storage import JsonStore
 from ..models.common import TargetInput
 from ..models.findings import Finding
-from ..reports import generate_reports
 from ..models.stages import (
     StageResult,
     StageState,
@@ -34,7 +33,8 @@ from ..models.stages import (
     summary_for_stages,
 )
 from ..modules.common import ModuleContext
-from ..scanners.web.gau import GauModule
+from ..reports import generate_reports
+from ..scanners.web.gau import GauModule, GauResult
 from ..scanners.web.httpx import HttpxModule
 from ..scanners.web.katana import KatanaModule
 from ..scanners.web.naabu import NaabuModule
@@ -42,7 +42,7 @@ from ..scanners.web.nmap import NmapModule
 from ..scanners.web.nuclei import NucleiModule
 from ..scanners.web.recon import ReconModule
 from ..scanners.web.url_aggregator import UrlAggregatorModule
-from ..scanners.web.waybackurls import WaybackurlsModule
+from ..scanners.web.waybackurls import WaybackurlsModule, WaybackurlsResult
 from ..scanners.web.whatweb import WhatWebModule
 
 logger = logging.getLogger(__name__)
@@ -119,9 +119,7 @@ class WebPipeline:
         self.output_root = output_dir or config.output_dir
         self.store = JsonStore(self.output_root)
         self.runner = AsyncCommandRunner()
-        self.context = ModuleContext(
-            self.runner, self.store, self.config.timeout_seconds
-        )
+        self.context = ModuleContext(self.runner, self.store, self.config.timeout_seconds)
         self._dep_checker = DependencyChecker(config)
 
     async def run(
@@ -148,7 +146,7 @@ class WebPipeline:
         self._run_dep_check()
 
         target_input = TargetInput.from_raw(target)
-        started_at = datetime.now(timezone.utc)
+        started_at = datetime.now(UTC)
         started_perf = perf_counter()
 
         # Shared mutable state for passing data between stages.
@@ -162,10 +160,7 @@ class WebPipeline:
 
         _completed: set[str] = set()
         if resume and cp.exists():
-            _completed = {
-                name for name in cp.completed_stage_names()
-                if cp.is_successfully_completed(name)
-            }
+            _completed = {name for name in cp.completed_stage_names() if cp.is_successfully_completed(name)}
             # Reconstruct shared outputs from checkpoint.
             restored = cp.restore_outputs()
             _results.update(restored)
@@ -188,7 +183,9 @@ class WebPipeline:
                 print("  Skipping completed stage: subfinder")
                 return cp.restore_stage("subfinder")
             if not _tool("subfinder"):
-                return self._finish("subfinder", cp, build_missing_dependency_stage("subfinder", "subfinder"), _results, _rc)
+                return self._finish(
+                    "subfinder", cp, build_missing_dependency_stage("subfinder", "subfinder"), _results, _rc
+                )
             mod = ReconModule(self.config, _ctx(_STAGE_TIMEOUTS.get("subfinder")))
             res = await mod.run(target_input)
             _results["subdomains"] = res.subdomains
@@ -235,7 +232,9 @@ class WebPipeline:
             if not subdomains:
                 return self._finish("waybackurls", cp, build_skipped_stage("waybackurls"), _results, _rc)
             if not _tool("waybackurls"):
-                return self._finish("waybackurls", cp, build_missing_dependency_stage("waybackurls", "waybackurls"), _results, _rc)
+                return self._finish(
+                    "waybackurls", cp, build_missing_dependency_stage("waybackurls", "waybackurls"), _results, _rc
+                )
             mod = WaybackurlsModule(self.config, self.context)
             res = await mod.run(subdomains, target_input)
             _results["waybackurls"] = res
@@ -313,12 +312,14 @@ class WebPipeline:
             mod = UrlAggregatorModule(self.config, self.context)
             res = await mod.run(
                 katana_res,
-                _results.get("gau"),
-                _results.get("waybackurls"),
+                cast(GauResult, _results.get("gau")),
+                cast(WaybackurlsResult, _results.get("waybackurls")),
             )
             _results["aggregated"] = res
             _rc["url_aggregator"] = res.unique_count
-            return self._finish("url_aggregator", cp, self._record("url_aggregator", res, _rc["url_aggregator"]), _results, _rc)
+            return self._finish(
+                "url_aggregator", cp, self._record("url_aggregator", res, _rc["url_aggregator"]), _results, _rc
+            )
 
         async def _stage_nuclei() -> StageResult:
             if "nuclei" in _completed:
@@ -364,7 +365,7 @@ class WebPipeline:
             "gau": "gau",
             "waybackurls": "waybackurls",
         }
-        for stage_name, result_key in result_keys.items():
+        for _stage_name, result_key in result_keys.items():
             stage_res = _results.get(result_key)
             if stage_res is not None:
                 sf = getattr(stage_res, "findings", None) or []
@@ -395,13 +396,13 @@ class WebPipeline:
                 aggregator=agg,
                 output_dir=reports_dir,
                 started_at=started_at,
-                finished_at=datetime.now(timezone.utc),
+                finished_at=datetime.now(UTC),
             )
             for fmt, path in generated.items():
                 logger.info("Report generated: %s (%s)", path, fmt)
 
         # Build result -----------------------------------------------------
-        finished_at = datetime.now(timezone.utc)
+        finished_at = datetime.now(UTC)
         total_duration = perf_counter() - started_perf
         summary = summary_for_stages(
             "Web Pipeline",
@@ -435,7 +436,7 @@ class WebPipeline:
         cp: CheckpointManager,
         stage: StageResult,
         results: dict[str, Any],
-        rc: dict[str, int],
+        _rc: dict[str, int],
     ) -> StageResult:
         """Record stage to checkpoint and log.  Returns the stage."""
         outputs = {}

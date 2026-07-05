@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import Any
 
 from ..models.findings import Finding, severity_key
 

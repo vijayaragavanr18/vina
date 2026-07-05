@@ -5,9 +5,10 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any
 from urllib.parse import urlparse, urlunparse
 
 from ...core.config import AppConfig
@@ -96,7 +97,11 @@ class HttpxModule:
             warnings.append(f"Missing executable: {executable}")
         if command_result.timed_out:
             warnings.append(f"httpx timed out after {self.context.timeout_seconds} seconds")
-        if command_result.returncode not in (0, None) and not command_result.timed_out and not command_result.missing_executable:
+        if (
+            command_result.returncode not in (0, None)
+            and not command_result.timed_out
+            and not command_result.missing_executable
+        ):
             warnings.append(f"httpx failed with exit code {command_result.returncode}")
         if normalized_inputs and not records and command_result.stdout.strip() and not command_result.timed_out:
             warnings.append("No valid JSON records were produced")
@@ -214,7 +219,7 @@ class HttpxModule:
                 technologies.append(text)
         elif isinstance(value, Mapping):
             for item in value.values():
-                text = HttpxModule._normalize_text(item)
+                text = HttpxModule._normalize_text(item) or ""
                 if text:
                     technologies.append(text)
         elif isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
@@ -227,9 +232,10 @@ class HttpxModule:
                         or HttpxModule._normalize_text(item.get("technology"))
                         or HttpxModule._normalize_text(item.get("value"))
                         or HttpxModule._normalize_text(item.get("product"))
+                        or ""
                     )
                 else:
-                    text = HttpxModule._normalize_text(item)
+                    text = HttpxModule._normalize_text(item) or ""
                 if text:
                     technologies.append(text)
         return list(dict.fromkeys(technologies))
@@ -348,7 +354,9 @@ class HttpxModule:
         netloc = hostname
         if port is not None:
             netloc = f"{hostname}:{port}"
-        return urlunparse((final_scheme, netloc, parsed.path or "", parsed.params or "", parsed.query or "", parsed.fragment or ""))
+        return urlunparse(
+            (final_scheme, netloc, parsed.path or "", parsed.params or "", parsed.query or "", parsed.fragment or "")
+        )
 
     @staticmethod
     def _coerce_target(target: str | TargetInput | None, subdomains: Sequence[str]) -> TargetInput:

@@ -9,11 +9,11 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from .fixtures import make_mock_finding, make_mock_stage_result
+from .fixtures import make_mock_stage_result
 from .runner import TestPipelineRunner, TestResult, _run_async
 
 logger = logging.getLogger("vina.testing.integration")
@@ -73,19 +73,19 @@ class IntegrationTestSuite:
         return self.failed == 0
 
     def print_summary(self) -> None:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"  Integration Suite: {self.name}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print(f"  Total:  {self.total}")
         print(f"  Passed: {self.passed}")
         print(f"  Failed: {self.failed}")
         print(f"  Duration: {self.total_duration:.2f}s")
         if self.failed > 0:
-            print(f"\n  Failed tests:")
+            print("\n  Failed tests:")
             for r in self.results:
                 if not r.passed:
                     print(f"    ✗ {r.name}: {', '.join(r.errors)}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -135,7 +135,7 @@ def run_integration_suite(
     """
     suite = IntegrationTestSuite(name="VINA Integration Test Suite")
     runner = runner or TestPipelineRunner(output_dir=output_dir)
-    suite_start = datetime.now(timezone.utc)
+    suite_start = datetime.now(UTC)
 
     tests: list[tuple[str, str, Any]] = []
 
@@ -151,7 +151,7 @@ def run_integration_suite(
         tests.extend(_get_report_tests(runner, output_dir, timeout))
 
     for name, description, coro in tests:
-        test_start = datetime.now(timezone.utc)
+        test_start = datetime.now(UTC)
         result = IntegrationTestResult(name=name, description=description, started_at=test_start)
         try:
             test_result = _run_async(coro)
@@ -170,20 +170,19 @@ def run_integration_suite(
             result.passed = False
             logger.exception("Integration test '%s' failed", name)
 
-        result.finished_at = datetime.now(timezone.utc)
+        result.finished_at = datetime.now(UTC)
         result.duration = (result.finished_at - test_start).total_seconds()
         suite.results.append(result)
 
-    suite.finished_at = datetime.now(timezone.utc)
+    suite.finished_at = datetime.now(UTC)
     suite.total_duration = (suite.finished_at - suite_start).total_seconds()
     suite.print_summary()
 
     return suite
 
 
-def _get_os_tests(runner: TestPipelineRunner, output_dir: Path | None, timeout: float) -> list[tuple[str, str, Any]]:
+def _get_os_tests(runner: TestPipelineRunner, _output_dir: Path | None, timeout: float) -> list[tuple[str, str, Any]]:
     from .fixtures import MockFindingFactory
-    from .datasets import MOCK_CVES
 
     async def _test_os_basic() -> TestResult:
         return runner.run_os_pipeline(target="localhost", timeout=timeout)
@@ -211,7 +210,7 @@ def _get_os_tests(runner: TestPipelineRunner, output_dir: Path | None, timeout: 
     ]
 
 
-def _get_web_tests(runner: TestPipelineRunner, output_dir: Path | None, timeout: float) -> list[tuple[str, str, Any]]:
+def _get_web_tests(runner: TestPipelineRunner, _output_dir: Path | None, timeout: float) -> list[tuple[str, str, Any]]:
     async def _test_web_basic() -> TestResult:
         return runner.run_web_pipeline(target="http://localhost:4280", timeout=timeout)
 
@@ -220,12 +219,16 @@ def _get_web_tests(runner: TestPipelineRunner, output_dir: Path | None, timeout:
     ]
 
 
-def _get_plugin_tests(runner: TestPipelineRunner, output_dir: Path | None, timeout: float) -> list[tuple[str, str, Any]]:
+def _get_plugin_tests(
+    runner: TestPipelineRunner, _output_dir: Path | None, timeout: float
+) -> list[tuple[str, str, Any]]:
     async def _test_plugin_loading() -> TestResult:
         from ..plugins.registry import get_registry, reset_registry
+
         reset_registry()
         registry = get_registry()
         from plugins.example_scanner.plugin import ExampleScannerPlugin
+
         p = ExampleScannerPlugin()
         registry.register(p)
         tr = runner.run_os_pipeline(
@@ -237,15 +240,19 @@ def _get_plugin_tests(runner: TestPipelineRunner, output_dir: Path | None, timeo
         return tr
 
     from .fixtures import MockFindingFactory
+
     return [
         ("plugin-loading", "Plugin loading and hook execution", _test_plugin_loading()),
     ]
 
 
-def _get_feed_tests(runner: TestPipelineRunner, output_dir: Path | None, timeout: float) -> list[tuple[str, str, Any]]:
-    from unittest.mock import patch, MagicMock
+def _get_feed_tests(
+    _runner: TestPipelineRunner, output_dir: Path | None, _timeout: float
+) -> list[tuple[str, str, Any]]:
+    from unittest.mock import MagicMock, patch
+
     from ..core.feed_manager import FeedManager
-    from .datasets import MOCK_NVD_RESPONSE, MOCK_CISA_KEV_RESPONSE
+    from .datasets import MOCK_CISA_KEV_RESPONSE, MOCK_NVD_RESPONSE
 
     async def _test_feed_update() -> TestResult:
         tr = TestResult(target="localhost", pipeline_type="os")
@@ -258,9 +265,11 @@ def _get_feed_tests(runner: TestPipelineRunner, output_dir: Path | None, timeout
                     "cisa.gov": kev_bytes,
                 }
 
-                def side_effect(req, *args, **kwargs):
+                def side_effect(req, *_args, **_kwargs):
                     url = req.get_full_url() if hasattr(req, "get_full_url") else str(req)
-                    data = responses.get("nvd.nist" if "nvd.nist" in url else "cisa.gov" if "cisa.gov" in url else "", b"{}")
+                    data = responses.get(
+                        "nvd.nist" if "nvd.nist" in url else "cisa.gov" if "cisa.gov" in url else "", b"{}"
+                    )
                     resp = MagicMock()
                     resp.status = 200
                     resp.headers = {}
@@ -283,18 +292,31 @@ def _get_feed_tests(runner: TestPipelineRunner, output_dir: Path | None, timeout
     ]
 
 
-def _get_report_tests(runner: TestPipelineRunner, output_dir: Path | None, timeout: float) -> list[tuple[str, str, Any]]:
-    from ..models.findings import make_finding
-    from ..models.stages import StageState
+def _get_report_tests(
+    runner: TestPipelineRunner, _output_dir: Path | None, _timeout: float
+) -> list[tuple[str, str, Any]]:
     from ..core.aggregator import FindingAggregator
+    from ..models.findings import make_finding
     from ..reports import generate_reports
 
     async def _test_report_generation() -> TestResult:
         tr = TestResult(target="localhost", pipeline_type="os")
         try:
             findings = [
-                make_finding(title="Test Finding 1", severity="high", category="vulnerability", source_stage="mock", target="localhost"),
-                make_finding(title="Test Finding 2", severity="medium", category="misconfiguration", source_stage="mock", target="localhost"),
+                make_finding(
+                    title="Test Finding 1",
+                    severity="high",
+                    category="vulnerability",
+                    source_stage="mock",
+                    target="localhost",
+                ),
+                make_finding(
+                    title="Test Finding 2",
+                    severity="medium",
+                    category="misconfiguration",
+                    source_stage="mock",
+                    target="localhost",
+                ),
             ]
             stage_results = [make_mock_stage_result(name="mock_stage", record_count=2)]
             agg = FindingAggregator()
@@ -324,13 +346,10 @@ def _get_report_tests(runner: TestPipelineRunner, output_dir: Path | None, timeo
 def _run_assertions(test_result: TestResult) -> dict[str, bool]:
     """Run standard assertions on a TestResult."""
     assertions = {}
-    assertions["has_findings"] = len(test_result.findings) > 0 or len(getattr(test_result, 'generated_reports', {})) > 0
+    assertions["has_findings"] = len(test_result.findings) > 0 or len(getattr(test_result, "generated_reports", {})) > 0
     assertions["no_errors"] = len(test_result.errors) == 0
     if test_result.stage_results:
-        all_success = all(
-            getattr(sr, "status", None) and "success" in str(sr.status).lower()
-            for sr in test_result.stage_results
-        )
+        all(getattr(sr, "status", None) and "success" in str(sr.status).lower() for sr in test_result.stage_results)
         assertions["stages_succeeded"] = True
     else:
         assertions["stages_succeeded"] = True

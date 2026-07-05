@@ -5,9 +5,10 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 from urllib.parse import urlparse
 
 from ...core.config import AppConfig
@@ -92,23 +93,14 @@ class NaabuModule:
         if command_result.missing_executable:
             warnings.append(f"Missing executable: {executable}")
         if command_result.timed_out:
-            warnings.append(
-                f"Naabu timed out after {self.context.timeout_seconds} seconds"
-            )
+            warnings.append(f"Naabu timed out after {self.context.timeout_seconds} seconds")
         if (
             command_result.returncode not in (0, None)
             and not command_result.timed_out
             and not command_result.missing_executable
         ):
-            warnings.append(
-                f"Naabu failed with exit code {command_result.returncode}"
-            )
-        if (
-            hostnames
-            and not records
-            and command_result.stdout.strip()
-            and not command_result.timed_out
-        ):
+            warnings.append(f"Naabu failed with exit code {command_result.returncode}")
+        if hostnames and not records and command_result.stdout.strip() and not command_result.timed_out:
             warnings.append("No valid JSON records were produced")
         if not open_ports:
             warnings.append("No open ports discovered")
@@ -123,17 +115,19 @@ class NaabuModule:
                 port_int = int(port_num) if port_num else None
             except ValueError:
                 port_int = None
-            findings.append(make_finding(
-                title=f"Open port: {port_str}",
-                description=f"Open port discovered via naabu",
-                severity="medium",
-                category="open_port",
-                source_stage="naabu",
-                target=target_input.root_domain or target_input.hostname or target_input.normalized,
-                host=host,
-                port=port_int,
-                protocol=protocol,
-            ))
+            findings.append(
+                make_finding(
+                    title=f"Open port: {port_str}",
+                    description="Open port discovered via naabu",
+                    severity="medium",
+                    category="open_port",
+                    source_stage="naabu",
+                    target=target_input.root_domain or target_input.hostname or target_input.normalized,
+                    host=host,
+                    port=port_int,
+                    protocol=protocol,
+                )
+            )
 
         result = NaabuResult(
             target=target_input,
@@ -198,9 +192,7 @@ class NaabuModule:
             key = (record.host, record.port, record.protocol)
             if key not in seen:
                 seen.add(key)
-                open_ports.append(
-                    f"{record.host}:{record.port}/{record.protocol}"
-                )
+                open_ports.append(f"{record.host}:{record.port}/{record.protocol}")
         return open_ports
 
     def _save_results(self, result: NaabuResult) -> Path:

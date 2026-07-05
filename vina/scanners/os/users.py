@@ -104,9 +104,7 @@ class UsersModule:
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {executable}")
             if cr.timed_out:
-                warnings.append(
-                    f"{name} timed out after {self.context.timeout_seconds}s"
-                )
+                warnings.append(f"{name} timed out after {self.context.timeout_seconds}s")
             if cr.returncode not in (0, None) and not cr.timed_out and not cr.missing_executable:
                 stderr_snippet = cr.stderr.strip()[:120] if cr.stderr.strip() else ""
                 msg = f"{name} exited with code {cr.returncode}"
@@ -177,9 +175,7 @@ class UsersModule:
                 warnings.append(f"Missing executable: {cmd}")
                 break
             if cr.timed_out:
-                warnings.append(
-                    f"id for {user.username} timed out after {self.context.timeout_seconds}s"
-                )
+                warnings.append(f"id for {user.username} timed out after {self.context.timeout_seconds}s")
             if cr.returncode not in (0, None) and not cr.timed_out and not cr.missing_executable:
                 stderr_snippet = cr.stderr.strip()[:120] if cr.stderr.strip() else ""
                 msg = f"id for {user.username} exited with code {cr.returncode}"
@@ -381,4 +377,4 @@ class UsersModule:
         )
 
 
-__all__ = ["UsersModule", "UserInfo", "UsersResult"]
+__all__ = ["UserInfo", "UsersModule", "UsersResult"]

@@ -104,7 +104,7 @@ class ReconModule:
     def _collect_warnings(
         self,
         command_results: list[CommandResult],
-        gathered: list[CommandResult | BaseException | object],
+        gathered: list[CommandResult | BaseException],
     ) -> list[str]:
         warnings: list[str] = []
         for item in gathered:
@@ -119,7 +119,7 @@ class ReconModule:
 
     @staticmethod
     def _normalize_command_results(
-        gathered: list[CommandResult | BaseException | object],
+        gathered: list[CommandResult | BaseException],
     ) -> list[CommandResult]:
         command_results: list[CommandResult] = []
         for item in gathered:

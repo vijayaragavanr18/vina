@@ -106,7 +106,9 @@ class CronModule:
         self._print_summary(result)
         return result
 
-    def _parse_entries(self, results: dict[str, CommandResult], warnings: list[str], findings: list[Finding], target: TargetInput) -> list[CronEntry]:
+    def _parse_entries(
+        self, results: dict[str, CommandResult], _warnings: list[str], findings: list[Finding], target: TargetInput
+    ) -> list[CronEntry]:
         entries: list[CronEntry] = []
         target_str = target.normalized
 
@@ -115,26 +117,38 @@ class CronModule:
         if cr and cr.succeeded and cr.stdout.strip():
             for line_no, raw in enumerate(cr.stdout.splitlines(), 1):
                 line = raw.strip()
-                if not line or line.startswith("#") or line.startswith("SHELL") or line.startswith("PATH") or line.startswith("MAILTO"):
+                if (
+                    not line
+                    or line.startswith("#")
+                    or line.startswith("SHELL")
+                    or line.startswith("PATH")
+                    or line.startswith("MAILTO")
+                ):
                     continue
                 parts = line.split()
                 if len(parts) >= 6:
                     schedule = " ".join(parts[:5])
                     user = parts[5]
                     command = " ".join(parts[6:])
-                    entry = CronEntry(schedule=schedule, command=command, user=user, source="/etc/crontab", line=line_no)
+                    entry = CronEntry(
+                        schedule=schedule, command=command, user=user, source="/etc/crontab", line=line_no
+                    )
                     entries.append(entry)
-                    if user in ("root",) and any(w in command.lower() for w in ("wget", "curl", "bash", "sh", "python", "perl")):
-                        findings.append(make_finding(
-                            title=f"Root cron job: {command[:60]}",
-                            description=f"Root runs cron job: {command}",
-                            severity="medium",
-                            category="scheduled_task",
-                            source_stage="cron",
-                            target=target_str,
-                            evidence=f"schedule={schedule} user={user} command={command}",
-                            recommendation="Verify this cron job is intentional and the target script is not world-writable",
-                        ))
+                    if user in ("root",) and any(
+                        w in command.lower() for w in ("wget", "curl", "bash", "sh", "python", "perl")
+                    ):
+                        findings.append(
+                            make_finding(
+                                title=f"Root cron job: {command[:60]}",
+                                description=f"Root runs cron job: {command}",
+                                severity="medium",
+                                category="scheduled_task",
+                                source_stage="cron",
+                                target=target_str,
+                                evidence=f"schedule={schedule} user={user} command={command}",
+                                recommendation="Verify this cron job is intentional and the target script is not world-writable",
+                            )
+                        )
 
         # User crontab
         ucr = results.get("crontab_l")
@@ -144,18 +158,16 @@ class CronModule:
                 if not line or line.startswith("#"):
                     continue
                 parts = line.split()
-                if len(parts) >= 6:
-                    schedule = " ".join(parts[:5])
-                    command = " ".join(parts[5:])
-                    entries.append(CronEntry(schedule=schedule, command=command, source="user crontab", line=line_no))
-                elif len(parts) >= 5:
+                if len(parts) >= 6 or len(parts) >= 5:
                     schedule = " ".join(parts[:5])
                     command = " ".join(parts[5:])
                     entries.append(CronEntry(schedule=schedule, command=command, source="user crontab", line=line_no))
 
         return entries
 
-    def _parse_dir_entries(self, results: dict[str, CommandResult], warnings: list[str], findings: list[Finding], target: TargetInput) -> list[CronDirEntry]:
+    def _parse_dir_entries(
+        self, results: dict[str, CommandResult], _warnings: list[str], findings: list[Finding], target: TargetInput
+    ) -> list[CronDirEntry]:
         dir_entries: list[CronDirEntry] = []
         target_str = target.normalized
 
@@ -183,16 +195,18 @@ class CronModule:
             dir_entries.append(CronDirEntry(directory=d, files=files, writable_files=writable))
 
             if writable:
-                findings.append(make_finding(
-                    title=f"Writable files in {d}",
-                    description=f"Found {len(writable)} writable file(s) in {d}",
-                    severity="high",
-                    category="misconfiguration",
-                    source_stage="cron",
-                    target=target_str,
-                    evidence="\n".join(writable),
-                    recommendation="Ensure cron files are owned by root and not world-writable",
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Writable files in {d}",
+                        description=f"Found {len(writable)} writable file(s) in {d}",
+                        severity="high",
+                        category="misconfiguration",
+                        source_stage="cron",
+                        target=target_str,
+                        evidence="\n".join(writable),
+                        recommendation="Ensure cron files are owned by root and not world-writable",
+                    )
+                )
 
         return dir_entries
 
@@ -222,7 +236,17 @@ class CronModule:
 
     @staticmethod
     def _empty_command_result() -> CommandResult:
-        return CommandResult(command="cron", args=(), returncode=1, stdout="", stderr="", duration_seconds=0.0, timed_out=False, missing_executable=False, full_command="cron")
+        return CommandResult(
+            command="cron",
+            args=(),
+            returncode=1,
+            stdout="",
+            stderr="",
+            duration_seconds=0.0,
+            timed_out=False,
+            missing_executable=False,
+            full_command="cron",
+        )
 
 
-__all__ = ["CronModule", "CronEntry", "CronDirEntry", "CronResult"]
+__all__ = ["CronDirEntry", "CronEntry", "CronModule", "CronResult"]

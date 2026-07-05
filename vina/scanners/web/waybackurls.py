@@ -6,13 +6,12 @@ import logging
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
 from urllib.parse import parse_qsl, urlparse
 
 from ...core.config import AppConfig
 from ...core.runner import CommandResult
 from ...models.common import TargetInput
-from ...models.findings import Finding, make_finding
+from ...models.findings import Finding
 from ...modules.common import ModuleContext
 
 logger = logging.getLogger(__name__)
@@ -85,32 +84,19 @@ class WaybackurlsModule:
                 timeout_seconds=self.context.timeout_seconds,
                 input_text="\n".join(hostnames) + "\n",
             )
-            wayback_urls = self._parse_output(
-                command_result.stdout, warnings
-            )
+            wayback_urls = self._parse_output(command_result.stdout, warnings)
 
         if command_result.missing_executable:
             warnings.append(f"Missing executable: {executable}")
         if command_result.timed_out:
-            warnings.append(
-                f"Waybackurls timed out after "
-                f"{self.context.timeout_seconds} seconds"
-            )
+            warnings.append(f"Waybackurls timed out after {self.context.timeout_seconds} seconds")
         if (
             command_result.returncode not in (0, None)
             and not command_result.timed_out
             and not command_result.missing_executable
         ):
-            warnings.append(
-                f"Waybackurls failed with exit code "
-                f"{command_result.returncode}"
-            )
-        if (
-            hostnames
-            and not wayback_urls
-            and command_result.stdout.strip()
-            and not command_result.timed_out
-        ):
+            warnings.append(f"Waybackurls failed with exit code {command_result.returncode}")
+        if hostnames and not wayback_urls and command_result.stdout.strip() and not command_result.timed_out:
             warnings.append("No valid URL lines were produced")
         if not wayback_urls:
             warnings.append("No historical URLs discovered")
@@ -139,9 +125,7 @@ class WaybackurlsModule:
         """Parse Waybackurls line-based output into typed records."""
         wayback_urls: list[WaybackUrl] = []
 
-        for line_number, raw_line in enumerate(
-            output.splitlines(), start=1
-        ):
+        for line_number, raw_line in enumerate(output.splitlines(), start=1):
             line = raw_line.strip()
             if not line:
                 continue
@@ -180,13 +164,7 @@ class WaybackurlsModule:
 
         params: list[str] = []
         if query:
-            params = [
-                name
-                for name, _ in parse_qsl(
-                    query, keep_blank_values=True
-                )
-                if name
-            ]
+            params = [name for name, _ in parse_qsl(query, keep_blank_values=True) if name]
 
         return WaybackUrl(
             url=line,
@@ -209,28 +187,13 @@ class WaybackurlsModule:
             return url_str.strip().lower()
 
         port = parsed.port
-        if port is not None:
-            if (scheme == "http" and port == 80) or (
-                scheme == "https" and port == 443
-            ):
-                port = None
+        if port is not None and ((scheme == "http" and port == 80) or (scheme == "https" and port == 443)):
+            port = None
 
-        path = (
-            parsed.path.rstrip("/")
-            if parsed.path != "/"
-            else parsed.path
-        )
-        query_parts = parse_qsl(
-            parsed.query, keep_blank_values=True
-        )
+        path = parsed.path.rstrip("/") if parsed.path != "/" else parsed.path
+        query_parts = parse_qsl(parsed.query, keep_blank_values=True)
         query_parts.sort(key=lambda x: x[0])
-        query = (
-            "&".join(
-                f"{k}={v}" if v else k for k, v in query_parts
-            )
-            if query_parts
-            else ""
-        )
+        query = "&".join(f"{k}={v}" if v else k for k, v in query_parts) if query_parts else ""
 
         netloc = host.lower()
         if port is not None:
@@ -273,9 +236,7 @@ class WaybackurlsModule:
         for entry in alive_hosts:
             candidate = entry if "://" in entry else f"//{entry}"
             parsed = urlparse(candidate)
-            hostname = (
-                parsed.hostname or entry.strip().lower().rstrip(".")
-            )
+            hostname = parsed.hostname or entry.strip().lower().rstrip(".")
             if hostname:
                 hostnames.add(hostname.lower())
         return hostnames
@@ -294,9 +255,7 @@ class WaybackurlsModule:
             "param_count": result.param_count,
             "warnings": result.warnings,
         }
-        return self.context.store.save(
-            "web/wayback_urls.json", payload
-        )
+        return self.context.store.save("web/wayback_urls.json", payload)
 
     def _print_summary(self, result: WaybackurlsResult) -> None:
         """Print a concise summary of Waybackurls results."""
@@ -324,7 +283,7 @@ class WaybackurlsModule:
 
 
 __all__ = [
-    "WaybackurlsModule",
     "WaybackUrl",
+    "WaybackurlsModule",
     "WaybackurlsResult",
 ]

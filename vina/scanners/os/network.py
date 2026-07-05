@@ -8,10 +8,10 @@ AsyncCommandRunner.
 from __future__ import annotations
 
 import logging
+import re
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-import re
 
 from ...core.config import AppConfig
 from ...core.runner import CommandResult
@@ -139,9 +139,7 @@ class NetworkModule:
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {executable}")
             if cr.timed_out:
-                warnings.append(
-                    f"{name} timed out after {self.context.timeout_seconds}s"
-                )
+                warnings.append(f"{name} timed out after {self.context.timeout_seconds}s")
             if cr.returncode not in (0, None) and not cr.timed_out and not cr.missing_executable:
                 stderr_snippet = cr.stderr.strip()[:120] if cr.stderr.strip() else ""
                 msg = f"{name} exited with code {cr.returncode}"
@@ -205,7 +203,7 @@ class NetworkModule:
         return []
 
     @staticmethod
-    def _parse_ip_addr(stdout: str, warnings: list[str]) -> list[NetworkInterface]:
+    def _parse_ip_addr(stdout: str, _warnings: list[str]) -> list[NetworkInterface]:
         """Parse ``ip addr`` output into NetworkInterface objects."""
         interfaces: list[NetworkInterface] = []
         current: NetworkInterface | None = None
@@ -253,7 +251,7 @@ class NetworkModule:
         return interfaces
 
     @staticmethod
-    def _parse_ifconfig(stdout: str, warnings: list[str]) -> list[NetworkInterface]:
+    def _parse_ifconfig(stdout: str, _warnings: list[str]) -> list[NetworkInterface]:
         """Parse ``ifconfig`` output into NetworkInterface objects."""
         interfaces: list[NetworkInterface] = []
         current: NetworkInterface | None = None
@@ -595,4 +593,4 @@ class NetworkModule:
         )
 
 
-__all__ = ["NetworkModule", "NetworkInterface", "ListeningPort", "RouteEntry", "NetworkResult"]
+__all__ = ["ListeningPort", "NetworkInterface", "NetworkModule", "NetworkResult", "RouteEntry"]

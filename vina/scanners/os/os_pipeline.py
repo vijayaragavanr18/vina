@@ -8,10 +8,10 @@ objects, and generates structured JSON reports.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter
-from typing import Any
+from typing import Any, cast
 
 from ...core.aggregator import FindingAggregator
 from ...core.config import AppConfig
@@ -49,15 +49,31 @@ from .secrets import SecretsModule, SecretsResult
 from .services import ServicesModule, ServicesResult
 from .ssh import SshModule, SshResult
 from .sudo import SudoModule, SudoResult
-from .systemd import SystemdModule, SystemdResult
 from .system_info import SystemInfoModule, SystemInfoResult
+from .systemd import SystemdModule, SystemdResult
 from .users import UsersModule, UsersResult
 
 # Tools checked before the OS pipeline runs.
 _OS_TOOLS: list[str] = [
-    "getcap", "ss", "ip", "systemctl", "sudo", "find", "route",
-    "ifconfig", "netstat", "service", "cat", "ls", "ps", "dpkg",
-    "uname", "stat", "env", "lastb", "last",
+    "getcap",
+    "ss",
+    "ip",
+    "systemctl",
+    "sudo",
+    "find",
+    "route",
+    "ifconfig",
+    "netstat",
+    "service",
+    "cat",
+    "ls",
+    "ps",
+    "dpkg",
+    "uname",
+    "stat",
+    "env",
+    "lastb",
+    "last",
 ]
 
 # Dependency graph. All stages depend on host_recon for target context
@@ -123,9 +139,7 @@ class OSPipeline:
         self.output_root = output_dir or config.output_dir
         self.store = JsonStore(self.output_root)
         self.runner = AsyncCommandRunner()
-        self.context = ModuleContext(
-            self.runner, self.store, self.config.timeout_seconds
-        )
+        self.context = ModuleContext(self.runner, self.store, self.config.timeout_seconds)
         self._dep_checker = DependencyChecker(config)
 
     async def run(self, target: str) -> OSPipelineResult:
@@ -137,7 +151,7 @@ class OSPipeline:
         self._run_dep_check()
 
         target_input = TargetInput.from_raw(target)
-        started_at = datetime.now(timezone.utc)
+        started_at = datetime.now(UTC)
         started_perf = perf_counter()
 
         # Shared state for passing data between stages
@@ -287,7 +301,9 @@ class OSPipeline:
             StageDef("secrets", _STAGE_DEPS["secrets"], _stage_secrets, RetryConfig()),
             StageDef("capabilities", _STAGE_DEPS["capabilities"], _stage_capabilities, RetryConfig()),
             StageDef("sudo", _STAGE_DEPS["sudo"], _stage_sudo, RetryConfig()),
-            StageDef("privilege_escalation", _STAGE_DEPS["privilege_escalation"], _stage_privilege_escalation, RetryConfig()),
+            StageDef(
+                "privilege_escalation", _STAGE_DEPS["privilege_escalation"], _stage_privilege_escalation, RetryConfig()
+            ),
         ]
 
         scheduler = PipelineScheduler(max_parallel=self._MAX_PARALLEL)
@@ -297,16 +313,51 @@ class OSPipeline:
         findings: list[Finding] = []
         registry.run_hook(HookPoint.BEFORE_FINDING, findings=findings)
         result_keys = [
-            "system_info", "ssh", "kernel", "environment", "packages",
-            "services", "users", "filesystem", "network", "processes",
-            "cron", "systemd", "docker", "logs", "secrets",
-            "capabilities", "sudo", "privilege_escalation",
+            "system_info",
+            "ssh",
+            "kernel",
+            "environment",
+            "packages",
+            "services",
+            "users",
+            "filesystem",
+            "network",
+            "processes",
+            "cron",
+            "systemd",
+            "docker",
+            "logs",
+            "secrets",
+            "capabilities",
+            "sudo",
+            "privilege_escalation",
         ]
         for key in result_keys:
             res = _results.get(key)
             if res is not None:
                 sf = getattr(res, "findings", None) or []
-                findings.extend(sf)
+                if key == "privilege_escalation":
+                    from ...models.findings import make_finding
+                    from .privilege_escalation import PrivilegeEscalationFinding
+
+                    for f in sf:
+                        if isinstance(f, PrivilegeEscalationFinding):
+                            findings.append(
+                                make_finding(
+                                    title=f.title,
+                                    description=f.description,
+                                    severity=f.severity,
+                                    category=f.category.lower().replace(" ", "_"),
+                                    source_stage="privilege_escalation",
+                                    target=f.target,
+                                    evidence=f.evidence,
+                                    recommendation=f.recommendation,
+                                )
+                            )
+                        else:
+                            findings.append(f)
+                else:
+                    findings.extend(sf)
 
         # Vulnerability intelligence -----------------------------------------
         registry.run_hook(HookPoint.BEFORE_VULNERABILITY_LOOKUP, findings=findings)
@@ -315,8 +366,11 @@ class OSPipeline:
         inventory: list[Any] = []
         if findings:
             from ...core.vuln_intel import (
-                VulnerabilityEngine, build_software_inventory, compute_vuln_stats,
+                VulnerabilityEngine,
+                build_software_inventory,
+                compute_vuln_stats,
             )
+
             inventory = build_software_inventory(findings)
             ve = VulnerabilityEngine()
             vuln_matches = ve.run(inventory)
@@ -325,11 +379,14 @@ class OSPipeline:
             feed_meta = None
             try:
                 from ...core.feed_manager import get_feed_status
+
                 feed_meta = get_feed_status()
             except Exception:
                 pass
             vuln_stats = compute_vuln_stats(vuln_matches, len(inventory), feed_metadata=feed_meta)
-        registry.run_hook(HookPoint.AFTER_VULNERABILITY_LOOKUP, findings=findings, vuln_matches=vuln_matches, vuln_stats=vuln_stats)
+        registry.run_hook(
+            HookPoint.AFTER_VULNERABILITY_LOOKUP, findings=findings, vuln_matches=vuln_matches, vuln_stats=vuln_stats
+        )
 
         # Aggregate, enrich, correlate, exploitability ----------------------
         agg = FindingAggregator()
@@ -339,10 +396,11 @@ class OSPipeline:
         reports_dir = self.output_root / "reports"
 
         from ...core.correlation import CorrelationEngine, compute_correlation_stats
-        from ...core.knowledge import EnrichmentEngine
         from ...core.exploitability import (
-            ExploitabilityEngine, compute_exploitability_summary,
+            ExploitabilityEngine,
+            compute_exploitability_summary,
         )
+        from ...core.knowledge import EnrichedFinding, EnrichmentEngine
 
         ee = EnrichmentEngine()
         enriched = ee.enrich_all(findings)
@@ -353,11 +411,15 @@ class OSPipeline:
         ac_stats = compute_correlation_stats(paths)
 
         # Exploitability analysis
-        registry.run_hook(HookPoint.BEFORE_EXPLOITABILITY, findings=enriched, attack_paths=paths, vuln_matches=vuln_matches)
+        registry.run_hook(
+            HookPoint.BEFORE_EXPLOITABILITY, findings=enriched, attack_paths=paths, vuln_matches=vuln_matches
+        )
         exp_engine = ExploitabilityEngine()
         exp_assessments = exp_engine.run(
-            findings=findings, enriched=enriched,
-            attack_paths=paths, vuln_matches=vuln_matches,
+            findings=cast("list[Finding | EnrichedFinding]", findings),
+            enriched=enriched,
+            attack_paths=paths,
+            vuln_matches=vuln_matches,
             inventory=inventory,
         )
         exp_summary = compute_exploitability_summary(exp_assessments)
@@ -377,13 +439,13 @@ class OSPipeline:
             registry.run_hook(HookPoint.BEFORE_REPORT, findings=enriched, attack_paths=paths, vuln_matches=vuln_matches)
             generated = generate_reports(
                 target=target_display,
-                findings=enriched,
+                findings=cast("list[Finding]", enriched),
                 stage_results=scheduler_result.stage_results,
                 stats=stats,
                 aggregator=agg,
                 output_dir=reports_dir,
                 started_at=started_at,
-                finished_at=datetime.now(timezone.utc),
+                finished_at=datetime.now(UTC),
                 enrich=False,
                 correlate_enabled=False,
                 attack_paths=paths,
@@ -394,13 +456,14 @@ class OSPipeline:
             )
             registry.run_hook(HookPoint.AFTER_REPORT, generated=generated, findings=enriched)
             import logging
+
             logger = logging.getLogger(__name__)
             for fmt, path in generated.items():
                 logger.info("Report generated: %s (%s)", path, fmt)
 
         registry.run_hook(HookPoint.AFTER_PIPELINE, target=target, findings=findings)
         # Build result -----------------------------------------------------
-        finished_at = datetime.now(timezone.utc)
+        finished_at = datetime.now(UTC)
         total_duration = perf_counter() - started_perf
         summary = summary_for_stages(
             "OS Pipeline",
@@ -418,7 +481,7 @@ class OSPipeline:
             stage_results=scheduler_result.stage_results,
             summary=summary,
             findings=findings,
-            enriched_findings=enriched,
+            enriched_findings=cast("list[Finding]", enriched),
             attack_paths=paths,
             aggregator=agg,
             stats=stats,
@@ -496,8 +559,8 @@ class OSPipeline:
 
 
 __all__ = [
+    "OSPipeline",
     "OSPipelineResult",
     "StageResult",
     "StageState",
-    "OSPipeline",
 ]

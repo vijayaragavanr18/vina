@@ -18,28 +18,22 @@ from .runner import TestPipelineRunner, TestResult
 from .sandbox import TestSandbox
 
 __all__ = [
-    # Benchmark
+    "BenchmarkMetrics",
     "BenchmarkProfile",
     "BenchmarkResult",
     "BenchmarkRunner",
-    "get_benchmark_profiles",
-    # Fixtures
+    "IntegrationTestResult",
+    "IntegrationTestSuite",
+    "MetricsCollector",
     "MockCommandRunner",
     "MockFindingFactory",
     "MockPipelineContext",
-    "make_mock_finding",
-    "make_mock_stage_result",
-    # Integration
-    "IntegrationTestResult",
-    "IntegrationTestSuite",
-    "run_integration_suite",
-    # Metrics
-    "BenchmarkMetrics",
-    "MetricsCollector",
-    "compute_metrics",
-    # Runner
     "TestPipelineRunner",
     "TestResult",
-    # Sandbox
     "TestSandbox",
+    "compute_metrics",
+    "get_benchmark_profiles",
+    "make_mock_finding",
+    "make_mock_stage_result",
+    "run_integration_suite",
 ]

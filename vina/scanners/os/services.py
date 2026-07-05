@@ -96,9 +96,7 @@ class ServicesModule:
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {executable}")
             if cr.timed_out:
-                warnings.append(
-                    f"{name} timed out after {self.context.timeout_seconds}s"
-                )
+                warnings.append(f"{name} timed out after {self.context.timeout_seconds}s")
             if cr.returncode not in (0, None) and not cr.timed_out and not cr.missing_executable:
                 stderr_snippet = cr.stderr.strip()[:120] if cr.stderr.strip() else ""
                 msg = f"{name} exited with code {cr.returncode}"
@@ -118,12 +116,8 @@ class ServicesModule:
         if not services:
             warnings.append("No services could be discovered")
 
-        active_count = sum(
-            1 for s in services if s.state and s.state in ("running", "active")
-        )
-        inactive_count = sum(
-            1 for s in services if s.state and s.state not in ("running", "active", None, "")
-        )
+        active_count = sum(1 for s in services if s.state and s.state in ("running", "active"))
+        inactive_count = sum(1 for s in services if s.state and s.state not in ("running", "active", None, ""))
 
         result = ServicesResult(
             target=target_input,
@@ -200,7 +194,6 @@ class ServicesModule:
                 continue
             try:
                 unit = tokens[0]
-                load = tokens[1]
                 active = tokens[2]
                 sub = tokens[3]
                 description = " ".join(tokens[4:]) if len(tokens) > 4 else ""
@@ -332,4 +325,4 @@ class ServicesModule:
         )
 
 
-__all__ = ["ServicesModule", "ServiceInfo", "ServicesResult"]
+__all__ = ["ServiceInfo", "ServicesModule", "ServicesResult"]

@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import parse_qsl, urlparse
+
+from .findings import Finding, make_finding  # noqa: F401 - re-exported for backward compat
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @dataclass(slots=True)
@@ -21,7 +23,7 @@ class TargetInput:
     root_domain: str | None
 
     @classmethod
-    def from_raw(cls, raw: str) -> "TargetInput":
+    def from_raw(cls, raw: str) -> TargetInput:
         normalized = raw.strip().rstrip("/")
         candidate = normalized if "://" in normalized else f"//{normalized}"
         parsed = urlparse(candidate)
@@ -92,18 +94,6 @@ class ParameterCandidate:
     url: str
     parameter: str
     source: str
-
-
-@dataclass(slots=True)
-class Finding:
-    tool: str
-    target: str
-    title: str
-    severity: str
-    evidence: str | None = None
-    category: str | None = None
-    confidence: float | None = None
-    raw: str | None = None
 
 
 @dataclass(slots=True)

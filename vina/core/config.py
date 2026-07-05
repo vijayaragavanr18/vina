@@ -7,8 +7,9 @@ application.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
@@ -279,7 +280,7 @@ class Config(BaseModel):
         return self.tools.paths
 
     @classmethod
-    def load(cls, config_path: str | Path | None = None) -> "Config":
+    def load(cls, config_path: str | Path | None = None) -> Config:
         """Load and validate configuration from YAML."""
 
         return load_config(config_path, model_cls=cls)

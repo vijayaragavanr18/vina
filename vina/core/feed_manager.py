@@ -8,24 +8,22 @@ cache.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import logging
 import sqlite3
 import time
 import zlib
-from collections import OrderedDict
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from threading import Lock
-from typing import Any, Callable
+from typing import Any, cast
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlparse
 from urllib.request import Request, urlopen
-
-from ..models.findings import Finding, make_finding
 
 _logger = logging.getLogger(__name__)
 
@@ -74,6 +72,7 @@ class UpdateStatus(StrEnum):
 @dataclass(slots=True)
 class FeedSource:
     """Configuration for a single vulnerability feed source."""
+
     name: str
     feed_type: FeedType
     url: str
@@ -92,6 +91,7 @@ class FeedSource:
 @dataclass(slots=True)
 class FeedEntry:
     """A single entry from any vulnerability feed, normalized."""
+
     cve: str
     title: str = ""
     description: str = ""
@@ -146,6 +146,7 @@ class FeedEntry:
 @dataclass(slots=True)
 class FeedMetadata:
     """Persistent metadata for the local feed database."""
+
     db_version: int = SCHEMA_VERSION
     created_at: str = ""
     last_updated: str = ""
@@ -196,7 +197,7 @@ class FeedMetadata:
             return -1.0
         try:
             updated = datetime.fromisoformat(self.last_updated)
-            return (datetime.now(timezone.utc) - updated).total_seconds() / 3600
+            return (datetime.now(UTC) - updated).total_seconds() / 3600
         except (ValueError, TypeError):
             return -1.0
 
@@ -340,10 +341,16 @@ class FeedCache:
             finally:
                 conn.close()
 
-    def upsert_source(self, name: str, feed_type: str, etag: str = "",
-                      last_modified: str = "", entry_count: int = 0,
-                      checksum: str = "") -> None:
-        now = datetime.now(timezone.utc).isoformat()
+    def upsert_source(
+        self,
+        name: str,
+        feed_type: str,
+        etag: str = "",
+        last_modified: str = "",
+        entry_count: int = 0,
+        checksum: str = "",
+    ) -> None:
+        now = datetime.now(UTC).isoformat()
         with self._lock:
             conn = sqlite3.connect(str(self._db_path), timeout=10)
             try:
@@ -392,7 +399,7 @@ class FeedCache:
 
     def upsert_entry(self, cve: str, source: str, data: dict[str, Any]) -> bool:
         """Insert or update a feed entry. Returns True if new, False if updated."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         data_str = json.dumps(data, default=str)
         checksum = hashlib.sha256(data_str.encode()).hexdigest()[:16]
         with self._lock:
@@ -444,7 +451,7 @@ class FeedCache:
                     cur = conn.execute("SELECT COUNT(*) FROM feed_entries WHERE source=?", (source,))
                 else:
                     cur = conn.execute("SELECT COUNT(*) FROM feed_entries")
-                return cur.fetchone()[0]
+                return cast(int, cur.fetchone()[0])
             finally:
                 conn.close()
 
@@ -487,10 +494,8 @@ class FeedCache:
         versions: dict[str, str] = {}
         raw = self.get_metadata("feed_versions")
         if raw:
-            try:
+            with contextlib.suppress(json.JSONDecodeError, TypeError):
                 versions = json.loads(raw)
-            except (json.JSONDecodeError, TypeError):
-                pass
         for ft in FeedType:
             ts = self.get_metadata(f"feed_{ft.value}_updated")
             if ts:
@@ -503,8 +508,9 @@ class FeedCache:
 # ---------------------------------------------------------------------------
 
 
-def _make_request(url: str, etag: str = "", last_modified: str = "",
-                  api_key: str = "", timeout: int = HTTP_TIMEOUT) -> Request:
+def _make_request(
+    url: str, etag: str = "", last_modified: str = "", api_key: str = "", _timeout: int = HTTP_TIMEOUT
+) -> Request:
     headers: dict[str, str] = {
         "User-Agent": "VINA/2.1 (Security Scanner; +https://vina.security)",
         "Accept": "application/json",
@@ -518,8 +524,9 @@ def _make_request(url: str, etag: str = "", last_modified: str = "",
     return Request(url, headers=headers)
 
 
-def _fetch_url(request: Request, timeout: int = HTTP_TIMEOUT,
-               max_bytes: int = MAX_RESPONSE_BYTES) -> tuple[bytes, str, str, int]:
+def _fetch_url(
+    request: Request, timeout: int = HTTP_TIMEOUT, max_bytes: int = MAX_RESPONSE_BYTES
+) -> tuple[bytes, str, str, int]:
     """Fetch a URL with retry support.
 
     Returns (body_bytes, etag, last_modified, status_code).
@@ -546,11 +553,11 @@ def _compute_checksum(data: bytes) -> str:
 
 
 def _exponential_backoff(attempt: int, base: float = RETRY_BACKOFF_BASE) -> float:
-    return base * (2 ** attempt)
+    return cast(float, base * (2**attempt))
 
 
 def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 # ---------------------------------------------------------------------------
@@ -625,23 +632,25 @@ def _parse_nvd_response(data: bytes) -> list[FeedEntry]:
             if url:
                 references.append(url)
 
-        entries.append(FeedEntry(
-            cve=cve_id,
-            title=cve_data.get("sourceIdentifier", ""),
-            description=description,
-            severity=severity,
-            cvss_v3=cvss_v3,
-            vendor=vendor,
-            product=product,
-            affected_versions=affected,
-            fixed_versions=fixed,
-            published=cve_data.get("published", ""),
-            updated=cve_data.get("lastModified", ""),
-            references=references,
-            source="nvd",
-            confidence=0.85,
-            raw=cve_data,
-        ))
+        entries.append(
+            FeedEntry(
+                cve=cve_id,
+                title=cve_data.get("sourceIdentifier", ""),
+                description=description,
+                severity=severity,
+                cvss_v3=cvss_v3,
+                vendor=vendor,
+                product=product,
+                affected_versions=affected,
+                fixed_versions=fixed,
+                published=cve_data.get("published", ""),
+                updated=cve_data.get("lastModified", ""),
+                references=references,
+                source="nvd",
+                confidence=0.85,
+                raw=cve_data,
+            )
+        )
     return entries
 
 
@@ -653,24 +662,26 @@ def _parse_cisa_kev(data: bytes) -> list[FeedEntry]:
         cve_id = item.get("cveID", "")
         if not cve_id:
             continue
-        entries.append(FeedEntry(
-            cve=cve_id,
-            title=item.get("vulnerabilityName", ""),
-            description=item.get("shortDescription", ""),
-            severity="critical",
-            kev=True,
-            exploited=True,
-            vendor=item.get("vendorProject", ""),
-            product=item.get("product", ""),
-            published=item.get("dateAdded", ""),
-            updated=item.get("dateAdded", ""),
-            references=[r for r in [item.get("notes", "")] if r],
-            exploit_available=True,
-            exploit_sources=["cisa_kev"],
-            source="cisa_kev",
-            confidence=0.95,
-            raw=item,
-        ))
+        entries.append(
+            FeedEntry(
+                cve=cve_id,
+                title=item.get("vulnerabilityName", ""),
+                description=item.get("shortDescription", ""),
+                severity="critical",
+                kev=True,
+                exploited=True,
+                vendor=item.get("vendorProject", ""),
+                product=item.get("product", ""),
+                published=item.get("dateAdded", ""),
+                updated=item.get("dateAdded", ""),
+                references=[r for r in [item.get("notes", "")] if r],
+                exploit_available=True,
+                exploit_sources=["cisa_kev"],
+                source="cisa_kev",
+                confidence=0.95,
+                raw=item,
+            )
+        )
     return entries
 
 
@@ -678,6 +689,7 @@ def _parse_epss_csv(data: bytes) -> list[FeedEntry]:
     """Parse EPSS CSV (possibly gzipped) into FeedEntry list."""
     try:
         import gzip
+
         raw_text = gzip.decompress(data).decode("utf-8")
     except (OSError, zlib.error):
         raw_text = data.decode("utf-8")
@@ -697,14 +709,16 @@ def _parse_epss_csv(data: bytes) -> list[FeedEntry]:
             epss = float(parts[1].strip().strip('"'))
         except (ValueError, IndexError):
             epss = 0.0
-        entries.append(FeedEntry(
-            cve=cve_id,
-            epss=epss,
-            severity="info",
-            source="epss",
-            confidence=0.9,
-            raw={"epss": epss},
-        ))
+        entries.append(
+            FeedEntry(
+                cve=cve_id,
+                epss=epss,
+                severity="info",
+                source="epss",
+                confidence=0.9,
+                raw={"epss": epss},
+            )
+        )
     return entries
 
 
@@ -760,21 +774,23 @@ def _parse_osv_response(data: bytes) -> list[FeedEntry]:
             if url:
                 references.append(url)
 
-        entries.append(FeedEntry(
-            cve=cve_id,
-            title=item.get("summary", ""),
-            description=item.get("details", ""),
-            severity=severity,
-            vendor="",
-            product=", ".join(packages) if packages else "",
-            affected_versions=affected_versions,
-            published=item.get("published", ""),
-            updated=item.get("modified", ""),
-            references=references,
-            source="osv",
-            confidence=0.8,
-            raw=item,
-        ))
+        entries.append(
+            FeedEntry(
+                cve=cve_id,
+                title=item.get("summary", ""),
+                description=item.get("details", ""),
+                severity=severity,
+                vendor="",
+                product=", ".join(packages) if packages else "",
+                affected_versions=affected_versions,
+                published=item.get("published", ""),
+                updated=item.get("modified", ""),
+                references=references,
+                source="osv",
+                confidence=0.8,
+                raw=item,
+            )
+        )
     return entries
 
 
@@ -811,8 +827,8 @@ def _parse_github_advisory(data: bytes) -> list[FeedEntry]:
         vulnerabilities = item.get("vulnerabilities", [])
         vendor = ""
         product = ""
-        affected_versions = []
-        fixed_versions = []
+        affected_versions: list[str] = []
+        fixed_versions: list[str] = []
         for vuln in vulnerabilities:
             pkg = vuln.get("package", {})
             vendor = pkg.get("ecosystem", "")
@@ -822,23 +838,25 @@ def _parse_github_advisory(data: bytes) -> list[FeedEntry]:
                 if r:
                     affected_versions.append(r)
 
-        entries.append(FeedEntry(
-            cve=cve_id,
-            title=item.get("summary", ""),
-            description=item.get("description", ""),
-            severity=severity,
-            cvss_v3=cvss_score,
-            vendor=vendor,
-            product=product,
-            affected_versions=affected_versions,
-            fixed_versions=fixed_versions,
-            published=item.get("published_at", ""),
-            updated=item.get("updated_at", ""),
-            references=references,
-            source="github_advisory",
-            confidence=0.85,
-            raw=item,
-        ))
+        entries.append(
+            FeedEntry(
+                cve=cve_id,
+                title=item.get("summary", ""),
+                description=item.get("description", ""),
+                severity=severity,
+                cvss_v3=cvss_score,
+                vendor=vendor,
+                product=product,
+                affected_versions=affected_versions,
+                fixed_versions=fixed_versions,
+                published=item.get("published_at", ""),
+                updated=item.get("updated_at", ""),
+                references=references,
+                source="github_advisory",
+                confidence=0.85,
+                raw=item,
+            )
+        )
     return entries
 
 
@@ -879,7 +897,7 @@ class FeedUpdater:
             if cached and cached.get("last_fetch"):
                 try:
                     last = datetime.fromisoformat(cached["last_fetch"])
-                    age_hours = (datetime.now(timezone.utc) - last).total_seconds() / 3600
+                    age_hours = (datetime.now(UTC) - last).total_seconds() / 3600
                     if age_hours < self._source.cache_ttl_hours:
                         result.status = UpdateStatus.NO_UPDATE
                         result.total_entries = cached.get("entry_count", 0)
@@ -900,11 +918,15 @@ class FeedUpdater:
                     time.sleep(sleep_time)
 
                 request = _make_request(
-                    self._source.url, etag=etag, last_modified=last_modified,
-                    api_key=self._source.api_key, timeout=self._source.timeout,
+                    self._source.url,
+                    etag=etag,
+                    last_modified=last_modified,
+                    api_key=self._source.api_key,
+                    _timeout=self._source.timeout,
                 )
                 body, new_etag, new_last_modified, status = _fetch_url(
-                    request, timeout=self._source.timeout,
+                    request,
+                    timeout=self._source.timeout,
                     max_bytes=self._source.max_response_bytes,
                 )
 
@@ -939,7 +961,7 @@ class FeedUpdater:
                 entries = parser(body)
 
                 # Clear old entries for this source, then batch insert
-                old_count = self._cache.count_entries(self._source.name)
+                self._cache.count_entries(self._source.name)
                 self._cache.delete_source_entries(self._source.name)
                 batch = [(e.cve, self._source.name, e.to_vulnerability()) for e in entries if e.cve]
                 added, updated = self._cache.batch_upsert(batch)
@@ -967,7 +989,10 @@ class FeedUpdater:
 
                 self._logger.info(
                     "Feed '%s': %d entries (%d new, %d replaced) in %.1fs",
-                    self._source.name, len(batch), added, updated,
+                    self._source.name,
+                    len(batch),
+                    added,
+                    updated,
                     time.perf_counter() - start,
                 )
                 return result
@@ -976,7 +1001,10 @@ class FeedUpdater:
                 last_error = exc
                 self._logger.warning(
                     "Attempt %d/%d for '%s' failed: %s",
-                    attempt, MAX_RETRIES, self._source.name, exc,
+                    attempt,
+                    MAX_RETRIES,
+                    self._source.name,
+                    exc,
                 )
                 continue
 
@@ -985,7 +1013,9 @@ class FeedUpdater:
         result.error = str(last_error) if last_error else "max retries exceeded"
         self._logger.error(
             "Feed '%s' failed after %d attempts: %s",
-            self._source.name, MAX_RETRIES, result.error,
+            self._source.name,
+            MAX_RETRIES,
+            result.error,
         )
         return result
 
@@ -1010,8 +1040,7 @@ class FeedScheduler:
         """Update all feed sources. Returns mapping of source name to result."""
         results: dict[str, UpdateResult] = {}
         # Order: NVD first (base CVE data), then others
-        order = [FeedType.NVD, FeedType.CISA_KEV, FeedType.EPSS,
-                 FeedType.OSV, FeedType.GITHUB_ADVISORY]
+        order = [FeedType.NVD, FeedType.CISA_KEV, FeedType.EPSS, FeedType.OSV, FeedType.GITHUB_ADVISORY]
         ordered_sources = []
         for ft in order:
             for s in self._sources.values():
@@ -1104,8 +1133,7 @@ class FeedManager:
     offline mode, and cache validation.
     """
 
-    def __init__(self, feed_dir: Path | None = None,
-                 sources: list[FeedSource] | None = None) -> None:
+    def __init__(self, feed_dir: Path | None = None, sources: list[FeedSource] | None = None) -> None:
         self._cache = FeedCache(cache_dir=feed_dir)
         self._sources = sources or list(_DEFAULT_SOURCES)
         self._scheduler = FeedScheduler(self._cache, self._sources)
@@ -1138,15 +1166,11 @@ class FeedManager:
                 metadata.feed_last_updated[ft.value] = ts
             count_str = raw.get(f"feed_{ft.value}_count", "")
             if count_str:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     metadata.feed_entry_counts[ft.value] = int(count_str)
-                except (ValueError, TypeError):
-                    pass
         feed_versions_raw = raw.get("feed_versions", "{}")
-        try:
+        with contextlib.suppress(json.JSONDecodeError, TypeError):
             metadata.feed_versions = json.loads(feed_versions_raw)
-        except (json.JSONDecodeError, TypeError):
-            pass
         return metadata
 
     def get_vulnerabilities(self) -> list[dict[str, Any]]:
@@ -1161,8 +1185,7 @@ class FeedManager:
         """Export all cached vulnerabilities to a JSON file."""
         entries = self.get_vulnerabilities()
         output_path.write_text(
-            json.dumps({"vulnerabilities": entries, "metadata": self.get_metadata().to_dict()},
-                       indent=2, default=str),
+            json.dumps({"vulnerabilities": entries, "metadata": self.get_metadata().to_dict()}, indent=2, default=str),
             encoding="utf-8",
         )
         return output_path
@@ -1242,20 +1265,19 @@ def get_feed_status() -> FeedMetadata:
 # ---------------------------------------------------------------------------
 
 __all__ = [
-    "FeedType",
-    "UpdateStatus",
-    "FeedSource",
-    "FeedEntry",
-    "FeedMetadata",
-    "UpdateResult",
-    "FeedCache",
-    "FeedUpdater",
-    "FeedScheduler",
-    "FeedManager",
-    "get_default_manager",
-    "update_feeds",
-    "get_feed_status",
-    "DEFAULT_FEED_DIR",
     "DEFAULT_CACHE_TTL_HOURS",
-    "DEFAULT_SOURCES",
+    "DEFAULT_FEED_DIR",
+    "FeedCache",
+    "FeedEntry",
+    "FeedManager",
+    "FeedMetadata",
+    "FeedScheduler",
+    "FeedSource",
+    "FeedType",
+    "FeedUpdater",
+    "UpdateResult",
+    "UpdateStatus",
+    "get_default_manager",
+    "get_feed_status",
+    "update_feeds",
 ]

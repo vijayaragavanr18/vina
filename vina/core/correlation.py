@@ -7,9 +7,11 @@ scenarios, and lateral movement opportunities.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
+from ..core.knowledge import EnrichedFinding
 from ..models.findings import Finding, severity_key
 
 _SEVERITY_WEIGHTS: dict[str, float] = {
@@ -32,6 +34,7 @@ class AttackPath:
     All attributes are plain strings / lists for direct serialisation.
     ``findings`` holds the matched :class:`Finding` objects.
     """
+
     id: str = ""
     title: str = ""
     description: str = ""
@@ -87,6 +90,7 @@ class FindingMatcher:
 
     A finding matches if *all* non-empty fields match.
     """
+
     title_contains: str = ""
     source_stage: str = ""
     category: str = ""
@@ -96,6 +100,7 @@ class FindingMatcher:
 @dataclass(slots=True)
 class CorrelationRule:
     """A rule that correlates multiple findings into an attack path."""
+
     rule_id: str
     title: str
     description: str
@@ -177,7 +182,10 @@ _CORRELATION_RULES: list[CorrelationRule] = [
             "Root shell",
         ],
         remediation="Remove NOPASSWD sudo rules. Restrict systemd unit permissions: chmod 644 && chown root:root.",
-        mitre_attack=["T1548.003 - Abuse Elevation Control Mechanism: Sudo", "T1569.002 - System Services: Service Execution"],
+        mitre_attack=[
+            "T1548.003 - Abuse Elevation Control Mechanism: Sudo",
+            "T1569.002 - System Services: Service Execution",
+        ],
         cwe="CWE-732: Incorrect Permission Assignment for Critical Resource",
         cis_controls=["CIS Control 5: Account Management", "CIS Control 4: Secure Configuration"],
         exploitability_bonus=15,
@@ -208,7 +216,10 @@ _CORRELATION_RULES: list[CorrelationRule] = [
             "Root shell",
         ],
         remediation="Remove NOPASSWD sudo rules and fix world-writable PATH directories.",
-        mitre_attack=["T1548.003 - Abuse Elevation Control Mechanism: Sudo", "T1574.001 - Hijack Execution Flow: DLL Search Order Hijacking"],
+        mitre_attack=[
+            "T1548.003 - Abuse Elevation Control Mechanism: Sudo",
+            "T1574.001 - Hijack Execution Flow: DLL Search Order Hijacking",
+        ],
         cwe="CWE-426: Untrusted Search Path",
         cis_controls=["CIS Control 5: Account Management", "CIS Control 4: Secure Configuration"],
         exploitability_bonus=15,
@@ -564,7 +575,10 @@ _CORRELATION_RULES: list[CorrelationRule] = [
             "Root shell",
         ],
         remediation="Restrict permissions on writable system directories. Review SUID binaries.",
-        mitre_attack=["T1548.001 - Abuse Elevation Control Mechanism: Setuid and Setgid", "T1574.001 - Hijack Execution Flow"],
+        mitre_attack=[
+            "T1548.001 - Abuse Elevation Control Mechanism: Setuid and Setgid",
+            "T1574.001 - Hijack Execution Flow",
+        ],
         cwe="CWE-732: Incorrect Permission Assignment for Critical Resource",
         cis_controls=["CIS Control 4: Secure Configuration"],
         exploitability_bonus=8,
@@ -749,7 +763,7 @@ class CorrelationEngine:
     def __init__(self, rules: list[CorrelationRule] | None = None) -> None:
         self._rules = _CORRELATION_RULES if rules is None else rules
 
-    def run(self, findings: list[Finding]) -> list[AttackPath]:
+    def run(self, findings: Sequence[Finding | EnrichedFinding]) -> list[AttackPath]:
         """Correlate a list of (enriched) findings into attack paths."""
         paths: list[AttackPath] = []
         used_path_ids: set[str] = set()
@@ -770,7 +784,7 @@ class CorrelationEngine:
     def _match_rule(
         self,
         rule: CorrelationRule,
-        findings: list[Finding],
+        findings: Sequence[Finding | EnrichedFinding],
     ) -> tuple[dict[int, list[Finding]], dict[int, list[Finding]]]:
         """Match a rule's required and optional patterns against findings.
 
@@ -781,28 +795,25 @@ class CorrelationEngine:
         for idx, matcher in enumerate(rule.required_findings):
             matches = [f for f in findings if self._finding_matches(matcher, f)]
             if matches:
-                required_matches[idx] = matches
+                required_matches[idx] = cast(list[Finding], matches)
 
         optional_matches: dict[int, list[Finding]] = {}
         for idx, matcher in enumerate(rule.optional_findings):
             matches = [f for f in findings if self._finding_matches(matcher, f)]
             if matches:
-                optional_matches[idx] = matches
+                optional_matches[idx] = cast(list[Finding], matches)
 
         return required_matches, optional_matches
 
     @staticmethod
-    def _finding_matches(matcher: FindingMatcher, finding: Finding) -> bool:
+    def _finding_matches(matcher: FindingMatcher, finding: Finding | EnrichedFinding) -> bool:
         """Check if a single finding matches a FindingMatcher."""
-        if matcher.title_contains:
-            if matcher.title_contains.lower() not in finding.title.lower():
-                return False
-        if matcher.source_stage:
-            if finding.source_stage.lower() != matcher.source_stage.lower():
-                return False
-        if matcher.category:
-            if finding.category.lower() != matcher.category.lower():
-                return False
+        if matcher.title_contains and matcher.title_contains.lower() not in finding.title.lower():
+            return False
+        if matcher.source_stage and finding.source_stage.lower() != matcher.source_stage.lower():
+            return False
+        if matcher.category and finding.category.lower() != matcher.category.lower():
+            return False
         if matcher.severity_min:
             min_key = severity_key(matcher.severity_min)
             f_key = severity_key(finding.severity)
@@ -815,57 +826,80 @@ class CorrelationEngine:
         """Check that every required matcher has at least one finding."""
         return len(matched) == len(rule.required_findings)
 
+    @staticmethod
+    def _collect_matched_findings(
+        required_matches: dict[int, list[Finding]],
+        optional_matches: dict[int, list[Finding]],
+    ) -> list[Finding]:
+        """Gather all matched findings (required + optional) without duplicates."""
+        seen_ids: set[str] = set()
+        all_findings: list[Finding] = []
+        for flist in required_matches.values():
+            for f in flist:
+                if f.id not in seen_ids:
+                    seen_ids.add(f.id)
+                    all_findings.append(f)
+        for flist in optional_matches.values():
+            for f in flist:
+                if f.id not in seen_ids:
+                    seen_ids.add(f.id)
+                    all_findings.append(f)
+        return all_findings
+
+    @staticmethod
+    def _compute_average_confidence(findings: list[Finding]) -> float:
+        """Compute the average confidence across findings."""
+        confidences: list[float] = []
+        for f in findings:
+            if hasattr(f, "confidence_score") and f.confidence_score:
+                confidences.append(f.confidence_score)
+            elif f.confidence is not None:
+                confidences.append(f.confidence)
+        return sum(confidences) / len(confidences) if confidences else 0.5
+
+    @staticmethod
+    def _check_attack_indicators(
+        findings: list[Finding],
+    ) -> tuple[bool, bool, bool, bool]:
+        """Check for GTFOBins, exploitability, credential, and persistence indicators."""
+        has_gtfo = any(hasattr(f, "gtfo_bins") and f.gtfo_bins for f in findings)
+        has_exploit = any(hasattr(f, "mitre_attack") and f.mitre_attack for f in findings)
+        has_cred = any(
+            hasattr(f, "enriched_tags") and any(t in {"credential", "secret", "password"} for t in f.enriched_tags)
+            for f in findings
+        )
+        has_persist = any(
+            hasattr(f, "enriched_tags") and any(t in {"persistence", "cron", "systemd"} for t in f.enriched_tags)
+            for f in findings
+        )
+        return has_gtfo, has_exploit, has_cred, has_persist
+
+    @staticmethod
+    def _build_evidence_str(findings: list[Finding]) -> str:
+        """Build a newline-separated evidence string from matched findings."""
+        parts = [f"{f.title} [{f.source_stage}]" for f in findings]
+        return "\n".join(parts) if parts else ""
+
+    @staticmethod
+    def _get_target_str(findings: list[Finding]) -> str:
+        """Derive a single target string from matched findings."""
+        targets = {f.target for f in findings if f.target}
+        return next(iter(targets)) if targets else "localhost"
+
     def _build_path(
         self,
         rule: CorrelationRule,
         required_matches: dict[int, list[Finding]],
         optional_matches: dict[int, list[Finding]],
-        all_findings: list[Finding],
+        _all_findings: Sequence[Finding | EnrichedFinding],
     ) -> AttackPath:
         """Build an AttackPath from matched findings."""
-        all_matched_findings: list[Finding] = []
-        seen_ids: set[str] = set()
-        for flist in required_matches.values():
-            for f in flist:
-                if f.id not in seen_ids:
-                    seen_ids.add(f.id)
-                    all_matched_findings.append(f)
-        for flist in optional_matches.values():
-            for f in flist:
-                if f.id not in seen_ids:
-                    seen_ids.add(f.id)
-                    all_matched_findings.append(f)
-
+        all_matched_findings = self._collect_matched_findings(required_matches, optional_matches)
         total_matched = len(all_matched_findings)
-
-        # Compute confidence as average of matched finding confidences
-        confidences: list[float] = []
-        for f in all_matched_findings:
-            if hasattr(f, "confidence_score") and f.confidence_score:
-                confidences.append(f.confidence_score)
-            elif f.confidence is not None:
-                confidences.append(f.confidence)
-        avg_confidence = sum(confidences) / len(confidences) if confidences else 0.5
-
-        # Check for GTFOBins, exploitability, credential, persistence indicators
-        has_gtfo = any(
-            hasattr(f, "gtfo_bins") and f.gtfo_bins
-            for f in all_matched_findings
-        )
-        has_exploit = False
-        has_cred = False
-        has_persist = False
-        for f in all_matched_findings:
-            if hasattr(f, "mitre_attack") and f.mitre_attack:
-                has_exploit = True
-            if hasattr(f, "enriched_tags") and any(
-                t in ("credential", "secret", "password") for t in f.enriched_tags
-            ):
-                has_cred = True
-            if hasattr(f, "enriched_tags") and any(
-                t in ("persistence", "cron", "systemd") for t in f.enriched_tags
-            ):
-                has_persist = True
+        avg_confidence = self._compute_average_confidence(all_matched_findings)
+        has_gtfo, has_exploit, has_cred, has_persist = self._check_attack_indicators(all_matched_findings)
+        evidence = self._build_evidence_str(all_matched_findings)
+        target_str = self._get_target_str(all_matched_findings)
 
         rule_bonuses = {
             "gtfo_bonus": rule.gtfo_bonus,
@@ -885,17 +919,8 @@ class CorrelationEngine:
             rule_bonuses=rule_bonuses,
         )
 
-        # Build evidence string
-        evidence_parts = [f"{f.title} [{f.source_stage}]" for f in all_matched_findings]
-        evidence = "\n".join(evidence_parts) if evidence_parts else ""
-
-        target_parts = {f.target for f in all_matched_findings if f.target}
-        target_str = next(iter(target_parts)) if target_parts else "localhost"
-
-        path_id = f"{rule.rule_id}/{target_str}"
-
         return AttackPath(
-            id=path_id,
+            id=f"{rule.rule_id}/{target_str}",
             title=rule.title,
             description=rule.description,
             severity=rule.severity,
@@ -925,6 +950,7 @@ class CorrelationEngine:
 @dataclass(slots=True)
 class CorrelationStats:
     """Aggregated statistics over a list of AttackPaths."""
+
     total_paths: int = 0
     by_severity: dict[str, int] = field(default_factory=dict)
     highest_severity: str = ""
@@ -972,9 +998,7 @@ def compute_correlation_stats(paths: list[AttackPath]) -> CorrelationStats:
     for sev in ("critical", "high", "medium", "low", "info"):
         ordered_sev[sev] = sev_counter.get(sev, 0)
 
-    weights_sum = sum(
-        _SEVERITY_WEIGHTS.get(s, 0) * c for s, c in ordered_sev.items()
-    )
+    weights_sum = sum(_SEVERITY_WEIGHTS.get(s, 0) * c for s, c in ordered_sev.items())
     total_weighted = sum(ordered_sev.values())
     overall_risk = (weights_sum / (total_weighted * 100) * 100) if total_weighted else 0
 
@@ -1003,12 +1027,12 @@ def correlate(findings: list[Finding]) -> list[AttackPath]:
 
 
 __all__ = [
+    "_CORRELATION_RULES",
     "AttackPath",
     "CorrelationEngine",
     "CorrelationRule",
     "CorrelationStats",
     "FindingMatcher",
-    "correlate",
     "compute_correlation_stats",
-    "_CORRELATION_RULES",
+    "correlate",
 ]

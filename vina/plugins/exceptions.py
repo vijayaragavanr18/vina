@@ -30,11 +30,11 @@ class PluginVersionError(PluginError):
 
 
 __all__ = [
-    "PluginError",
-    "PluginLoadError",
-    "PluginNotFoundError",
     "PluginDependencyError",
     "PluginDisabledError",
+    "PluginError",
     "PluginHookError",
+    "PluginLoadError",
+    "PluginNotFoundError",
     "PluginVersionError",
 ]

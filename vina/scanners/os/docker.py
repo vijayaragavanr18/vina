@@ -58,7 +58,11 @@ class DockerModule:
         commands: list[tuple[str, str, list[str]]] = [
             ("which_docker", self.config.tool_bin("which", "which"), ["docker"]),
             ("docker_ps", self.config.tool_bin("docker", "docker"), ["ps", "-a", "--no-trunc"]),
-            ("docker_inspect", self.config.tool_bin("docker", "docker"), ["inspect", "$(docker ps -q)", "--format", "{{.Name}} {{.HostConfig.Privileged}}"]),
+            (
+                "docker_inspect",
+                self.config.tool_bin("docker", "docker"),
+                ["inspect", "$(docker ps -q)", "--format", "{{.Name}} {{.HostConfig.Privileged}}"],
+            ),
             ("stat_sock", self.config.tool_bin("stat", "stat"), ["/var/run/docker.sock"]),
             ("ls_sock", self.config.tool_bin("ls", "ls"), ["-la", "/var/run/docker.sock"]),
             ("getent_group", self.config.tool_bin("getent", "getent"), ["group", "docker"]),
@@ -86,15 +90,17 @@ class DockerModule:
         if not installed:
             warnings.append("Docker is not installed")
         else:
-            findings.append(make_finding(
-                title="Docker is installed",
-                description="Docker is installed on the system",
-                severity="info",
-                category="service",
-                source_stage="docker",
-                target=target_str,
-                evidence="docker binary found",
-            ))
+            findings.append(
+                make_finding(
+                    title="Docker is installed",
+                    description="Docker is installed on the system",
+                    severity="info",
+                    category="service",
+                    source_stage="docker",
+                    target=target_str,
+                    evidence="docker binary found",
+                )
+            )
 
         primary = results.get("docker_ps") or results.get("stat_sock") or self._empty_command_result()
 
@@ -116,9 +122,11 @@ class DockerModule:
     @staticmethod
     def _check_installed(results: dict[str, CommandResult]) -> bool:
         cr = results.get("which_docker")
-        return cr is not None and cr.succeeded and cr.stdout.strip()
+        return bool(cr is not None and cr.succeeded and cr.stdout.strip())
 
-    def _check_socket(self, results: dict[str, CommandResult], warnings: list[str], findings: list[Finding], target_str: str) -> str:
+    def _check_socket(
+        self, results: dict[str, CommandResult], _warnings: list[str], findings: list[Finding], target_str: str
+    ) -> str:
         cr = results.get("ls_sock")
         if cr is None or not cr.stdout.strip():
             return ""
@@ -129,19 +137,23 @@ class DockerModule:
         if len(parts) >= 1:
             perms = parts[0]
             if len(perms) >= 10 and perms[8] == "w":
-                findings.append(make_finding(
-                    title="Docker socket is world-writable",
-                    description="/var/run/docker.sock has world-writable permissions",
-                    severity="critical",
-                    category="misconfiguration",
-                    source_stage="docker",
-                    target=target_str,
-                    evidence=perm_line,
-                    recommendation="Restrict permissions on /var/run/docker.sock to root:docker only",
-                ))
+                findings.append(
+                    make_finding(
+                        title="Docker socket is world-writable",
+                        description="/var/run/docker.sock has world-writable permissions",
+                        severity="critical",
+                        category="misconfiguration",
+                        source_stage="docker",
+                        target=target_str,
+                        evidence=perm_line,
+                        recommendation="Restrict permissions on /var/run/docker.sock to root:docker only",
+                    )
+                )
         return perm_line
 
-    def _parse_containers(self, results: dict[str, CommandResult], warnings: list[str], findings: list[Finding], target_str: str) -> list[DockerContainerInfo]:
+    def _parse_containers(
+        self, results: dict[str, CommandResult], _warnings: list[str], findings: list[Finding], target_str: str
+    ) -> list[DockerContainerInfo]:
         containers: list[DockerContainerInfo] = []
         cr = results.get("docker_ps")
         if cr is None or not cr.succeeded or not cr.stdout.strip():
@@ -159,21 +171,27 @@ class DockerModule:
                 status = status_parts[0] if status_parts else "unknown"
                 port_info = " ".join(p for p in parts if "->" in p)
                 priv = self._check_privileged(cid)
-                containers.append(DockerContainerInfo(container_id=cid[:12], image=image, status=status, privileged=priv, ports=port_info))
+                containers.append(
+                    DockerContainerInfo(
+                        container_id=cid[:12], image=image, status=status, privileged=priv, ports=port_info
+                    )
+                )
                 if priv:
-                    findings.append(make_finding(
-                        title=f"Privileged container: {image[:40]}",
-                        description=f"Container {cid[:12]} ({image}) is running in privileged mode",
-                        severity="high",
-                        category="misconfiguration",
-                        source_stage="docker",
-                        target=target_str,
-                        evidence=f"Container: {cid[:12]}, Image: {image}",
-                        recommendation="Avoid running containers in privileged mode. Use specific capabilities instead.",
-                    ))
+                    findings.append(
+                        make_finding(
+                            title=f"Privileged container: {image[:40]}",
+                            description=f"Container {cid[:12]} ({image}) is running in privileged mode",
+                            severity="high",
+                            category="misconfiguration",
+                            source_stage="docker",
+                            target=target_str,
+                            evidence=f"Container: {cid[:12]}, Image: {image}",
+                            recommendation="Avoid running containers in privileged mode. Use specific capabilities instead.",
+                        )
+                    )
         return containers
 
-    def _check_privileged(self, container_id: str) -> bool:
+    def _check_privileged(self, _container_id: str) -> bool:
         return False  # Docker inspect would need the container running
 
     def _check_group(self, results: dict[str, CommandResult], findings: list[Finding], target_str: str) -> list[str]:
@@ -186,16 +204,18 @@ class DockerModule:
             if len(parts) >= 4 and parts[3].strip():
                 members = [m.strip() for m in parts[3].split(",") if m.strip()]
                 if members:
-                    findings.append(make_finding(
-                        title=f"Users in docker group: {', '.join(members)}",
-                        description=f"Users {', '.join(members)} are in the docker group, which grants root-equivalent access",
-                        severity="high",
-                        category="misconfiguration",
-                        source_stage="docker",
-                        target=target_str,
-                        evidence=f"docker group members: {', '.join(members)}",
-                        recommendation="Review docker group membership. Only trusted users should have docker access.",
-                    ))
+                    findings.append(
+                        make_finding(
+                            title=f"Users in docker group: {', '.join(members)}",
+                            description=f"Users {', '.join(members)} are in the docker group, which grants root-equivalent access",
+                            severity="high",
+                            category="misconfiguration",
+                            source_stage="docker",
+                            target=target_str,
+                            evidence=f"docker group members: {', '.join(members)}",
+                            recommendation="Review docker group membership. Only trusted users should have docker access.",
+                        )
+                    )
                 return members
         return []
 
@@ -229,7 +249,17 @@ class DockerModule:
 
     @staticmethod
     def _empty_command_result() -> CommandResult:
-        return CommandResult(command="docker", args=(), returncode=1, stdout="", stderr="", duration_seconds=0.0, timed_out=False, missing_executable=False, full_command="docker")
+        return CommandResult(
+            command="docker",
+            args=(),
+            returncode=1,
+            stdout="",
+            stderr="",
+            duration_seconds=0.0,
+            timed_out=False,
+            missing_executable=False,
+            full_command="docker",
+        )
 
 
-__all__ = ["DockerModule", "DockerContainerInfo", "DockerResult"]
+__all__ = ["DockerContainerInfo", "DockerModule", "DockerResult"]

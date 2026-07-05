@@ -42,6 +42,8 @@ class TechnologyDetectionModule:
                         version_value = details.get("version")
                         if isinstance(version_value, str):
                             version = version_value
-                    technologies.append(TechnologyEntry(host=host, name=str(name), version=version, source=command.command))
+                    technologies.append(
+                        TechnologyEntry(host=host, name=str(name), version=version, source=command.command)
+                    )
         warnings = [command.stderr] if command.stderr and not command.succeeded else []
         return TechnologyDetectionResult(technologies=technologies, warnings=warnings, command_results=[command])

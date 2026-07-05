@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import unittest
-from datetime import datetime, timezone
 from pathlib import Path
 
 from vina.core.aggregator import FindingAggregator
@@ -248,6 +247,7 @@ class GenerateReportsTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         import shutil
+
         if self.tmpdir.exists():
             shutil.rmtree(self.tmpdir)
 

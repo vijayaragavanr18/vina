@@ -6,6 +6,7 @@ import unittest
 
 from vina.core.aggregator import AggregatorStats, FindingAggregator
 from vina.models.findings import Finding, make_finding
+from vina.pipeline.aggregator import Aggregator
 
 
 def _finding(
@@ -148,7 +149,9 @@ class StatisticsTests(unittest.TestCase):
         agg = FindingAggregator()
         agg.add_finding(_finding(title="Critical Vuln", severity="critical", category="vulnerability", host="a.com"))
         agg.add_finding(_finding(title="High Vuln", severity="high", category="vulnerability", host="a.com"))
-        agg.add_finding(_finding(title="Open Port", severity="medium", category="open_port", host="b.com", url="http://b.com:80"))
+        agg.add_finding(
+            _finding(title="Open Port", severity="medium", category="open_port", host="b.com", url="http://b.com:80")
+        )
         stats = agg.statistics()
         self.assertEqual(stats.total, 3)
         self.assertEqual(stats.by_severity.get("critical"), 1)
@@ -202,6 +205,41 @@ class AggregatorStatsDataclassTests(unittest.TestCase):
         )
         self.assertEqual(s.total, 10)
         self.assertEqual(s.by_severity["critical"], 3)
+
+    def test_merge_hosts_static_method_no_self(self) -> None:
+        """Regression: _merge_hosts is @staticmethod and must not reference self."""
+        from vina.core.runner import CommandResult
+        from vina.scanners.web.gau import GauResult
+        from vina.scanners.web.httpx import HttpxResult
+        from vina.scanners.web.katana import KatanaResult
+        from vina.scanners.web.naabu import NaabuResult
+        from vina.scanners.web.nmap import NmapResult
+        from vina.scanners.web.recon import WebReconResult
+        from vina.scanners.web.whatweb import WhatWebResult
+
+        cr = CommandResult(
+            command="test",
+            args=(),
+            returncode=0,
+            stdout="",
+            stderr="",
+            duration_seconds=0.0,
+        )
+        subfinder = WebReconResult(target="example.com", command_result=cr, subdomains=["example.com"])
+        httpx = HttpxResult(
+            target="example.com",
+            command_result=cr,
+            records=[],
+            alive_hosts=["https://example.com"],
+        )
+        naabu = NaabuResult(target="example.com", command_result=cr, open_ports=[])
+        nmap = NmapResult(target="example.com", command_result=cr, hosts=[], services=[])
+        whatweb = WhatWebResult(target="example.com", command_result=cr, hosts=[])
+        katana = KatanaResult(target="example.com", command_result=cr, endpoints=[])
+        gau = GauResult(target="example.com", command_result=cr, urls=[])
+
+        hosts = Aggregator._merge_hosts(subfinder, httpx, naabu, nmap, whatweb, katana, gau)
+        self.assertIsInstance(hosts, list)
 
 
 if __name__ == "__main__":

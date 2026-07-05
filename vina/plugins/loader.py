@@ -8,7 +8,6 @@ import inspect
 import logging
 import sys
 from pathlib import Path
-from typing import Any
 
 from .exceptions import PluginLoadError, PluginVersionError
 from .plugin import Plugin, PluginMetadata
@@ -34,10 +33,7 @@ def _check_vina_version(metadata: PluginMetadata) -> None:
 
     required = metadata.minimum_vina_version
     if required and _compare_versions(__version__, required) < 0:
-        raise PluginVersionError(
-            f"Plugin '{metadata.id}' requires VINA {required} "
-            f"(installed: {__version__})"
-        )
+        raise PluginVersionError(f"Plugin '{metadata.id}' requires VINA {required} (installed: {__version__})")
 
 
 def _compare_versions(installed: str, required: str) -> int:
@@ -60,11 +56,7 @@ def _find_plugin_classes(module: object) -> list[type[Plugin]]:
     """Return all :class:`Plugin` subclasses found in *module*."""
     results: list[type[Plugin]] = []
     for _, obj in inspect.getmembers(module, inspect.isclass):
-        if (
-            issubclass(obj, Plugin)
-            and obj is not Plugin
-            and not inspect.isabstract(obj)
-        ):
+        if issubclass(obj, Plugin) and obj is not Plugin and not inspect.isabstract(obj):
             results.append(obj)
     return results
 
@@ -129,9 +121,7 @@ class PluginLoader:
                         ep.module,
                     )
             except Exception:
-                logger.warning(
-                    "Failed to load entry-point plugin '%s'", ep.name, exc_info=True
-                )
+                logger.warning("Failed to load entry-point plugin '%s'", ep.name, exc_info=True)
         return plugins
 
     # -- Module-path plugin ------------------------------------------------
@@ -141,18 +131,14 @@ class PluginLoader:
         try:
             module = importlib.import_module(module_path)
         except Exception as exc:
-            raise PluginLoadError(
-                f"Cannot import module '{module_path}': {exc}"
-            ) from exc
+            raise PluginLoadError(f"Cannot import module '{module_path}': {exc}") from exc
 
         classes = _find_plugin_classes(module)
         if not classes:
             logger.warning("No Plugin subclass found in '%s'", module_path)
             return None
         if len(classes) > 1:
-            logger.warning(
-                "Multiple Plugin subclasses in '%s'; using first one", module_path
-            )
+            logger.warning("Multiple Plugin subclasses in '%s'; using first one", module_path)
         instance = classes[0]()
         _check_vina_version(instance.metadata)
         return instance
@@ -201,9 +187,7 @@ class PluginLoader:
                 if plugin is not None:
                     plugins.append(plugin)
             except Exception:
-                logger.warning(
-                    "Failed to load plugin from '%s'", entry, exc_info=True
-                )
+                logger.warning("Failed to load plugin from '%s'", entry, exc_info=True)
         return plugins
 
     def _load_single(self, plugin_dir: Path) -> Plugin | None:
@@ -221,16 +205,14 @@ class PluginLoader:
         except PluginVersionError:
             raise
         except Exception as exc:
-            raise PluginLoadError(
-                f"Cannot load plugin from '{plugin_dir}': {exc}"
-            ) from exc
+            raise PluginLoadError(f"Cannot load plugin from '{plugin_dir}': {exc}") from exc
         finally:
             if sys.path and sys.path[0] == str(plugin_dir.parent):
                 sys.path.pop(0)
 
 
 __all__ = [
-    "PluginLoader",
     "ENTRY_POINT_GROUP",
     "LOCAL_PLUGIN_DIRS",
+    "PluginLoader",
 ]

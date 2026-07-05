@@ -12,7 +12,7 @@ from typing import Any
 from ...core.config import AppConfig
 from ...core.runner import CommandResult
 from ...models.common import TargetInput
-from ...models.findings import Finding, make_finding
+from ...models.findings import Finding
 from ...modules.common import ModuleContext
 
 logger = logging.getLogger(__name__)
@@ -99,30 +99,19 @@ class NmapModule:
                 args,
                 timeout_seconds=self.context.timeout_seconds,
             )
-            hosts, services = self._parse_xml_output(
-                command_result.stdout, warnings
-            )
+            hosts, services = self._parse_xml_output(command_result.stdout, warnings)
 
         if command_result.missing_executable:
             warnings.append(f"Missing executable: {executable}")
         if command_result.timed_out:
-            warnings.append(
-                f"Nmap timed out after {self.context.timeout_seconds} seconds"
-            )
+            warnings.append(f"Nmap timed out after {self.context.timeout_seconds} seconds")
         if (
             command_result.returncode not in (0, None)
             and not command_result.timed_out
             and not command_result.missing_executable
         ):
-            warnings.append(
-                f"Nmap failed with exit code {command_result.returncode}"
-            )
-        if (
-            host_ports
-            and not services
-            and command_result.stdout.strip()
-            and not command_result.timed_out
-        ):
+            warnings.append(f"Nmap failed with exit code {command_result.returncode}")
+        if host_ports and not services and command_result.stdout.strip() and not command_result.timed_out:
             warnings.append("No valid XML records were produced")
         if not services:
             warnings.append("No services discovered")
@@ -172,7 +161,7 @@ class NmapModule:
             for port, _ in ports:
                 all_ports.add(port)
         port_str = ",".join(str(p) for p in sorted(all_ports))
-        return ["-Pn", "-sV", "-oX", "-", "-p", port_str] + hostnames
+        return ["-Pn", "-sV", "-oX", "-", "-p", port_str, *hostnames]
 
     def _parse_xml_output(
         self,
@@ -208,9 +197,7 @@ class NmapModule:
                     if svc is not None:
                         host_services.append(svc)
 
-            hosts.append(
-                NmapHost(hostname=hostname, ip=ip, services=host_services)
-            )
+            hosts.append(NmapHost(hostname=hostname, ip=ip, services=host_services))
             services.extend(host_services)
 
         return hosts, services
@@ -264,18 +251,10 @@ class NmapModule:
         version: str | None = None
         extra_info: str | None = None
         if service_elem is not None:
-            service = NmapModule._normalize_text(
-                service_elem.get("name")
-            )
-            product = NmapModule._normalize_text(
-                service_elem.get("product")
-            )
-            version = NmapModule._normalize_text(
-                service_elem.get("version")
-            )
-            extra_info = NmapModule._normalize_text(
-                service_elem.get("extrainfo")
-            )
+            service = NmapModule._normalize_text(service_elem.get("name"))
+            product = NmapModule._normalize_text(service_elem.get("product"))
+            version = NmapModule._normalize_text(service_elem.get("version"))
+            extra_info = NmapModule._normalize_text(service_elem.get("extrainfo"))
 
         return NmapService(
             hostname=hostname,
@@ -350,4 +329,4 @@ class NmapModule:
         return text or None
 
 
-__all__ = ["NmapModule", "NmapHost", "NmapResult", "NmapService"]
+__all__ = ["NmapHost", "NmapModule", "NmapResult", "NmapService"]

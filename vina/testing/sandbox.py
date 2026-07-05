@@ -9,13 +9,12 @@ from __future__ import annotations
 import json
 import logging
 import os
-import socket
 import subprocess
 import tempfile
 import threading
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, ClassVar
 
 logger = logging.getLogger("vina.testing.sandbox")
 
@@ -23,8 +22,8 @@ logger = logging.getLogger("vina.testing.sandbox")
 class _MockFeedHandler(BaseHTTPRequestHandler):
     """Serves canned feed responses for testing the feed manager."""
 
-    responses: dict[str, tuple[int, dict[str, str], bytes]] = {}
-    served_paths: list[str] = []
+    responses: ClassVar[dict[str, tuple[int, dict[str, str], bytes]]] = {}
+    served_paths: ClassVar[list[str]] = []
 
     @classmethod
     def reset(cls) -> None:
@@ -88,6 +87,7 @@ class TestSandbox:
         self.stop_mock_feed_server()
         if self._tmpdir and self._tmpdir.exists():
             import shutil
+
             shutil.rmtree(self._tmpdir, ignore_errors=True)
         logger.info("TestSandbox stopped")
 
@@ -124,6 +124,7 @@ class TestSandbox:
         """Write a YAML config file for pipeline tests."""
         path = self.tmpdir / "config.yaml"
         import yaml
+
         with open(path, "w") as f:
             yaml.dump(config, f)
         return path

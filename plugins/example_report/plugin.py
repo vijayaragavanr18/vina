@@ -1,7 +1,6 @@
 """Example report plugin — adds a custom report section."""
 
-from vina.plugins.sdk import Plugin, PluginMetadata, PluginContext
-from vina.plugins.sdk import HookPoint
+from vina.plugins.sdk import HookPoint, Plugin, PluginContext, PluginMetadata
 
 
 class ExampleReportPlugin(Plugin):
@@ -45,8 +44,8 @@ class ExampleReportSection:
     title = "Example Report Section"
     order = 100
 
-    def render_markdown(self, data: dict) -> str:
+    def render_markdown(self, _data: dict) -> str:
         return "\n## Example Report Section\n\nThis is a plugin-provided report section.\n"
 
-    def render_html(self, data: dict) -> str:
+    def render_html(self, _data: dict) -> str:
         return '<div class="plugin-section"><h2>Example Report Section</h2><p>Plugin content.</p></div>\n'

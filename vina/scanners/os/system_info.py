@@ -6,6 +6,7 @@ by running lightweight system commands through AsyncCommandRunner.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import time
 from dataclasses import asdict, dataclass, field
@@ -111,10 +112,15 @@ class SystemInfoModule:
 
         if info is None:
             warnings.append("No system information could be collected")
-        elif not any((
-            info.hostname, info.kernel_version, info.architecture,
-            info.distribution, info.current_user,
-        )):
+        elif not any(
+            (
+                info.hostname,
+                info.kernel_version,
+                info.architecture,
+                info.distribution,
+                info.current_user,
+            )
+        ):
             warnings.append("System information is incomplete")
 
         result = SystemInfoResult(
@@ -131,7 +137,7 @@ class SystemInfoModule:
     def _parse_info(
         self,
         results: dict[str, CommandResult],
-        warnings: list[str],
+        _warnings: list[str],
     ) -> SystemInfo | None:
         """Parse collected command outputs into a SystemInfo instance."""
         hostname = self._stdout_or_none(results.get("hostname"))
@@ -199,10 +205,8 @@ class SystemInfoModule:
             if line.startswith("Model name:"):
                 model = line.split(":", 1)[1].strip()
             elif line.startswith("CPU(s):"):
-                try:
+                with contextlib.suppress(ValueError, IndexError):
                     cores = int(line.split(":", 1)[1].strip())
-                except (ValueError, IndexError):
-                    pass
         return model, cores
 
     @staticmethod
@@ -263,9 +267,11 @@ class SystemInfoModule:
         print(f"User        : {info.current_user or 'N/A'}")
         print(f"CPU         : {info.cpu_model or 'N/A'}")
         print(f"CPU Cores   : {info.cpu_count or 'N/A'}")
-        print(f"Memory      : {info.memory_total or 'N/A'} "
-              f"(used {info.memory_used or 'N/A'}, "
-              f"available {info.memory_available or 'N/A'})")
+        print(
+            f"Memory      : {info.memory_total or 'N/A'} "
+            f"(used {info.memory_used or 'N/A'}, "
+            f"available {info.memory_available or 'N/A'})"
+        )
 
     @staticmethod
     def _empty_command_result() -> CommandResult:
@@ -283,4 +289,4 @@ class SystemInfoModule:
         )
 
 
-__all__ = ["SystemInfoModule", "SystemInfo", "SystemInfoResult"]
+__all__ = ["SystemInfo", "SystemInfoModule", "SystemInfoResult"]

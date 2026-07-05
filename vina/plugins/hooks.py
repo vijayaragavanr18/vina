@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any, Callable
+from typing import Any
 
 logger = logging.getLogger("vina.plugins.hooks")
 
@@ -69,10 +70,10 @@ def get_all_hook_points() -> list[str]:
 
 
 __all__ = [
-    "HookPoint",
     "HookEvent",
     "HookHandler",
+    "HookPoint",
     "HookRegistration",
-    "is_valid_hook_point",
     "get_all_hook_points",
+    "is_valid_hook_point",
 ]

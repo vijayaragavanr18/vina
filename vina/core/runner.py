@@ -14,16 +14,16 @@ Goals and guarantees:
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import shlex
-from contextlib import suppress
-from datetime import datetime, timezone
-import logging
 import shutil
-from time import perf_counter_ns
+from collections.abc import Iterable, Mapping
+from contextlib import suppress
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Iterable, Mapping
+from time import perf_counter_ns
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ _STREAM_BYTE_LIMIT = 10 * 1024 * 1024
 def _utc_now_iso8601() -> str:
     """Return the current UTC timestamp in ISO-8601 format."""
 
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _normalize_env(env: Mapping[str, str] | None) -> dict[str, str] | None:
@@ -49,6 +49,43 @@ def _normalize_env(env: Mapping[str, str] | None) -> dict[str, str] | None:
     merged_env = os.environ.copy()
     merged_env.update({str(key): str(value) for key, value in env.items()})
     return merged_env
+
+
+def classify_command_error(name: str, cr: CommandResult) -> tuple[str, str]:
+    """Classify a command failure into a category and human-readable message.
+
+    Categories
+    ----------
+    ``permission_denied``
+        The command failed because access to a file or directory was denied.
+        This is expected when not running as root.
+    ``not_found``
+        The target file or directory does not exist.
+    ``unexpected``
+        Any other failure (unexpected return code, I/O error, etc.).
+
+    Returns
+    -------
+    (category, message)
+        A pair of (category, user-facing message).
+    """
+    stderr_lower = cr.stderr.strip().lower() if cr.stderr else ""
+    stderr_snippet = cr.stderr.strip()[:120] if cr.stderr.strip() else ""
+
+    if "permission denied" in stderr_lower:
+        return (
+            "permission_denied",
+            f"{name}: permission denied (expected when not root)",
+        )
+    if "no such file or directory" in stderr_lower or "cannot access" in stderr_lower:
+        return (
+            "not_found",
+            f"{name}: file or directory not found",
+        )
+    msg = f"{name} exited with code {cr.returncode}"
+    if stderr_snippet:
+        msg += f": {stderr_snippet}"
+    return ("unexpected", msg)
 
 
 async def _collect_stream(
@@ -189,7 +226,7 @@ class AsyncCommandRunner:
             full_command,
             float(timeout_seconds),
             cwd_path,
-            None if env is None else sorted(str(key) for key in env.keys()),
+            None if env is None else sorted(str(key) for key in env),
         )
 
         # Detect missing executable early to provide a clean, testable result.
@@ -310,7 +347,7 @@ class AsyncCommandRunner:
                 stderr_truncated=stderr_truncated,
             )
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             # The process exceeded the allowed time; attempt graceful termination
             logger.warning("Command timed out after %.1fs: %s", timeout_seconds, full_command)
             try:

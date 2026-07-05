@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from ..models.common import CrawlEntry, Finding, HistoricalUrlEntry, ParameterCandidate, PortEntry, TechnologyEntry
+from ..models.common import CrawlEntry, HistoricalUrlEntry, ParameterCandidate, PortEntry, TechnologyEntry
+from ..models.findings import Finding
 
 
 @dataclass(slots=True)
@@ -94,7 +95,7 @@ class AggregateModule:
         seen: set[tuple[str, str, str]] = set()
         deduped: list[Finding] = []
         for finding in findings:
-            key = (finding.tool, finding.target, finding.title)
+            key = (finding.source_stage, finding.target, finding.title)
             if key not in seen:
                 seen.add(key)
                 deduped.append(finding)

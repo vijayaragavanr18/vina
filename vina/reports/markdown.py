@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Sequence
+from typing import Any, TypeGuard
 
 from ..core.aggregator import AggregatorStats, FindingAggregator
 from ..core.correlation import AttackPath
 from ..core.exploitability import ExploitabilityAssessment, ExploitabilitySummary
 from ..core.knowledge import EnrichedFinding
 from ..core.vuln_intel import VulnerabilityMatch, VulnStats
-from ..models.findings import Finding, Severity, severity_key
+from ..models.findings import Finding
 from ..models.stages import StageResult
 
 
@@ -30,7 +31,7 @@ def _severity_badge(sev: str) -> str:
     return f"[{sev.upper()}]({color})"
 
 
-def _is_enriched(f: Finding | EnrichedFinding) -> bool:
+def _is_enriched(f: Finding | EnrichedFinding) -> TypeGuard[EnrichedFinding]:
     return isinstance(f, EnrichedFinding) and f.has_enrichment()
 
 
@@ -38,40 +39,29 @@ def _chain_lines(chain: list[str]) -> str:
     return "\n".join(f"    {line}" for line in chain)
 
 
-def render_markdown(
-    target: str,
-    findings: list[Finding],
-    stage_results: list[StageResult],
-    stats: AggregatorStats,
-    aggregator: FindingAggregator,
-    attack_paths: list[AttackPath] | None = None,
-    vuln_matches: list[VulnerabilityMatch] | None = None,
-    vuln_stats: VulnStats | None = None,
-    exploitability_assessments: list[ExploitabilityAssessment] | None = None,
-    exploitability_summary: ExploitabilitySummary | None = None,
-) -> str:
-    paths = attack_paths or []
-    vmatches = vuln_matches or []
-    exp_assessments = exploitability_assessments or []
-    exp_summary = exploitability_summary
+def _severity_color_md(sev: str) -> str:
+    colors = {
+        "critical": "ff4444",
+        "high": "ff8800",
+        "medium": "ffcc00",
+        "low": "4488ff",
+        "info": "888888",
+    }
+    return colors.get(sev.lower(), "888888")
 
-    lines: list[str] = []
 
-    # ── Title ──────────────────────────────────────────────────────────────
-    lines.append(f"# VINA Security Report: {_esc_md(target)}")
-    lines.append("")
-    lines.append(f"*Generated on {__import__('datetime').datetime.now():%Y-%m-%d %H:%M:%S UTC}*")
-    lines.append("")
-    lines.append("---")
-    lines.append("")
+def _get_remediation(f: Finding | EnrichedFinding) -> str:
+    if _is_enriched(f):
+        return f.remediation or f.recommendation
+    return f.recommendation
 
-    # ── Executive Summary ──────────────────────────────────────────────────
+
+def _render_executive_summary(lines: list[str], stats: AggregatorStats, target: str) -> None:
     lines.append("## Executive Summary")
     lines.append("")
-    lines.append(f"This report presents the results of an automated security reconnaissance scan ")
+    lines.append("This report presents the results of an automated security reconnaissance scan ")
     lines.append(f"performed against **{_esc_md(target)}**.")
     lines.append("")
-
     if stats.total > 0:
         critical = stats.by_severity.get("critical", 0)
         high = stats.by_severity.get("high", 0)
@@ -94,7 +84,12 @@ def render_markdown(
     else:
         lines.append("No findings were discovered during this scan.")
 
-    # ── Executive Vulnerability Summary ────────────────────────────────────
+
+def _render_executive_vulnerability_summary(
+    lines: list[str],
+    vmatches: list[VulnerabilityMatch],
+    vuln_stats: VulnStats | None,
+) -> None:
     if vmatches:
         vs = vuln_stats
         lines.append("")
@@ -110,7 +105,6 @@ def render_markdown(
             if vs.public_exploits:
                 lines.append(f"- **Public Exploits Available**: {vs.public_exploits}")
             lines.append(f"- **Overall Vulnerability Score**: {vs.overall_score}/100")
-            # Feed info
             status_str = "Offline" if vs.is_offline else "Online"
             lines.append(f"- **Database Version**: {vs.db_version}")
             if vs.last_updated:
@@ -121,7 +115,12 @@ def render_markdown(
             lines.append(f"- **Status**: {status_str}")
         lines.append("")
 
-    # ── Executive Attack Summary ───────────────────────────────────────────
+
+def _render_executive_attack_summary(
+    lines: list[str],
+    stats: AggregatorStats,
+    paths: list[AttackPath],
+) -> None:
     if stats.attack_paths_total > 0:
         lines.append("")
         lines.append("### Executive Attack Summary")
@@ -148,14 +147,12 @@ def render_markdown(
             lines.append(f"- **Persistence Opportunities**: {persist_count}")
         lines.append("")
 
-    lines.append("")
 
-    # ── Pipeline Overview ──────────────────────────────────────────────────
+def _render_pipeline_overview(lines: list[str], stage_results: list[StageResult]) -> None:
     lines.append("## Pipeline Overview")
     lines.append("")
     lines.append(f"The web reconnaissance pipeline ran **{len(stage_results)}** stages across the target.")
     lines.append("")
-
     stage_statuses: dict[str, int] = {}
     for sr in stage_results:
         status = sr.status.value if hasattr(sr.status, "value") else str(sr.status)
@@ -164,7 +161,8 @@ def render_markdown(
         lines.append(f"- **{status.title()}**: {count}")
     lines.append("")
 
-    # ── Stage Execution Table ──────────────────────────────────────────────
+
+def _render_stage_table(lines: list[str], stage_results: list[StageResult]) -> None:
     lines.append("## Stage Execution Details")
     lines.append("")
     lines.append("| Stage | Status | Records | Duration |")
@@ -174,12 +172,12 @@ def render_markdown(
         lines.append(f"| {_esc_md(sr.name)} | {status} | {sr.record_count} | {sr.duration:.1f}s |")
     lines.append("")
 
-    # ── Attack Paths ───────────────────────────────────────────────────────
+
+def _render_attack_paths(lines: list[str], paths: list[AttackPath]) -> None:
     if paths:
         lines.append("## Attack Paths")
         lines.append("")
         for path in paths:
-            color = _severity_color_md(path.severity)
             lines.append(f"### {path.title}")
             lines.append("")
             lines.append(f"- **Severity**: {_severity_badge(path.severity)}")
@@ -221,14 +219,19 @@ def render_markdown(
                     lines.append(f"- **Reference**: {ref}")
             lines.append("")
 
-    # ── Exploitability Analysis ───────────────────────────────────────────
+
+def _render_exploitability_assessments(
+    lines: list[str],
+    exp_assessments: list[ExploitabilityAssessment],
+    exp_summary: ExploitabilitySummary | None,
+) -> None:
     if exp_assessments:
         lines.append("## Exploitability Analysis")
         lines.append("")
         es = exp_summary
         if es:
             lines.append(f"- **Total Assessments**: {es.total_assessments}")
-            lines.append(f"- **Critical (score ≥75)** : {es.critical_exploitable}")
+            lines.append(f"- **Critical (score \u226575)** : {es.critical_exploitable}")
             lines.append(f"- **High (score 55-74)** : {es.high_exploitable}")
             lines.append(f"- **Medium (score 35-54)** : {es.medium_exploitable}")
             lines.append(f"- **Low (score <35)** : {es.low_exploitable}")
@@ -236,8 +239,7 @@ def render_markdown(
             lines.append(f"- **Highest Score**: {es.highest_score}/100")
             lines.append("")
 
-        for idx, a in enumerate(exp_assessments):
-            color = _severity_color_md(a.complexity)
+        for _idx, a in enumerate(exp_assessments):
             lines.append(f"### {a.title}")
             lines.append("")
             lines.append(f"- **Score**: {a.overall_score}/100")
@@ -293,7 +295,8 @@ def render_markdown(
                     lines.append(f"- {s}")
             lines.append("")
 
-    # ── Known Vulnerabilities ──────────────────────────────────────────────
+
+def _render_vulnerability_matches(lines: list[str], vmatches: list[VulnerabilityMatch]) -> None:
     if vmatches:
         lines.append("## Known Vulnerabilities")
         lines.append("")
@@ -315,7 +318,8 @@ def render_markdown(
             )
         lines.append("")
 
-    # ── Findings by Severity ───────────────────────────────────────────────
+
+def _render_findings_by_severity(lines: list[str], aggregator: FindingAggregator) -> None:
     lines.append("## Findings by Severity")
     lines.append("")
     by_severity = aggregator.group_by_severity()
@@ -338,12 +342,15 @@ def render_markdown(
                 exp = _esc_md(f_in.explanation[:80]) if f_in.explanation else ""
                 imp = _esc_md(f_in.security_impact[:80]) if f_in.security_impact else ""
                 rem = _esc_md(f_in.remediation[:80]) if f_in.remediation else ""
-                lines.append(f"| {i} | {_esc_md(f_in.title)} | {_esc_md(f_in.target)} | {f_in.category} | {evidence} | {exp} | {imp} | {rem} |")
+                lines.append(
+                    f"| {i} | {_esc_md(f_in.title)} | {_esc_md(f_in.target)} | {f_in.category} | {evidence} | {exp} | {imp} | {rem} |"
+                )
             else:
                 lines.append(f"| {i} | {_esc_md(f_in.title)} | {_esc_md(f_in.target)} | {f_in.category} | {evidence} |")
         lines.append("")
 
-    # ── Findings by Category ───────────────────────────────────────────────
+
+def _render_findings_by_category(lines: list[str], aggregator: FindingAggregator) -> None:
     lines.append("## Findings by Category")
     lines.append("")
     by_category = aggregator.group_by_category()
@@ -357,80 +364,78 @@ def render_markdown(
             lines.append(f"| {i} | {_esc_md(f.title)} | {f.severity} | {_esc_md(f.target)} |")
         lines.append("")
 
-    # ── Detailed Findings (with enrichment) ────────────────────────────────
+
+def _render_detailed_findings(lines: list[str], findings: Sequence[Finding | EnrichedFinding]) -> None:
     enriched_list = [f for f in findings if _is_enriched(f)]
     if enriched_list:
         lines.append("## Detailed Findings")
         lines.append("")
-        for f_in in enriched_list:
-            lines.append(f"### {_esc_md(f_in.title)}")
+        for ef in enriched_list:
+            lines.append(f"### {_esc_md(ef.title)}")
             lines.append("")
-            lines.append(f"- **Severity**: {_esc_md(f_in.severity)}")
-            lines.append(f"- **Target**: {_esc_md(f_in.target)}")
-            lines.append(f"- **Source**: {f_in.source_stage if f_in.source_stage else 'N/A'}")
-            lines.append(f"- **Confidence**: {f_in.confidence_score:.0%}" if f_in.confidence_score else "")
-            if f_in.explanation:
+            lines.append(f"- **Severity**: {_esc_md(ef.severity)}")
+            lines.append(f"- **Target**: {_esc_md(ef.target)}")
+            lines.append(f"- **Source**: {ef.source_stage if ef.source_stage else 'N/A'}")
+            lines.append(f"- **Confidence**: {ef.confidence_score:.0%}" if ef.confidence_score else "")
+            if ef.explanation:
                 lines.append("")
-                lines.append(f"**Explanation:** {f_in.explanation}")
-            if f_in.security_impact:
+                lines.append(f"**Explanation:** {ef.explanation}")
+            if ef.security_impact:
                 lines.append("")
-                lines.append(f"**Impact:** {f_in.security_impact}")
-            if f_in.evidence:
+                lines.append(f"**Impact:** {ef.security_impact}")
+            if ef.evidence:
                 lines.append("")
-                lines.append(f"**Evidence:** `{_esc_md(f_in.evidence)}`")
-            if f_in.remediation:
+                lines.append(f"**Evidence:** `{_esc_md(ef.evidence)}`")
+            if ef.remediation:
                 lines.append("")
-                lines.append(f"**Remediation:** {f_in.remediation}")
-            if f_in.cis_control:
+                lines.append(f"**Remediation:** {ef.remediation}")
+            if ef.cis_control:
                 lines.append("")
-                lines.append(f"- **CIS**: {f_in.cis_control}")
-            if f_in.mitre_attack:
-                for ta in f_in.mitre_attack:
+                lines.append(f"- **CIS**: {ef.cis_control}")
+            if ef.mitre_attack:
+                for ta in ef.mitre_attack:
                     lines.append(f"- **MITRE ATT&CK**: {ta}")
-            if f_in.cwe:
-                lines.append(f"- **CWE**: {f_in.cwe}")
-            if f_in.enriched_references:
-                for ref in f_in.enriched_references:
+            if ef.cwe:
+                lines.append(f"- **CWE**: {ef.cwe}")
+            if ef.enriched_references:
+                for ref in ef.enriched_references:
                     lines.append(f"- **Reference**: {ref}")
-            if f_in.gtfo_bins:
-                for gb in f_in.gtfo_bins:
+            if ef.gtfo_bins:
+                for gb in ef.gtfo_bins:
                     lines.append(f"- **GTFOBins**: [{gb.get('binary', '')}]({gb.get('url', '')})")
                     if gb.get("technique"):
                         lines.append(f"  - Technique: `{gb['technique']}`")
-            if f_in.enriched_tags:
-                lines.append(f"- **Tags**: {', '.join(f_in.enriched_tags)}")
+            if ef.enriched_tags:
+                lines.append(f"- **Tags**: {', '.join(ef.enriched_tags)}")
             lines.append("")
 
-    # ── Recommendations ────────────────────────────────────────────────────
+
+def _render_recommendations(lines: list[str], findings: Sequence[Finding | EnrichedFinding]) -> None:
     lines.append("## Recommendations")
     lines.append("")
-    def _get_remediation(f: Finding | EnrichedFinding) -> str:
-        if _is_enriched(f):
-            return f.remediation or f.recommendation
-        return f.recommendation
-
-    recommendations = [f for f in findings if f.recommendation or (_is_enriched(f) and f.remediation)]
+    recommendations = [f for f in findings if f.recommendation or (isinstance(f, EnrichedFinding) and f.remediation)]
     if recommendations:
-        for f_in in recommendations:
-            lines.append(f"### {_esc_md(f_in.title)}")
+        for rec in recommendations:
+            lines.append(f"### {_esc_md(rec.title)}")
             lines.append("")
-            lines.append(f"- **Severity**: {f_in.severity}")
-            lines.append(f"- **Target**: {_esc_md(f_in.target)}")
-            rem = _get_remediation(f_in)
+            lines.append(f"- **Severity**: {rec.severity}")
+            lines.append(f"- **Target**: {_esc_md(rec.target)}")
+            rem = _get_remediation(rec)
             if rem:
                 lines.append(f"- **Recommendation**: {rem}")
-            if f_in.references:
-                for ref in f_in.references:
+            if rec.references:
+                for ref in rec.references:
                     lines.append(f"- Reference: {ref}")
-            if _is_enriched(f_in) and f_in.enriched_references:
-                for ref in f_in.enriched_references:
+            if isinstance(rec, EnrichedFinding) and rec.enriched_references:
+                for ref in rec.enriched_references:
                     lines.append(f"- Reference: {ref}")
             lines.append("")
     else:
         lines.append("No specific recommendations were generated.")
         lines.append("")
 
-    # ── Appendix ───────────────────────────────────────────────────────────
+
+def _render_appendix(lines: list[str], stage_results: list[StageResult]) -> None:
     lines.append("## Appendix: Raw Stage Outputs")
     lines.append("")
     for sr in stage_results:
@@ -445,18 +450,58 @@ def render_markdown(
                 lines.append(f"  - {_esc_md(w)}")
         lines.append("")
 
+
+def render_markdown(
+    target: str,
+    findings: Sequence[Finding | EnrichedFinding],
+    stage_results: list[StageResult] | None = None,
+    stats: AggregatorStats | None = None,
+    aggregator: FindingAggregator | None = None,
+    attack_paths: list[AttackPath] | None = None,
+    vuln_matches: list[VulnerabilityMatch] | None = None,
+    vuln_stats: VulnStats | None = None,
+    exploitability_assessments: list[ExploitabilityAssessment] | None = None,
+    exploitability_summary: ExploitabilitySummary | None = None,
+    **_kwargs: Any,
+) -> str:
+    paths = attack_paths or []
+    vmatches = vuln_matches or []
+    exp_assessments = exploitability_assessments or []
+    exp_summary = exploitability_summary
+    if stage_results is None:
+        stage_results = []
+    if stats is None:
+        stats = AggregatorStats()
+    if aggregator is None:
+        aggregator = FindingAggregator()
+
+    lines: list[str] = []
+
+    lines.append(f"# VINA Security Report: {_esc_md(target)}")
+    lines.append("")
+    lines.append(f"*Generated on {__import__('datetime').datetime.now():%Y-%m-%d %H:%M:%S UTC}*")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+
+    _render_executive_summary(lines, stats, target)
+    _render_executive_vulnerability_summary(lines, vmatches, vuln_stats)
+    _render_executive_attack_summary(lines, stats, paths)
+
+    lines.append("")
+
+    _render_pipeline_overview(lines, stage_results)
+    _render_stage_table(lines, stage_results)
+    _render_attack_paths(lines, paths)
+    _render_exploitability_assessments(lines, exp_assessments, exp_summary)
+    _render_vulnerability_matches(lines, vmatches)
+    _render_findings_by_severity(lines, aggregator)
+    _render_findings_by_category(lines, aggregator)
+    _render_detailed_findings(lines, findings)
+    _render_recommendations(lines, findings)
+    _render_appendix(lines, stage_results)
+
     return "\n".join(lines).rstrip() + "\n"
-
-
-def _severity_color_md(sev: str) -> str:
-    colors = {
-        "critical": "ff4444",
-        "high": "ff8800",
-        "medium": "ffcc00",
-        "low": "4488ff",
-        "info": "888888",
-    }
-    return colors.get(sev.lower(), "888888")
 
 
 __all__ = ["render_markdown"]

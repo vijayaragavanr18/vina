@@ -12,7 +12,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from ...core.config import AppConfig
-from ...core.runner import CommandResult
+from ...core.runner import CommandResult, classify_command_error
 from ...models.common import TargetInput
 from ...models.findings import Finding, make_finding
 from ...modules.common import ModuleContext
@@ -86,7 +86,8 @@ class SshModule:
             if cr.timed_out:
                 warnings.append(f"{name} timed out after {self.context.timeout_seconds}s")
             if cr.returncode not in (0, None) and not cr.timed_out and not cr.missing_executable:
-                warnings.append(f"{name} exited with code {cr.returncode}")
+                _, msg = classify_command_error(name, cr)
+                warnings.append(msg)
 
         settings = self._parse_sshd_config(results, warnings)
         authorized_keys = self._parse_authorized_keys(results, warnings)
@@ -113,7 +114,7 @@ class SshModule:
         self._print_summary(result)
         return result
 
-    def _parse_sshd_config(self, results: dict[str, CommandResult], warnings: list[str]) -> list[SshSetting]:
+    def _parse_sshd_config(self, results: dict[str, CommandResult], _warnings: list[str]) -> list[SshSetting]:
         settings: list[SshSetting] = []
         cr = results.get("sshd_config")
         if cr is None or not cr.stdout.strip():
@@ -124,10 +125,12 @@ class SshModule:
                 continue
             if " " in line:
                 key, _, value = line.partition(" ")
-                settings.append(SshSetting(key=key.strip(), value=value.strip(), source_file="/etc/ssh/sshd_config", line=line_no))
+                settings.append(
+                    SshSetting(key=key.strip(), value=value.strip(), source_file="/etc/ssh/sshd_config", line=line_no)
+                )
         return settings
 
-    def _parse_authorized_keys(self, results: dict[str, CommandResult], warnings: list[str]) -> list[SshKeyEntry]:
+    def _parse_authorized_keys(self, results: dict[str, CommandResult], _warnings: list[str]) -> list[SshKeyEntry]:
         keys: list[SshKeyEntry] = []
         for name in ("auth_root", "auth_home"):
             cr = results.get(name)
@@ -144,7 +147,7 @@ class SshModule:
         return keys
 
     @staticmethod
-    def _parse_known_hosts(results: dict[str, CommandResult], warnings: list[str]) -> list[str]:
+    def _parse_known_hosts(results: dict[str, CommandResult], _warnings: list[str]) -> list[str]:
         hosts: list[str] = []
         for name in ("known_hosts", "known_hosts_root"):
             cr = results.get(name)
@@ -164,59 +167,77 @@ class SshModule:
         target_str = target.normalized
 
         audit_map: dict[str, tuple[str, str, str, str]] = {
-            "PermitRootLogin": ("high", "SSH root login is permitted", "Set PermitRootLogin to 'prohibit-password' or 'no'", "high"),
-            "PasswordAuthentication": ("medium", "SSH password authentication is enabled", "Use PubkeyAuthentication only and disable PasswordAuthentication", "medium"),
+            "PermitRootLogin": (
+                "high",
+                "SSH root login is permitted",
+                "Set PermitRootLogin to 'prohibit-password' or 'no'",
+                "high",
+            ),
+            "PasswordAuthentication": (
+                "medium",
+                "SSH password authentication is enabled",
+                "Use PubkeyAuthentication only and disable PasswordAuthentication",
+                "medium",
+            ),
             "PubkeyAuthentication": ("info", "SSH public key authentication is enabled", "", "info"),
         }
 
         for s in settings:
             if s.key in audit_map:
-                default_sev, default_title, default_rec, sev = audit_map[s.key]
+                _default_sev, default_title, default_rec, sev = audit_map[s.key]
                 val_lower = s.value.lower()
                 if s.key == "PermitRootLogin" and val_lower not in ("no", "prohibit-password", "without-password"):
                     issues.append(f"{s.key} = {s.value}")
-                    findings.append(make_finding(
-                        title=default_title,
-                        description=f"PermitRootLogin is set to '{s.value}' in sshd_config",
-                        severity=sev,
-                        category="misconfiguration",
-                        source_stage="ssh",
-                        target=target_str,
-                        evidence=f"{s.key} = {s.value}",
-                        recommendation=default_rec,
-                    ))
+                    findings.append(
+                        make_finding(
+                            title=default_title,
+                            description=f"PermitRootLogin is set to '{s.value}' in sshd_config",
+                            severity=sev,
+                            category="misconfiguration",
+                            source_stage="ssh",
+                            target=target_str,
+                            evidence=f"{s.key} = {s.value}",
+                            recommendation=default_rec,
+                        )
+                    )
                 elif s.key == "PasswordAuthentication" and val_lower != "no":
                     issues.append(f"{s.key} = {s.value}")
-                    findings.append(make_finding(
-                        title=default_title,
-                        description=f"PasswordAuthentication is set to '{s.value}' in sshd_config",
-                        severity=sev,
-                        category="misconfiguration",
-                        source_stage="ssh",
-                        target=target_str,
-                        evidence=f"{s.key} = {s.value}",
-                        recommendation=default_rec,
-                    ))
+                    findings.append(
+                        make_finding(
+                            title=default_title,
+                            description=f"PasswordAuthentication is set to '{s.value}' in sshd_config",
+                            severity=sev,
+                            category="misconfiguration",
+                            source_stage="ssh",
+                            target=target_str,
+                            evidence=f"{s.key} = {s.value}",
+                            recommendation=default_rec,
+                        )
+                    )
                 elif s.key == "PasswordAuthentication" and val_lower == "no":
-                    findings.append(make_finding(
-                        title="SSH password authentication is disabled",
-                        description="PasswordAuthentication is disabled in sshd_config",
-                        severity="info",
-                        category="information",
-                        source_stage="ssh",
-                        target=target_str,
-                        evidence=f"{s.key} = {s.value}",
-                    ))
+                    findings.append(
+                        make_finding(
+                            title="SSH password authentication is disabled",
+                            description="PasswordAuthentication is disabled in sshd_config",
+                            severity="info",
+                            category="information",
+                            source_stage="ssh",
+                            target=target_str,
+                            evidence=f"{s.key} = {s.value}",
+                        )
+                    )
                 elif s.key == "PubkeyAuthentication" and val_lower == "yes":
-                    findings.append(make_finding(
-                        title=default_title,
-                        description="Public key authentication is enabled in sshd_config",
-                        severity="info",
-                        category="information",
-                        source_stage="ssh",
-                        target=target_str,
-                        evidence=f"{s.key} = {s.value}",
-                    ))
+                    findings.append(
+                        make_finding(
+                            title=default_title,
+                            description="Public key authentication is enabled in sshd_config",
+                            severity="info",
+                            category="information",
+                            source_stage="ssh",
+                            target=target_str,
+                            evidence=f"{s.key} = {s.value}",
+                        )
+                    )
 
         return issues, findings
 
@@ -249,7 +270,17 @@ class SshModule:
 
     @staticmethod
     def _empty_command_result() -> CommandResult:
-        return CommandResult(command="ssh", args=(), returncode=1, stdout="", stderr="", duration_seconds=0.0, timed_out=False, missing_executable=False, full_command="ssh")
+        return CommandResult(
+            command="ssh",
+            args=(),
+            returncode=1,
+            stdout="",
+            stderr="",
+            duration_seconds=0.0,
+            timed_out=False,
+            missing_executable=False,
+            full_command="ssh",
+        )
 
 
-__all__ = ["SshModule", "SshSetting", "SshKeyEntry", "SshResult"]
+__all__ = ["SshKeyEntry", "SshModule", "SshResult", "SshSetting"]

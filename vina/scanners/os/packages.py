@@ -7,7 +7,6 @@ flags held packages and identifies potentially outdated packages.
 from __future__ import annotations
 
 import logging
-import re
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -21,13 +20,33 @@ from ...modules.common import ModuleContext
 logger = logging.getLogger(__name__)
 
 _SENSITIVE_PACKAGES = (
-    "openssh-server", "openssh-client", "docker.io", "docker-ce",
-    "containerd", "kubelet", "kubectl", "kubeadm",
-    "mysql-server", "postgresql", "mongodb", "redis-server",
-    "nginx", "apache2", "httpd", "vsftpd", "proftpd",
-    "samba", "nfs-kernel-server", "bind9", "dnsmasq",
-    "telnetd", "telnet", "rsh-server", "rsh-client",
-    "xinetd", "inetd",
+    "openssh-server",
+    "openssh-client",
+    "docker.io",
+    "docker-ce",
+    "containerd",
+    "kubelet",
+    "kubectl",
+    "kubeadm",
+    "mysql-server",
+    "postgresql",
+    "mongodb",
+    "redis-server",
+    "nginx",
+    "apache2",
+    "httpd",
+    "vsftpd",
+    "proftpd",
+    "samba",
+    "nfs-kernel-server",
+    "bind9",
+    "dnsmasq",
+    "telnetd",
+    "telnet",
+    "rsh-server",
+    "rsh-client",
+    "xinetd",
+    "inetd",
 )
 
 _VULNERABLE_PACKAGES = {
@@ -84,7 +103,7 @@ class PackagesModule:
             ("dpkg_l", self.config.tool_bin("dpkg", "dpkg"), ["-l"]),
             ("apt_sources", self.config.tool_bin("cat", "cat"), ["/etc/apt/sources.list"]),
             ("apt_sources_d", self.config.tool_bin("ls", "ls"), ["/etc/apt/sources.list.d/"]),
-            ("apt_mark", self.config.tool_bin("apt", "apt"), ["mark", "showhold"]),
+            ("apt_mark", self.config.tool_bin("apt-mark", "apt-mark"), ["showhold"]),
         ]
 
         results: dict[str, CommandResult] = {}
@@ -129,7 +148,9 @@ class PackagesModule:
         self._print_summary(result)
         return result
 
-    def _parse_packages(self, results: dict[str, CommandResult], warnings: list[str], findings: list[Finding], target_str: str) -> list[InstalledPackage]:
+    def _parse_packages(
+        self, results: dict[str, CommandResult], _warnings: list[str], findings: list[Finding], target_str: str
+    ) -> list[InstalledPackage]:
         packages: list[InstalledPackage] = []
         cr = results.get("dpkg_l")
         if cr is None or not cr.succeeded or not cr.stdout.strip():
@@ -149,23 +170,29 @@ class PackagesModule:
                 arch = parts[3] if len(parts) > 3 else ""
                 held = status == "hi"
 
-                packages.append(InstalledPackage(name=name, version=version, architecture=arch, status=status, held=held))
+                packages.append(
+                    InstalledPackage(name=name, version=version, architecture=arch, status=status, held=held)
+                )
 
                 if name in _SENSITIVE_PACKAGES:
-                    findings.append(make_finding(
-                        title=f"Installed: {name} ({version})",
-                        description=f"Sensitive package '{name}' version {version} is installed",
-                        severity="info",
-                        category="package",
-                        source_stage="packages",
-                        target=target_str,
-                        evidence=f"{name}={version} arch={arch}",
-                    ))
+                    findings.append(
+                        make_finding(
+                            title=f"Installed: {name} ({version})",
+                            description=f"Sensitive package '{name}' version {version} is installed",
+                            severity="info",
+                            category="package",
+                            source_stage="packages",
+                            target=target_str,
+                            evidence=f"{name}={version} arch={arch}",
+                        )
+                    )
 
         return packages
 
     @staticmethod
-    def _parse_apt_sources(results: dict[str, CommandResult], warnings: list[str], findings: list[Finding], target_str: str) -> list[AptSourceEntry]:
+    def _parse_apt_sources(
+        results: dict[str, CommandResult], _warnings: list[str], findings: list[Finding], target_str: str
+    ) -> list[AptSourceEntry]:
         entries: list[AptSourceEntry] = []
         cr = results.get("apt_sources")
         if cr and cr.succeeded and cr.stdout.strip():
@@ -180,16 +207,18 @@ class PackagesModule:
                     entry = AptSourceEntry(source=" ".join(parts[1:]), enabled=enabled, type=typ)
                     entries.append(entry)
                     if any(u in line.lower() for u in ("unstable", "experimental", "testing", "sid")):
-                        findings.append(make_finding(
-                            title=f"Potentially unstable apt source: {line[:80]}",
-                            description=f"APT source references an unstable distribution: {line[:120]}",
-                            severity="medium",
-                            category="misconfiguration",
-                            source_stage="packages",
-                            target=target_str,
-                            evidence=line[:200],
-                            recommendation="Avoid using unstable/testing repositories in production",
-                        ))
+                        findings.append(
+                            make_finding(
+                                title=f"Potentially unstable apt source: {line[:80]}",
+                                description=f"APT source references an unstable distribution: {line[:120]}",
+                                severity="medium",
+                                category="misconfiguration",
+                                source_stage="packages",
+                                target=target_str,
+                                evidence=line[:200],
+                                recommendation="Avoid using unstable/testing repositories in production",
+                            )
+                        )
 
         # Also check sources.list.d directory listing
         cr_d = results.get("apt_sources_d")
@@ -202,7 +231,7 @@ class PackagesModule:
         return entries
 
     @staticmethod
-    def _parse_held(results: dict[str, CommandResult], warnings: list[str]) -> list[str]:
+    def _parse_held(results: dict[str, CommandResult], _warnings: list[str]) -> list[str]:
         cr = results.get("apt_mark")
         if cr is None or not cr.succeeded or not cr.stdout.strip():
             return []
@@ -236,7 +265,17 @@ class PackagesModule:
 
     @staticmethod
     def _empty_command_result() -> CommandResult:
-        return CommandResult(command="packages", args=(), returncode=1, stdout="", stderr="", duration_seconds=0.0, timed_out=False, missing_executable=False, full_command="packages")
+        return CommandResult(
+            command="packages",
+            args=(),
+            returncode=1,
+            stdout="",
+            stderr="",
+            duration_seconds=0.0,
+            timed_out=False,
+            missing_executable=False,
+            full_command="packages",
+        )
 
 
-__all__ = ["PackagesModule", "InstalledPackage", "AptSourceEntry", "PackagesResult"]
+__all__ = ["AptSourceEntry", "InstalledPackage", "PackagesModule", "PackagesResult"]

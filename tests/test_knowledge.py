@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import unittest
-from dataclasses import fields
 
 from vina.core.knowledge import (
     ALL_RULES,
@@ -167,7 +166,7 @@ class KnowledgeRuleTests(unittest.TestCase):
         self.assertEqual(rule.source_categories, ["vulnerability"])
 
 
-class ALL_RULES_Tests(unittest.TestCase):
+class TestAllRules(unittest.TestCase):
     """Verify the consolidated rule list."""
 
     def test_all_rules_have_required_fields(self):
@@ -184,8 +183,22 @@ class ALL_RULES_Tests(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)), "Duplicate rule IDs found")
 
     def test_rule_ids_use_expected_prefixes(self):
-        prefixes = {"PE-", "CAP-", "SSH-", "DOCKER-", "KERNEL-", "WRITABLE-",
-                    "SEC-", "AUTH-", "PROC-", "PKG-", "SVC-", "CRON-", "BIN-", "FS-"}
+        prefixes = {
+            "PE-",
+            "CAP-",
+            "SSH-",
+            "DOCKER-",
+            "KERNEL-",
+            "WRITABLE-",
+            "SEC-",
+            "AUTH-",
+            "PROC-",
+            "PKG-",
+            "SVC-",
+            "CRON-",
+            "BIN-",
+            "FS-",
+        }
         for rule in ALL_RULES:
             with self.subTest(rule_id=rule.rule_id):
                 self.assertTrue(
@@ -588,9 +601,23 @@ class EnrichmentEngineEdgeCaseTests(unittest.TestCase):
 
     def test_enrich_all(self):
         findings = [
-            make_finding(title="NOPASSWD sudo: ALL commands", severity="critical", category="misconfiguration", source_stage="sudo", target="localhost"),
-            make_finding(title="Unknown finding", severity="info", category="other", source_stage="test", target="localhost"),
-            make_finding(title="ASLR is disabled", severity="high", category="misconfiguration", source_stage="kernel", target="localhost"),
+            make_finding(
+                title="NOPASSWD sudo: ALL commands",
+                severity="critical",
+                category="misconfiguration",
+                source_stage="sudo",
+                target="localhost",
+            ),
+            make_finding(
+                title="Unknown finding", severity="info", category="other", source_stage="test", target="localhost"
+            ),
+            make_finding(
+                title="ASLR is disabled",
+                severity="high",
+                category="misconfiguration",
+                source_stage="kernel",
+                target="localhost",
+            ),
         ]
         enriched = self.engine.enrich_all(findings)
         self.assertEqual(len(enriched), 3)
@@ -669,15 +696,33 @@ class ConvenienceFunctionTests(unittest.TestCase):
 
     def test_enrich_all(self):
         findings = [
-            make_finding(title="ASLR is disabled", severity="high", category="misconfiguration", source_stage="kernel", target="localhost"),
+            make_finding(
+                title="ASLR is disabled",
+                severity="high",
+                category="misconfiguration",
+                source_stage="kernel",
+                target="localhost",
+            ),
             make_finding(title="Unknown", severity="info", category="other", source_stage="t", target="localhost"),
         ]
         enriched = enrich_all(findings)
         self.assertEqual(len(enriched), 2)
 
     def test_reuses_default_engine(self):
-        f1 = make_finding(title="ASLR is disabled", severity="high", category="misconfiguration", source_stage="kernel", target="localhost")
-        f2 = make_finding(title="ASLR is disabled", severity="high", category="misconfiguration", source_stage="kernel", target="localhost")
+        f1 = make_finding(
+            title="ASLR is disabled",
+            severity="high",
+            category="misconfiguration",
+            source_stage="kernel",
+            target="localhost",
+        )
+        f2 = make_finding(
+            title="ASLR is disabled",
+            severity="high",
+            category="misconfiguration",
+            source_stage="kernel",
+            target="localhost",
+        )
         e1 = enrich_finding(f1)
         e2 = enrich_finding(f2)
         self.assertEqual(e1.explanation, e2.explanation)

@@ -94,7 +94,9 @@ class LogsModule:
         if not entries:
             warnings.append("No log entries could be read. Log files may not exist or require root privileges.")
 
-        primary = results.get("auth_log") or results.get("secure_log") or results.get("last") or self._empty_command_result()
+        primary = (
+            results.get("auth_log") or results.get("secure_log") or results.get("last") or self._empty_command_result()
+        )
 
         result = LogsResult(
             target=target_input,
@@ -109,7 +111,9 @@ class LogsModule:
         self._print_summary(result)
         return result
 
-    def _parse_logs(self, results: dict[str, CommandResult], findings: list[Finding], target_str: str) -> tuple[list[LogEntry], LogStatistics]:
+    def _parse_logs(
+        self, results: dict[str, CommandResult], findings: list[Finding], target_str: str
+    ) -> tuple[list[LogEntry], LogStatistics]:
         entries: list[LogEntry] = []
         stats = LogStatistics()
 
@@ -155,43 +159,58 @@ class LogsModule:
 
                 if event_type:
                     ts = line[:19] if len(line) > 19 else ""
-                    entries.append(LogEntry(timestamp=ts, source=source_name, message=line[:200], user=user, ip=ip, event_type=event_type))
+                    entries.append(
+                        LogEntry(
+                            timestamp=ts,
+                            source=source_name,
+                            message=line[:200],
+                            user=user,
+                            ip=ip,
+                            event_type=event_type,
+                        )
+                    )
 
         # Generate findings based on statistics
         if stats.failed_logins > 0:
-            findings.append(make_finding(
-                title=f"Failed logins: {stats.failed_logins}",
-                description=f"Found {stats.failed_logins} failed login attempts in system logs",
-                severity="medium" if stats.failed_logins > 10 else "low",
-                category="authentication",
-                source_stage="logs",
-                target=target_str,
-                evidence=f"{stats.failed_logins} failed login attempts",
-                recommendation="Investigate failed login attempts. Review /var/log/auth.log for patterns. Consider fail2ban.",
-            ))
+            findings.append(
+                make_finding(
+                    title=f"Failed logins: {stats.failed_logins}",
+                    description=f"Found {stats.failed_logins} failed login attempts in system logs",
+                    severity="medium" if stats.failed_logins > 10 else "low",
+                    category="authentication",
+                    source_stage="logs",
+                    target=target_str,
+                    evidence=f"{stats.failed_logins} failed login attempts",
+                    recommendation="Investigate failed login attempts. Review /var/log/auth.log for patterns. Consider fail2ban.",
+                )
+            )
 
         if stats.root_logins > 0:
-            findings.append(make_finding(
-                title=f"Direct root logins: {stats.root_logins}",
-                description=f"Found {stats.root_logins} direct root login(s) (not via su/sudo)",
-                severity="high",
-                category="authentication",
-                source_stage="logs",
-                target=target_str,
-                evidence=f"{stats.root_logins} direct root login(s)",
-                recommendation="Disable direct root login. Use sudo instead.",
-            ))
+            findings.append(
+                make_finding(
+                    title=f"Direct root logins: {stats.root_logins}",
+                    description=f"Found {stats.root_logins} direct root login(s) (not via su/sudo)",
+                    severity="high",
+                    category="authentication",
+                    source_stage="logs",
+                    target=target_str,
+                    evidence=f"{stats.root_logins} direct root login(s)",
+                    recommendation="Disable direct root login. Use sudo instead.",
+                )
+            )
 
         if stats.sudo_events > 100:
-            findings.append(make_finding(
-                title=f"High sudo usage: {stats.sudo_events} events",
-                description=f"Found {stats.sudo_events} sudo events in logs",
-                severity="low",
-                category="information",
-                source_stage="logs",
-                target=target_str,
-                evidence=f"{stats.sudo_events} sudo events",
-            ))
+            findings.append(
+                make_finding(
+                    title=f"High sudo usage: {stats.sudo_events} events",
+                    description=f"Found {stats.sudo_events} sudo events in logs",
+                    severity="low",
+                    category="information",
+                    source_stage="logs",
+                    target=target_str,
+                    evidence=f"{stats.sudo_events} sudo events",
+                )
+            )
 
         return entries, stats
 
@@ -222,7 +241,17 @@ class LogsModule:
 
     @staticmethod
     def _empty_command_result() -> CommandResult:
-        return CommandResult(command="logs", args=(), returncode=1, stdout="", stderr="", duration_seconds=0.0, timed_out=False, missing_executable=False, full_command="logs")
+        return CommandResult(
+            command="logs",
+            args=(),
+            returncode=1,
+            stdout="",
+            stderr="",
+            duration_seconds=0.0,
+            timed_out=False,
+            missing_executable=False,
+            full_command="logs",
+        )
 
 
-__all__ = ["LogsModule", "LogEntry", "LogStatistics", "LogsResult"]
+__all__ = ["LogEntry", "LogStatistics", "LogsModule", "LogsResult"]

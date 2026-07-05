@@ -1,7 +1,6 @@
 """Example scanner plugin — adds a custom system scan stage."""
 
-from vina.plugins.sdk import Plugin, PluginMetadata, PluginContext
-from vina.plugins.sdk import HookPoint
+from vina.plugins.sdk import HookPoint, Plugin, PluginContext, PluginMetadata
 
 
 class ExampleScannerPlugin(Plugin):

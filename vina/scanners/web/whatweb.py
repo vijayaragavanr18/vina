@@ -2,18 +2,20 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import time
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 from urllib.parse import urlparse
 
 from ...core.config import AppConfig
 from ...core.runner import CommandResult
 from ...models.common import TargetInput
-from ...models.findings import Finding, make_finding
+from ...models.findings import Finding
 from ...modules.common import ModuleContext
 
 logger = logging.getLogger(__name__)
@@ -98,34 +100,23 @@ class WhatWebModule:
         else:
             command_result = await self.context.runner.run(
                 executable,
-                ["--log-json=-", "--no-errors"] + alive_hosts,
+                ["--log-json=-", "--no-errors", *alive_hosts],
                 timeout_seconds=self.context.timeout_seconds,
             )
-            hosts, all_technologies = self._parse_output(
-                command_result.stdout, warnings
-            )
+            hosts, all_technologies = self._parse_output(command_result.stdout, warnings)
             host_count = len(hosts)
 
         if command_result.missing_executable:
             warnings.append(f"Missing executable: {executable}")
         if command_result.timed_out:
-            warnings.append(
-                f"WhatWeb timed out after {self.context.timeout_seconds} seconds"
-            )
+            warnings.append(f"WhatWeb timed out after {self.context.timeout_seconds} seconds")
         if (
             command_result.returncode not in (0, None)
             and not command_result.timed_out
             and not command_result.missing_executable
         ):
-            warnings.append(
-                f"WhatWeb failed with exit code {command_result.returncode}"
-            )
-        if (
-            alive_hosts
-            and not hosts
-            and command_result.stdout.strip()
-            and not command_result.timed_out
-        ):
+            warnings.append(f"WhatWeb failed with exit code {command_result.returncode}")
+        if alive_hosts and not hosts and command_result.stdout.strip() and not command_result.timed_out:
             warnings.append("No valid JSON records were produced")
         if not hosts:
             warnings.append("No hosts were successfully analysed")
@@ -179,9 +170,7 @@ class WhatWebModule:
             host = self._parse_host(payload, line_number, warnings)
             if host is not None:
                 hosts.append(host)
-                all_technologies.extend(
-                    t.name for t in host.technologies
-                )
+                all_technologies.extend(t.name for t in host.technologies)
 
         return hosts, all_technologies
 
@@ -194,10 +183,7 @@ class WhatWebModule:
         """Parse a single WhatWeb JSON line into a WhatWebHost."""
         target_url = payload.get("target") or payload.get("url")
         if not target_url or not isinstance(target_url, str):
-            msg = (
-                f"Skipping record on line {line_number}: "
-                f"missing target or url"
-            )
+            msg = f"Skipping record on line {line_number}: missing target or url"
             logger.warning(msg)
             warnings.append(msg)
             return None
@@ -214,8 +200,6 @@ class WhatWebModule:
 
         categorized = self._categorize_plugins(plugins)
         technologies = categorized["technologies"]
-        all_tech_names = [t.name for t in technologies]
-
         return WhatWebHost(
             url=target_url,
             host=hostname,
@@ -253,14 +237,10 @@ class WhatWebModule:
             certainty = None
             certainty_raw = details.get("certainty")
             if isinstance(certainty_raw, (int, str)):
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     certainty = int(certainty_raw)
-                except (ValueError, TypeError):
-                    pass
 
-            version = WhatWebModule._normalize_text(
-                details.get("version")
-            )
+            version = WhatWebModule._normalize_text(details.get("version"))
             categories_raw = details.get("categories", [])
             categories: list[str] = []
             if isinstance(categories_raw, list):
@@ -283,35 +263,22 @@ class WhatWebModule:
             if "server" in name_lower and not server:
                 server = version or name
             if name_lower == "ip":
-                raw = WhatWebModule._normalize_text(
-                    details.get("string")
-                )
+                raw = WhatWebModule._normalize_text(details.get("string"))
                 if raw:
                     ip = raw
 
             if "cms" in cat_lower:
                 cms_list.append(name)
-            if any(
-                "language" in c or "programming" in c
-                for c in cat_lower
-            ):
+            if any("language" in c or "programming" in c for c in cat_lower):
                 language_list.append(name)
-            if any(
-                "javascript" in c or "js" in c or "framework" in c
-                for c in cat_lower
-            ):
+            if any("javascript" in c or "js" in c or "framework" in c for c in cat_lower):
                 js_list.append(name)
             if "framework" in cat_lower:
                 frameworks.append(name)
-            if (
-                "framework" in name_lower
-                and name not in frameworks
-            ):
+            if "framework" in name_lower and name not in frameworks:
                 frameworks.append(name)
             if "cookie" in name_lower:
-                cookie_val = WhatWebModule._normalize_text(
-                    details.get("string")
-                ) or version
+                cookie_val = WhatWebModule._normalize_text(details.get("string")) or version
                 if cookie_val:
                     cookies_list.append(cookie_val)
 
@@ -414,8 +381,8 @@ class WhatWebModule:
 
 
 __all__ = [
-    "WhatWebModule",
     "WhatWebHost",
+    "WhatWebModule",
     "WhatWebResult",
     "WhatWebTechnology",
 ]

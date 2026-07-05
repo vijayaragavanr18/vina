@@ -1,6 +1,6 @@
 """Example enrichment plugin — adds custom enrichment rules."""
 
-from vina.plugins.sdk import Plugin, PluginMetadata, PluginContext, HookPoint
+from vina.plugins.sdk import HookPoint, Plugin, PluginContext, PluginMetadata
 
 
 class ExampleEnrichmentPlugin(Plugin):

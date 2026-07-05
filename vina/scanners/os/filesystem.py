@@ -107,9 +107,7 @@ class FilesystemModule:
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {executable}")
             if cr.timed_out:
-                warnings.append(
-                    f"{name} timed out after {self.context.timeout_seconds}s"
-                )
+                warnings.append(f"{name} timed out after {self.context.timeout_seconds}s")
             if cr.returncode not in (0, None) and not cr.timed_out and not cr.missing_executable:
                 stderr_snippet = cr.stderr.strip()[:120] if cr.stderr.strip() else ""
                 msg = f"{name} exited with code {cr.returncode}"
@@ -122,7 +120,7 @@ class FilesystemModule:
 
         stat_result = None
         if mount_points:
-            stat_args = ["--format=%a %U %G %s %n"] + mount_points
+            stat_args = ["--format=%a %U %G %s %n", *mount_points]
             stat_cr = await self.context.runner.run(
                 self.config.tool_bin("stat", "stat"),
                 stat_args,
@@ -142,15 +140,16 @@ class FilesystemModule:
             stat_result = stat_cr
 
         entries = self._build_entries(
-            results, mount_entries, stat_result, warnings,
+            results,
+            mount_entries,
+            stat_result,
+            warnings,
         )
 
         if not entries:
             warnings.append("No filesystem entries could be discovered")
 
-        mount_count = sum(
-            1 for e in entries if e.type == "mount"
-        )
+        mount_count = sum(1 for e in entries if e.type == "mount")
 
         primary = (
             results.get("mount")
@@ -240,7 +239,6 @@ class FilesystemModule:
             if " on /" not in line or " type " not in line:
                 continue
             try:
-                device = line.split(" on ")[0].strip()
                 rest = line.split(" on ", 1)[1]
                 mount_point = rest.split(" type ")[0].strip()
                 rest2 = rest.split(" type ", 1)[1]
@@ -348,7 +346,7 @@ class FilesystemModule:
     def _parse_find_output(
         stdout: str,
         source: str,
-        warnings: list[str],
+        _warnings: list[str],
     ) -> list[FilesystemEntry]:
         """Parse ``find`` output (one path per line) into entries."""
         entries: list[FilesystemEntry] = []
@@ -433,4 +431,4 @@ class FilesystemModule:
         )
 
 
-__all__ = ["FilesystemModule", "FilesystemEntry", "FilesystemResult"]
+__all__ = ["FilesystemEntry", "FilesystemModule", "FilesystemResult"]

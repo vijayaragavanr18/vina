@@ -65,7 +65,7 @@ class SystemdModule:
         commands: list[tuple[str, str, list[str]]] = [
             ("list_units", self.config.tool_bin("systemctl", "systemctl"), ["list-unit-files"]),
             ("list_timers", self.config.tool_bin("systemctl", "systemctl"), ["list-timers", "--all"]),
-            ("find_writable", self.config.tool_bin("find", "find"), ["/etc/systemd/system", "-writable", "-type", "f", "2>/dev/null"]),
+            ("find_writable", self.config.tool_bin("find", "find"), ["/etc/systemd/system", "-writable", "-type", "f"]),
         ]
 
         results: dict[str, CommandResult] = {}
@@ -90,16 +90,18 @@ class SystemdModule:
         enabled_count = sum(1 for s in services if s.state == "enabled")
 
         for wf in writable_files:
-            findings.append(make_finding(
-                title=f"Writable systemd unit: {wf}",
-                description=f"Systemd unit file {wf} is world-writable",
-                severity="high",
-                category="misconfiguration",
-                source_stage="systemd",
-                target=target_str,
-                evidence=wf,
-                recommendation="Restrict permissions: chmod 644 <file> && chown root:root <file>",
-            ))
+            findings.append(
+                make_finding(
+                    title=f"Writable systemd unit: {wf}",
+                    description=f"Systemd unit file {wf} is world-writable",
+                    severity="high",
+                    category="misconfiguration",
+                    source_stage="systemd",
+                    target=target_str,
+                    evidence=wf,
+                    recommendation="Restrict permissions: chmod 644 <file> && chown root:root <file>",
+                )
+            )
 
         if not services:
             warnings.append("No systemd services could be enumerated")
@@ -121,7 +123,9 @@ class SystemdModule:
         self._print_summary(result)
         return result
 
-    def _parse_services(self, results: dict[str, CommandResult], warnings: list[str], findings: list[Finding], target_str: str) -> list[SystemdServiceEntry]:
+    def _parse_services(
+        self, results: dict[str, CommandResult], _warnings: list[str], findings: list[Finding], target_str: str
+    ) -> list[SystemdServiceEntry]:
         services: list[SystemdServiceEntry] = []
         cr = results.get("list_units")
         if cr is None or not cr.succeeded or not cr.stdout.strip():
@@ -141,34 +145,38 @@ class SystemdModule:
         dangerous_prefixes = ("sshd", "docker", "containerd", "kube", "webmin", "mysql", "postgresql")
         for s in services:
             if s.state == "enabled" and any(s.unit.startswith(p) for p in dangerous_prefixes):
-                findings.append(make_finding(
-                    title=f"Enabled service: {s.unit}",
-                    description=f"Service {s.unit} is enabled and potentially exposes attack surface",
-                    severity="info",
-                    category="service",
-                    source_stage="systemd",
-                    target=target_str,
-                    evidence=s.unit,
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Enabled service: {s.unit}",
+                        description=f"Service {s.unit} is enabled and potentially exposes attack surface",
+                        severity="info",
+                        category="service",
+                        source_stage="systemd",
+                        target=target_str,
+                        evidence=s.unit,
+                    )
+                )
 
         # Check for writable-looking services (running from /tmp, /dev/shm, /var/tmp)
         for s in services:
             if s.exec_start and any(s.exec_start.startswith(p) for p in ("/tmp", "/dev/shm", "/var/tmp")):
-                findings.append(make_finding(
-                    title=f"Suspicious ExecStart: {s.exec_start}",
-                    description=f"Service {s.unit} runs from a world-writable path: {s.exec_start}",
-                    severity="high",
-                    category="misconfiguration",
-                    source_stage="systemd",
-                    target=target_str,
-                    evidence=f"{s.unit}: {s.exec_start}",
-                    recommendation="Move the binary to a system path and ensure correct ownership",
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Suspicious ExecStart: {s.exec_start}",
+                        description=f"Service {s.unit} runs from a world-writable path: {s.exec_start}",
+                        severity="high",
+                        category="misconfiguration",
+                        source_stage="systemd",
+                        target=target_str,
+                        evidence=f"{s.unit}: {s.exec_start}",
+                        recommendation="Move the binary to a system path and ensure correct ownership",
+                    )
+                )
 
         return services
 
     @staticmethod
-    def _parse_timers(results: dict[str, CommandResult], warnings: list[str]) -> list[TimerEntry]:
+    def _parse_timers(results: dict[str, CommandResult], _warnings: list[str]) -> list[TimerEntry]:
         timers: list[TimerEntry] = []
         cr = results.get("list_timers")
         if cr is None or not cr.succeeded or not cr.stdout.strip():
@@ -183,7 +191,7 @@ class SystemdModule:
         return timers
 
     @staticmethod
-    def _parse_writable(results: dict[str, CommandResult], warnings: list[str]) -> list[str]:
+    def _parse_writable(results: dict[str, CommandResult], _warnings: list[str]) -> list[str]:
         cr = results.get("find_writable")
         if cr is None or not cr.succeeded or not cr.stdout.strip():
             return []
@@ -218,7 +226,17 @@ class SystemdModule:
 
     @staticmethod
     def _empty_command_result() -> CommandResult:
-        return CommandResult(command="systemd", args=(), returncode=1, stdout="", stderr="", duration_seconds=0.0, timed_out=False, missing_executable=False, full_command="systemd")
+        return CommandResult(
+            command="systemd",
+            args=(),
+            returncode=1,
+            stdout="",
+            stderr="",
+            duration_seconds=0.0,
+            timed_out=False,
+            missing_executable=False,
+            full_command="systemd",
+        )
 
 
-__all__ = ["SystemdModule", "SystemdServiceEntry", "TimerEntry", "SystemdResult"]
+__all__ = ["SystemdModule", "SystemdResult", "SystemdServiceEntry", "TimerEntry"]

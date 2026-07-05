@@ -5,9 +5,10 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 from ...core.config import AppConfig
 from ...core.runner import CommandResult
@@ -71,7 +72,11 @@ class ReconModule:
             warnings.append(f"Missing executable: {executable}")
         if command_result.timed_out:
             warnings.append(f"Subfinder timed out after {self.context.timeout_seconds} seconds")
-        if command_result.returncode not in (0, None) and not command_result.timed_out and not command_result.missing_executable:
+        if (
+            command_result.returncode not in (0, None)
+            and not command_result.timed_out
+            and not command_result.missing_executable
+        ):
             warnings.append(f"Subfinder failed with exit code {command_result.returncode}")
         if not records and command_result.stdout.strip() and not command_result.timed_out:
             warnings.append("No valid JSON records were produced")
@@ -81,7 +86,7 @@ class ReconModule:
         findings = [
             make_finding(
                 title=f"Subdomain: {sub}",
-                description=f"Discovered subdomain via subfinder",
+                description="Discovered subdomain via subfinder",
                 severity="info",
                 category="subdomain",
                 source_stage="subfinder",

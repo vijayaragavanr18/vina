@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -15,13 +14,11 @@ from vina.core.vuln_intel import (
     NVDProvider,
     OSVProvider,
     SoftwareComponent,
-    VersionPattern,
+    VulnEngineConfig,
     Vulnerability,
     VulnerabilityDatabase,
     VulnerabilityEngine,
     VulnerabilityMatch,
-    VulnEngineConfig,
-    VulnStats,
     build_software_inventory,
     compare_versions,
     component_from_finding,
@@ -32,8 +29,7 @@ from vina.core.vuln_intel import (
     scan_components,
     version_matches,
 )
-from vina.models.findings import Finding, make_finding
-
+from vina.models.findings import make_finding
 
 # =========================================================================
 #  Version comparison
@@ -338,7 +334,7 @@ class TestVulnerabilityMatch:
 
 
 class TestVulnerabilityDatabase:
-    _SAMPLE_CVES = [
+    _SAMPLE_CVES: list[dict[str, object]] = [  # noqa: RUF012
         {
             "cve": "CVE-2024-0001",
             "title": "Test CVE 1",
@@ -369,10 +365,10 @@ class TestVulnerabilityDatabase:
     ]
 
     def _make_db_file(self, entries: list[dict]) -> Path:
-        tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
-        json.dump(entries, tmp)
-        tmp.close()
-        return Path(tmp.name)
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tmp:
+            json.dump(entries, tmp)
+            tmp_name = tmp.name
+        return Path(tmp_name)
 
     def test_load_empty(self):
         db = VulnerabilityDatabase()
@@ -422,7 +418,7 @@ class TestVulnerabilityDatabase:
 
 
 class TestVulnerabilityEngine:
-    _SAMPLE_CVES = [
+    _SAMPLE_CVES: list[dict[str, object]] = [  # noqa: RUF012
         {
             "cve": "CVE-2024-0001",
             "severity": "high",
@@ -457,10 +453,10 @@ class TestVulnerabilityEngine:
     ]
 
     def _make_db(self) -> VulnerabilityDatabase:
-        tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
-        json.dump(self._SAMPLE_CVES, tmp)
-        tmp.close()
-        db = VulnerabilityDatabase(paths=[Path(tmp.name)])
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tmp:
+            json.dump(self._SAMPLE_CVES, tmp)
+            tmp_name = tmp.name
+        db = VulnerabilityDatabase(paths=[Path(tmp_name)])
         return db
 
     def test_empty_components(self):
@@ -526,7 +522,7 @@ class TestVulnerabilityEngine:
         assert matches[0].risk_score > 0
 
     def test_config_max_results(self):
-        db = self._make_db()
+        self._make_db()
         # Add a second component with matches
         extra_cve = {
             "cve": "CVE-2024-0004",
@@ -536,10 +532,10 @@ class TestVulnerabilityEngine:
             "affected_versions": ["<5.0"],
             "cvss_v3": 2.0,
         }
-        tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
-        json.dump(self._SAMPLE_CVES + [extra_cve], tmp)
-        tmp.close()
-        db2 = VulnerabilityDatabase(paths=[Path(tmp.name)])
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tmp:
+            json.dump([*self._SAMPLE_CVES, extra_cve], tmp)
+            tmp_name = tmp.name
+        db2 = VulnerabilityDatabase(paths=[Path(tmp_name)])
         engine = VulnerabilityEngine(database=db2, config=VulnEngineConfig(max_results=1))
         comp1 = SoftwareComponent(name="app", version="1.0", vendor="testcorp")
         comp2 = SoftwareComponent(name="otherapp", version="1.0", vendor="testcorp")
@@ -692,10 +688,7 @@ class TestComputeVulnStats:
         assert stats.by_severity["medium"] == 1
 
     def test_top_cves(self):
-        vulns = [
-            Vulnerability(cve=f"CVE-{i}", severity="high" if i < 3 else "medium", cvss_v3=7.5)
-            for i in range(10)
-        ]
+        vulns = [Vulnerability(cve=f"CVE-{i}", severity="high" if i < 3 else "medium", cvss_v3=7.5) for i in range(10)]
         matches = [
             VulnerabilityMatch(vulnerability=v, component=SoftwareComponent(name="t", version="1"), risk_score=70 - i)
             for i, v in enumerate(vulns)
@@ -806,7 +799,9 @@ class TestJsonSerialization:
             references=["https://example.com"],
         )
         c = SoftwareComponent(name="app", version="1.0")
-        m = VulnerabilityMatch(vulnerability=v, component=c, matching_version="1.0", fixed_version="2.0", risk_score=75.0)
+        m = VulnerabilityMatch(
+            vulnerability=v, component=c, matching_version="1.0", fixed_version="2.0", risk_score=75.0
+        )
         f = m.to_finding()
         d = f.to_dict()
         assert isinstance(d, dict)

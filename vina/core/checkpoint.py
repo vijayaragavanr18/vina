@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import cast
 
 from ..models.stages import StageResult, StageState
 
@@ -95,11 +96,11 @@ class CheckpointManager:
 
     def get_stage_info(self, stage_name: str) -> dict:
         """Return the raw checkpoint dict for a stage."""
-        return self._data.get("stages", {}).get(stage_name, {})
+        return cast(dict, self._data.get("stages", {}).get(stage_name, {}))
 
     def get_stage_outputs(self, stage_name: str) -> dict:
         """Return the ``outputs`` dict stored for a stage."""
-        return self.get_stage_info(stage_name).get("outputs", {})
+        return cast(dict, self.get_stage_info(stage_name).get("outputs", {}))
 
     def restore_stage(self, stage_name: str) -> StageResult:
         """Reconstruct a :class:`StageResult` from the checkpoint."""
@@ -172,7 +173,7 @@ class CheckpointManager:
 
 
 def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 __all__ = [

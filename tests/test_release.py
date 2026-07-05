@@ -3,12 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
-import pytest
-
-from vina._version import __version__, VERSION_INFO, version_str, version_tuple
-
+from vina._version import VERSION_INFO, __version__, version_str, version_tuple
 
 # =========================================================================
 #  Version module
@@ -37,6 +33,7 @@ class TestVersion:
 
     def test_vina_init_exports(self):
         import vina
+
         assert hasattr(vina, "__version__")
         assert hasattr(vina, "version_str")
         assert hasattr(vina, "version_tuple")
@@ -52,6 +49,7 @@ class TestVersionCommand:
     @staticmethod
     def _command_names():
         from vina.cli import app
+
         return {cmd.callback.__name__ for cmd in app.registered_commands}
 
     def test_version_command_registered(self):
@@ -64,6 +62,7 @@ class TestVersionCommand:
 class TestDoctor:
     def test_doctor_checks_python_version(self):
         import sys
+
         major, minor = sys.version_info[:2]
         assert (major, minor) >= (3, 12), f"Python {major}.{minor} < 3.12"
 
@@ -87,6 +86,7 @@ class TestDoctor:
         from vina.core.feed_manager import FeedManager
         from vina.core.vuln_intel import get_default_db
         from vina.plugins.registry import get_registry
+
         assert AppConfig
         assert DependencyChecker
         assert FeedManager
@@ -106,6 +106,7 @@ class TestPyproject:
 
     def test_extras_defined(self):
         import tomllib
+
         root = Path(__file__).parent.parent
         data = tomllib.loads((root / "pyproject.toml").read_text())
         optional = data["project"]["optional-dependencies"]
@@ -118,6 +119,7 @@ class TestPyproject:
 
     def test_scripts_defined(self):
         import tomllib
+
         root = Path(__file__).parent.parent
         data = tomllib.loads((root / "pyproject.toml").read_text())
         assert data["project"]["scripts"]["vina"] == "vina.cli:app"
@@ -159,6 +161,7 @@ class TestDockerFiles:
 
     def test_compose_has_services(self):
         import yaml
+
         root = Path(__file__).parent.parent
         data = yaml.safe_load((root / "docker-compose.yml").read_text())
         assert "services" in data
@@ -184,60 +187,70 @@ class TestCIWorkflows:
 
     def test_ci_has_lint_job(self):
         import yaml
+
         root = Path(__file__).parent.parent
         data = yaml.safe_load((root / ".github/workflows/ci.yml").read_text())
         assert "lint" in data["jobs"]
 
     def test_ci_has_typecheck_job(self):
         import yaml
+
         root = Path(__file__).parent.parent
         data = yaml.safe_load((root / ".github/workflows/ci.yml").read_text())
         assert "typecheck" in data["jobs"]
 
     def test_ci_has_security_job(self):
         import yaml
+
         root = Path(__file__).parent.parent
         data = yaml.safe_load((root / ".github/workflows/ci.yml").read_text())
         assert "security" in data["jobs"]
 
     def test_ci_has_unit_job(self):
         import yaml
+
         root = Path(__file__).parent.parent
         data = yaml.safe_load((root / ".github/workflows/ci.yml").read_text())
         assert "unit" in data["jobs"]
 
     def test_ci_has_integration_job(self):
         import yaml
+
         root = Path(__file__).parent.parent
         data = yaml.safe_load((root / ".github/workflows/ci.yml").read_text())
         assert "integration" in data["jobs"]
 
     def test_ci_has_benchmark_job(self):
         import yaml
+
         root = Path(__file__).parent.parent
         data = yaml.safe_load((root / ".github/workflows/ci.yml").read_text())
         assert "benchmark" in data["jobs"]
 
     def test_ci_has_build_job(self):
         import yaml
+
         root = Path(__file__).parent.parent
         data = yaml.safe_load((root / ".github/workflows/ci.yml").read_text())
         assert "build" in data["jobs"]
 
     def test_ci_has_quality_gate(self):
         import yaml
+
         root = Path(__file__).parent.parent
         data = yaml.safe_load((root / ".github/workflows/ci.yml").read_text())
         assert "qualify" in data["jobs"]
 
     def test_release_has_docker_job(self):
         import yaml
+
         root = Path(__file__).parent.parent
         data = yaml.safe_load((root / ".github/workflows/release.yml").read_text())
         assert "docker" in data["jobs"]
 
     def test_release_has_release_job(self):
         import yaml
+
         root = Path(__file__).parent.parent
         data = yaml.safe_load((root / ".github/workflows/release.yml").read_text())
         assert "release" in data["jobs"]
@@ -264,6 +277,7 @@ class TestConfigFiles:
 
     def test_pyproject_has_ruff_config(self):
         import tomllib
+
         root = Path(__file__).parent.parent
         data = tomllib.loads((root / "pyproject.toml").read_text())
         assert "tool" in data
@@ -271,36 +285,42 @@ class TestConfigFiles:
 
     def test_pyproject_has_black_config(self):
         import tomllib
+
         root = Path(__file__).parent.parent
         data = tomllib.loads((root / "pyproject.toml").read_text())
         assert "black" in data["tool"]
 
     def test_pyproject_has_mypy_config(self):
         import tomllib
+
         root = Path(__file__).parent.parent
         data = tomllib.loads((root / "pyproject.toml").read_text())
         assert "mypy" in data["tool"]
 
     def test_pyproject_has_bandit_config(self):
         import tomllib
+
         root = Path(__file__).parent.parent
         data = tomllib.loads((root / "pyproject.toml").read_text())
         assert "bandit" in data["tool"]
 
     def test_pyproject_has_pytest_config(self):
         import tomllib
+
         root = Path(__file__).parent.parent
         data = tomllib.loads((root / "pyproject.toml").read_text())
         assert "pytest" in data["tool"]
 
     def test_pyproject_has_coverage_config(self):
         import tomllib
+
         root = Path(__file__).parent.parent
         data = tomllib.loads((root / "pyproject.toml").read_text())
         assert "coverage" in data["tool"]
 
     def test_pyproject_has_entry_point_group(self):
         import tomllib
+
         root = Path(__file__).parent.parent
         data = tomllib.loads((root / "pyproject.toml").read_text())
         assert "project" in data
@@ -361,6 +381,7 @@ class TestBenchmarkCommands:
     @staticmethod
     def _command_names():
         from vina.cli import app
+
         return {cmd.callback.__name__ for cmd in app.registered_commands}
 
     def test_benchmark_list_registered(self):
@@ -385,6 +406,7 @@ class TestPluginCommands:
     @staticmethod
     def _command_names():
         from vina.cli import app
+
         return {cmd.callback.__name__ for cmd in app.registered_commands}
 
     def test_plugin_list_registered(self):
@@ -412,6 +434,7 @@ class TestScanCommands:
     @staticmethod
     def _command_names():
         from vina.cli import app
+
         return {cmd.callback.__name__ for cmd in app.registered_commands}
 
     def test_scan_registered(self):
@@ -428,3 +451,13 @@ class TestScanCommands:
 
     def test_update_db_registered(self):
         assert "update_db" in self._command_names()
+
+    def test_feed_manager_imported_at_module_level(self) -> None:
+        """Regression: _show_db_status references FeedManager in its signature.
+        FeedManager must be importable at module level, not just inside update_db."""
+        import inspect
+
+        from vina.cli import _show_db_status
+
+        sig = inspect.signature(_show_db_status)
+        assert "manager" in sig.parameters

@@ -7,6 +7,7 @@ environment variables for potential security issues.
 from __future__ import annotations
 
 import logging
+import os
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -19,7 +20,24 @@ from ...modules.common import ModuleContext
 
 logger = logging.getLogger(__name__)
 
-_SENSITIVE_ENV_PATTERNS = ("SECRET", "TOKEN", "PASSWORD", "PASS", "API_KEY", "AWS_", "AZURE_", "GITHUB_", "GITLAB_", "DOCKER_", "DB_", "DATABASE", "REDIS_", "MONGODB_", "PGPASSWORD", "MYSQL_")
+_SENSITIVE_ENV_PATTERNS = (
+    "SECRET",
+    "TOKEN",
+    "PASSWORD",
+    "PASS",
+    "API_KEY",
+    "AWS_",
+    "AZURE_",
+    "GITHUB_",
+    "GITLAB_",
+    "DOCKER_",
+    "DB_",
+    "DATABASE",
+    "REDIS_",
+    "MONGODB_",
+    "PGPASSWORD",
+    "MYSQL_",
+)
 
 
 @dataclass(slots=True)
@@ -64,7 +82,6 @@ class EnvironmentModule:
 
         commands: list[tuple[str, str, list[str]]] = [
             ("env", self.config.tool_bin("env", "env"), []),
-            ("echo_path", self.config.tool_bin("echo", "echo"), ["$PATH"]),
             ("cat_env", self.config.tool_bin("cat", "cat"), ["/etc/environment"]),
             ("cat_profile", self.config.tool_bin("cat", "cat"), ["/etc/profile"]),
             ("cat_bashrc", self.config.tool_bin("cat", "cat"), ["/etc/bash.bashrc"]),
@@ -91,7 +108,7 @@ class EnvironmentModule:
         if not variables:
             warnings.append("No environment variables could be read")
 
-        primary = results.get("env") or results.get("echo_path") or self._empty_command_result()
+        primary = results.get("env") or self._empty_command_result()
 
         result = EnvironmentResult(
             target=target_input,
@@ -108,7 +125,9 @@ class EnvironmentModule:
         self._print_summary(result)
         return result
 
-    def _parse_env(self, results: dict[str, CommandResult], findings: list[Finding], target_str: str) -> list[EnvVariable]:
+    def _parse_env(
+        self, results: dict[str, CommandResult], findings: list[Finding], target_str: str
+    ) -> list[EnvVariable]:
         variables: list[EnvVariable] = []
         cr = results.get("env")
         if cr is None or not cr.succeeded or not cr.stdout.strip():
@@ -123,16 +142,18 @@ class EnvironmentModule:
             sensitive = any(p in key.upper() for p in _SENSITIVE_ENV_PATTERNS)
             variables.append(EnvVariable(key=key, value=value, sensitive=sensitive))
             if sensitive:
-                findings.append(make_finding(
-                    title=f"Sensitive env variable: {key}",
-                    description=f"Environment variable '{key}' may contain sensitive information",
-                    severity="medium",
-                    category="exposure",
-                    source_stage="environment",
-                    target=target_str,
-                    evidence=f"{key}=***masked***",
-                    recommendation=f"Review whether {key} needs to be exposed in the environment. Use secrets management.",
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Sensitive env variable: {key}",
+                        description=f"Environment variable '{key}' may contain sensitive information",
+                        severity="medium",
+                        category="exposure",
+                        source_stage="environment",
+                        target=target_str,
+                        evidence=f"{key}=***masked***",
+                        recommendation=f"Review whether {key} needs to be exposed in the environment. Use secrets management.",
+                    )
+                )
 
         cr2 = results.get("cat_env")
         if cr2 and cr2.succeeded and cr2.stdout.strip():
@@ -147,34 +168,37 @@ class EnvironmentModule:
                 if not any(v.key == key for v in variables):
                     variables.append(EnvVariable(key=key, value=value, sensitive=sensitive))
                     if sensitive:
-                        findings.append(make_finding(
-                            title=f"Sensitive env variable: {key} (in /etc/environment)",
-                            description=f"Environment variable '{key}' in /etc/environment may contain sensitive information",
-                            severity="medium",
-                            category="exposure",
-                            source_stage="environment",
-                            target=target_str,
-                            evidence=f"{key}=***masked*** (in /etc/environment)",
-                            recommendation="Remove sensitive data from /etc/environment",
-                        ))
+                        findings.append(
+                            make_finding(
+                                title=f"Sensitive env variable: {key} (in /etc/environment)",
+                                description=f"Environment variable '{key}' in /etc/environment may contain sensitive information",
+                                severity="medium",
+                                category="exposure",
+                                source_stage="environment",
+                                target=target_str,
+                                evidence=f"{key}=***masked*** (in /etc/environment)",
+                                recommendation="Remove sensitive data from /etc/environment",
+                            )
+                        )
 
         return variables
 
-    async def _parse_path(self, results: dict[str, CommandResult], findings: list[Finding], target_str: str) -> tuple[list[PathEntry], int]:
+    async def _parse_path(
+        self, results: dict[str, CommandResult], findings: list[Finding], target_str: str
+    ) -> tuple[list[PathEntry], int]:
         entries: list[PathEntry] = []
         writable_count = 0
-        cr = results.get("echo_path")
-        if cr is None or not cr.succeeded or not cr.stdout.strip():
-            # Try env output for PATH
+        path_str = os.environ.get("PATH", "")
+
+        if not path_str:
+            # Fallback: try parsing from env command output
             for v in self._parse_env(results, [], target_str):
                 if v.key == "PATH" and v.value:
-                    cr = CommandResult(command="echo", args=("$PATH",), returncode=0, stdout=v.value, stderr="", duration_seconds=0.0, full_command="echo $PATH")
+                    path_str = v.value
                     break
 
-        if cr is None or not cr.stdout.strip():
+        if not path_str.strip():
             return entries, 0
-
-        path_str = cr.stdout.strip()
         for p in path_str.split(":"):
             p = p.strip()
             if not p:
@@ -193,24 +217,25 @@ class EnvironmentModule:
                 parts = ls_line.split()
                 if len(parts) >= 1:
                     perm = parts[0]
-                    if len(perm) >= 9:
-                        if perm[8] == "w":
-                            entry.writable = True
-                            writable_count += 1
+                    if len(perm) >= 9 and perm[8] == "w":
+                        entry.writable = True
+                        writable_count += 1
             entries.append(entry)
 
         if writable_count > 0:
             writable_paths = [e.path for e in entries if e.writable]
-            findings.append(make_finding(
-                title=f"Writable PATH entries ({writable_count})",
-                description=f"Found {writable_count} world-writable directories in PATH",
-                severity="high",
-                category="misconfiguration",
-                source_stage="environment",
-                target=target_str,
-                evidence="\n".join(writable_paths[:10]),
-                recommendation="Remove write permissions or remove these directories from PATH",
-            ))
+            findings.append(
+                make_finding(
+                    title=f"Writable PATH entries ({writable_count})",
+                    description=f"Found {writable_count} world-writable directories in PATH",
+                    severity="high",
+                    category="misconfiguration",
+                    source_stage="environment",
+                    target=target_str,
+                    evidence="\n".join(writable_paths[:10]),
+                    recommendation="Remove write permissions or remove these directories from PATH",
+                )
+            )
 
         return entries, writable_count
 
@@ -243,7 +268,17 @@ class EnvironmentModule:
 
     @staticmethod
     def _empty_command_result() -> CommandResult:
-        return CommandResult(command="environment", args=(), returncode=1, stdout="", stderr="", duration_seconds=0.0, timed_out=False, missing_executable=False, full_command="environment")
+        return CommandResult(
+            command="environment",
+            args=(),
+            returncode=1,
+            stdout="",
+            stderr="",
+            duration_seconds=0.0,
+            timed_out=False,
+            missing_executable=False,
+            full_command="environment",
+        )
 
 
-__all__ = ["EnvironmentModule", "EnvVariable", "PathEntry", "EnvironmentResult"]
+__all__ = ["EnvVariable", "EnvironmentModule", "EnvironmentResult", "PathEntry"]

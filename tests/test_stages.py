@@ -221,7 +221,9 @@ class StageResultDataclassTests(unittest.TestCase):
 
     def test_slots(self) -> None:
         """Verify that the dataclass uses __slots__."""
-        stage = StageResult(name="test", status=StageState.SUCCESS, command="", exit_code=0, duration=0.0, record_count=0)
+        stage = StageResult(
+            name="test", status=StageState.SUCCESS, command="", exit_code=0, duration=0.0, record_count=0
+        )
         with self.assertRaises(AttributeError):
             stage.nonexistent = 1  # type: ignore[attr-defined]
 
@@ -231,11 +233,24 @@ class SummaryForStagesTests(unittest.TestCase):
 
     def test_summary_output(self) -> None:
         stages = [
-            StageResult(name="subfinder", status=StageState.SUCCESS, command="", exit_code=0, duration=1.0, record_count=5),
+            StageResult(
+                name="subfinder", status=StageState.SUCCESS, command="", exit_code=0, duration=1.0, record_count=5
+            ),
             StageResult(name="httpx", status=StageState.EMPTY, command="", exit_code=0, duration=0.5, record_count=0),
-            StageResult(name="naabu", status=StageState.SKIPPED, command="", exit_code=None, duration=0.0, record_count=0),
-            StageResult(name="nuclei", status=StageState.TIMEOUT, command="", exit_code=None, duration=30.0, record_count=0),
-            StageResult(name="nmap", status=StageState.MISSING_DEPENDENCY, command="", exit_code=None, duration=0.0, record_count=0),
+            StageResult(
+                name="naabu", status=StageState.SKIPPED, command="", exit_code=None, duration=0.0, record_count=0
+            ),
+            StageResult(
+                name="nuclei", status=StageState.TIMEOUT, command="", exit_code=None, duration=30.0, record_count=0
+            ),
+            StageResult(
+                name="nmap",
+                status=StageState.MISSING_DEPENDENCY,
+                command="",
+                exit_code=None,
+                duration=0.0,
+                record_count=0,
+            ),
         ]
         summary = summary_for_stages("Web Pipeline", "example.com", stages, 31.5)
         self.assertIn("VINA Web Pipeline", summary)

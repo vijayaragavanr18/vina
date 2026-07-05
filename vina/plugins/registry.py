@@ -4,15 +4,13 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from .exceptions import (
-    PluginDisabledError,
-    PluginError,
-    PluginHookError,
     PluginNotFoundError,
 )
-from .hooks import HookEvent, HookPoint, HookRegistration, is_valid_hook_point
+from .hooks import HookEvent, HookRegistration, is_valid_hook_point
 from .plugin import Plugin
 
 logger = logging.getLogger("vina.plugins.registry")

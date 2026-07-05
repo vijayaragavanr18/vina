@@ -9,15 +9,14 @@ from __future__ import annotations
 import logging
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
 from urllib.parse import parse_qsl, urlparse
 
 from ...core.config import AppConfig
 from ...core.runner import CommandResult
 from ...models.common import TargetInput
-from ...models.findings import Finding, make_finding
+from ...models.findings import Finding
 from ...modules.common import ModuleContext
-from ..web.gau import GauResult, GauUrl
+from ..web.gau import GauResult
 from ..web.katana import KatanaResult
 from ..web.waybackurls import WaybackurlsResult
 
@@ -79,11 +78,7 @@ class UrlAggregatorModule:
         wayback_result:
             Output from the Waybackurls historical-URL stage.
         """
-        target_input = (
-            katana_result.target
-            or gau_result.target
-            or wayback_result.target
-        )
+        target_input = katana_result.target or gau_result.target or wayback_result.target
 
         warnings: list[str] = []
 
@@ -148,14 +143,8 @@ class UrlAggregatorModule:
             normalized = self._normalize_url(raw_url)
 
             if normalized not in merged:
-                parsed = urlparse(
-                    raw_url if "://" in raw_url else f"//{raw_url}"
-                )
-                host = (
-                    parsed.hostname.lower()
-                    if parsed.hostname
-                    else None
-                )
+                parsed = urlparse(raw_url if "://" in raw_url else f"//{raw_url}")
+                host = parsed.hostname.lower() if parsed.hostname else None
                 path = parsed.path or "/"
                 query = parsed.query or None
 
@@ -168,13 +157,7 @@ class UrlAggregatorModule:
 
                 params: list[str] = []
                 if query:
-                    params = [
-                        name
-                        for name, _ in parse_qsl(
-                            query, keep_blank_values=True
-                        )
-                        if name
-                    ]
+                    params = [name for name, _ in parse_qsl(query, keep_blank_values=True) if name]
 
                 merged[normalized] = AggregatedUrl(
                     url=raw_url,
@@ -210,28 +193,17 @@ class UrlAggregatorModule:
             return url_str.strip().lower()
 
         port = parsed.port
-        if port is not None:
-            if (scheme == "http" and port == 80) or (
-                scheme == "https" and port == 443
-            ):
-                port = None
+        if port is not None and ((scheme == "http" and port == 80) or (scheme == "https" and port == 443)):
+            port = None
 
         path = parsed.path
         while len(path) > 1 and path.endswith("//"):
             path = path[:-1]
         path = path.rstrip("/") if path != "/" else path
 
-        query_parts = parse_qsl(
-            parsed.query, keep_blank_values=True
-        )
+        query_parts = parse_qsl(parsed.query, keep_blank_values=True)
         query_parts.sort(key=lambda x: x[0])
-        query = (
-            "&".join(
-                f"{k}={v}" if v else k for k, v in query_parts
-            )
-            if query_parts
-            else ""
-        )
+        query = "&".join(f"{k}={v}" if v else k for k, v in query_parts) if query_parts else ""
 
         netloc = host
         if port is not None:
@@ -271,9 +243,7 @@ class UrlAggregatorModule:
             "duplicates_removed": result.duplicates_removed,
             "warnings": result.warnings,
         }
-        return self.context.store.save(
-            "web/aggregated_urls.json", payload
-        )
+        return self.context.store.save("web/aggregated_urls.json", payload)
 
     def _print_summary(self, result: UrlAggregatorResult) -> None:
         """Print a concise summary of URL aggregation results."""

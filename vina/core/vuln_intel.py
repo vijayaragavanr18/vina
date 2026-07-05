@@ -7,13 +7,13 @@ matching, risk scoring, and external feed provider interfaces.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import re
 from dataclasses import dataclass, field
-from functools import lru_cache
 from pathlib import Path
 from threading import Lock
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol, cast
 
 from ..models.findings import Finding, make_finding
 
@@ -25,6 +25,7 @@ from ..models.findings import Finding, make_finding
 @dataclass(slots=True)
 class SoftwareComponent:
     """A software component discovered on the target system."""
+
     name: str
     version: str = ""
     vendor: str = ""
@@ -36,6 +37,7 @@ class SoftwareComponent:
 @dataclass(slots=True)
 class Vulnerability:
     """A security vulnerability entry."""
+
     cve: str
     title: str = ""
     description: str = ""
@@ -63,6 +65,7 @@ class Vulnerability:
 @dataclass(slots=True)
 class VulnerabilityMatch:
     """A matched vulnerability for a specific software component."""
+
     vulnerability: Vulnerability
     component: SoftwareComponent
     matching_version: str = ""
@@ -73,7 +76,10 @@ class VulnerabilityMatch:
     def to_finding(self) -> Finding:
         sev = self.vulnerability.severity
         title = f"{self.vulnerability.cve} - {self.vulnerability.title or self.vulnerability.product}"
-        desc = self.vulnerability.description or f"{self.vulnerability.cve} affects {self.component.name} {self.component.version}"
+        desc = (
+            self.vulnerability.description
+            or f"{self.vulnerability.cve} affects {self.component.name} {self.component.version}"
+        )
         evidence = (
             f"cve={self.vulnerability.cve} "
             f"component={self.component.name} "
@@ -222,6 +228,38 @@ def compare_versions(a: str, b: str) -> int:
     return _compare_version_parts(deb_a, deb_b)
 
 
+def _cmp_missing_part(is_left_missing: bool, part: int | str | None) -> int:
+    """Compare when one side of a version comparison is ``None``.
+
+    Returns -1, 0, or 1 from the perspective of ``a < b``.
+    """
+    if isinstance(part, int):
+        if part > 0:
+            return -1 if is_left_missing else 1
+        if part < 0:
+            return 1 if is_left_missing else -1
+        return 0
+    if part:
+        return -1 if is_left_missing else 1
+    return 0
+
+
+def _cmp_typed_part(part_a: int | str, part_b: int | str) -> int:
+    """Compare two non-``None`` version parts."""
+    if isinstance(part_a, int) and isinstance(part_b, int):
+        if part_a < part_b:
+            return -1
+        if part_a > part_b:
+            return 1
+        return 0
+    str_a, str_b = str(part_a), str(part_b)
+    if str_a < str_b:
+        return -1
+    if str_a > str_b:
+        return 1
+    return 0
+
+
 def _compare_version_parts(a: list[int | str], b: list[int | str]) -> int:
     """Compare two parsed version component lists."""
     max_len = max(len(a), len(b))
@@ -229,40 +267,20 @@ def _compare_version_parts(a: list[int | str], b: list[int | str]) -> int:
         part_a = a[i] if i < len(a) else None
         part_b = b[i] if i < len(b) else None
         if part_a is None and part_b is None:
-            return 0
+            continue
         if part_a is None:
-            # Treat missing as 0 for int, "" for str
-            if isinstance(part_b, int):
-                if 0 < part_b:
-                    return -1
-                if 0 > part_b:
-                    return 1
-            else:
-                if part_b:
-                    return -1
+            cmp = _cmp_missing_part(is_left_missing=True, part=part_b)
+            if cmp:
+                return cmp
             continue
         if part_b is None:
-            if isinstance(part_a, int):
-                if part_a > 0:
-                    return 1
-                if part_a < 0:
-                    return -1
-            else:
-                if part_a:
-                    return 1
+            cmp = _cmp_missing_part(is_left_missing=False, part=part_a)
+            if cmp:
+                return cmp
             continue
-        if isinstance(part_a, int) and isinstance(part_b, int):
-            if part_a < part_b:
-                return -1
-            if part_a > part_b:
-                return 1
-        else:
-            str_a = str(part_a)
-            str_b = str(part_b)
-            if str_a < str_b:
-                return -1
-            if str_a > str_b:
-                return 1
+        cmp = _cmp_typed_part(part_a, part_b)
+        if cmp:
+            return cmp
     return 0
 
 
@@ -364,17 +382,14 @@ def version_matches(installed: str, pattern: str) -> bool:
 
     for p in patterns:
         cmp_val = compare_versions(installed, p.version)
-        if p.operator == "<" and not (cmp_val < 0):
-            return False
-        elif p.operator == "<=" and not (cmp_val <= 0):
-            return False
-        elif p.operator == ">" and not (cmp_val > 0):
-            return False
-        elif p.operator == ">=" and not (cmp_val >= 0):
-            return False
-        elif p.operator == "=" and not (cmp_val == 0):
-            return False
-        elif p.operator == "!=" and not (cmp_val != 0):
+        if (
+            (p.operator == "<" and not (cmp_val < 0))
+            or (p.operator == "<=" and not (cmp_val <= 0))
+            or (p.operator == ">" and not (cmp_val > 0))
+            or (p.operator == ">=" and not (cmp_val >= 0))
+            or (p.operator == "=" and cmp_val != 0)
+            or (p.operator == "!=" and cmp_val == 0)
+        ):
             return False
     return True
 
@@ -561,12 +576,12 @@ class VulnerabilityEngine:
         self._database = database
 
         if self._database is None:
-            # If feed manager is available, try to load its data
             if self._feed_manager is not None:
                 self._database = self._build_db_from_feeds()
                 self._config.offline = self._feed_manager.is_offline
             else:
                 self._database = get_default_db()
+        assert self._database is not None, "VulnerabilityDatabase initialization failed"
 
     def _build_db_from_feeds(self) -> VulnerabilityDatabase:
         """Build a VulnerabilityDatabase from FeedManager cache data."""
@@ -575,17 +590,16 @@ class VulnerabilityEngine:
             db = VulnerabilityDatabase()
             # Load directly into the database
             import json
-            from pathlib import Path
             import tempfile
+            from pathlib import Path
+
             tmp = Path(tempfile.mktemp(suffix=".json"))
             try:
                 tmp.write_text(json.dumps(feed_data, default=str), encoding="utf-8")
                 db.load([tmp])
             finally:
-                try:
+                with contextlib.suppress(OSError):
                     tmp.unlink()
-                except OSError:
-                    pass
             return db
         return get_default_db()
 
@@ -595,6 +609,7 @@ class VulnerabilityEngine:
         Returns a deduplicated list of matches sorted by risk score
         (highest first).
         """
+        assert self._database is not None
         matches: list[VulnerabilityMatch] = []
         seen: set[tuple[str, str, str]] = set()  # (cve, component_name, version)
 
@@ -615,19 +630,21 @@ class VulnerabilityEngine:
                 risk = self._compute_risk(vuln, comp)
                 fixed = vuln.fixed_versions[0] if vuln.fixed_versions else ""
 
-                matches.append(VulnerabilityMatch(
-                    vulnerability=vuln,
-                    component=comp,
-                    matching_version=comp.version,
-                    affected_range=vuln.affected_versions[0] if vuln.affected_versions else "",
-                    fixed_version=fixed,
-                    risk_score=risk,
-                ))
+                matches.append(
+                    VulnerabilityMatch(
+                        vulnerability=vuln,
+                        component=comp,
+                        matching_version=comp.version,
+                        affected_range=vuln.affected_versions[0] if vuln.affected_versions else "",
+                        fixed_version=fixed,
+                        risk_score=risk,
+                    )
+                )
 
         matches.sort(key=lambda m: m.risk_score, reverse=True)
 
         if self._config.max_results > 0:
-            matches = matches[:self._config.max_results]
+            matches = matches[: self._config.max_results]
 
         return matches
 
@@ -639,10 +656,7 @@ class VulnerabilityEngine:
         """
         # Check affected patterns
         if vuln.affected_versions:
-            affected = any(
-                version_matches(version, pat)
-                for pat in vuln.affected_versions
-            )
+            affected = any(version_matches(version, pat) for pat in vuln.affected_versions)
             if not affected:
                 return False
 
@@ -654,7 +668,7 @@ class VulnerabilityEngine:
 
         return True
 
-    def _compute_risk(self, vuln: Vulnerability, component: SoftwareComponent) -> float:
+    def _compute_risk(self, vuln: Vulnerability, _component: SoftwareComponent) -> float:
         """Compute a 0-100 risk score for a matched vulnerability.
 
         Factors: CVSS (0-60), EPSS (0-15), KEV (0-10),
@@ -686,6 +700,7 @@ class VulnerabilityEngine:
 
     @property
     def database(self) -> VulnerabilityDatabase:
+        assert self._database is not None
         return self._database
 
 
@@ -714,7 +729,7 @@ class FeedCache:
         path = self._cache_dir / f"{key}.json"
         if path.exists():
             try:
-                return json.loads(path.read_text(encoding="utf-8"))
+                return cast("list[dict[str, Any]]", json.loads(path.read_text(encoding="utf-8")))
             except (json.JSONDecodeError, OSError):
                 return None
         return None
@@ -749,8 +764,12 @@ class NVDProvider:
     def _to_vuln(item: dict[str, Any]) -> Vulnerability:
         return Vulnerability(
             cve=item.get("id", ""),
-            title=item.get("descriptions", [{}])[0].get("value", "") if isinstance(item.get("descriptions"), list) else item.get("description", ""),
-            description=item.get("descriptions", [{}])[0].get("value", "") if isinstance(item.get("descriptions"), list) else item.get("description", ""),
+            title=item.get("descriptions", [{}])[0].get("value", "")
+            if isinstance(item.get("descriptions"), list)
+            else item.get("description", ""),
+            description=item.get("descriptions", [{}])[0].get("value", "")
+            if isinstance(item.get("descriptions"), list)
+            else item.get("description", ""),
             severity=item.get("severity", "medium"),
             cvss_v3=float(item.get("cvss_v3", 0)),
             vendor=item.get("vendor", ""),
@@ -797,60 +816,75 @@ def scan_components(components: list[SoftwareComponent]) -> list[VulnerabilityMa
     return _default_engine.run(components)
 
 
+def _extract_from_evidence(evidence: str) -> tuple[str, str]:
+    """Extract component name and version from an evidence string."""
+    name = ""
+    version = ""
+    if not evidence:
+        return name, version
+    for part in evidence.split():
+        if "=" not in part:
+            continue
+        key, _, val = part.partition("=")
+        if key == "kernel":
+            name = "linux-kernel"
+            version = val
+        elif key in {"package", "name"} and not name:
+            name = val
+    return name, version
+
+
+def _extract_name_from_title(title: str) -> str:
+    """Extract component name from title prefixes like ``Kernel: ``."""
+    if not title:
+        return ""
+    for prefix in ("Kernel: ", "Installed: "):
+        if not title.startswith(prefix):
+            continue
+        rest = title[len(prefix) :]
+        if " (" in rest:
+            return rest.split(" (")[0]
+        if "=" in rest:
+            return rest.split("=")[0]
+        return rest.split()[0] if rest else ""
+    return ""
+
+
+def _extract_version_from_title(title: str) -> str:
+    """Extract version string from a title using token and regex patterns."""
+    if not title:
+        return ""
+    for token in title.split():
+        if "=" in token:
+            _, _, val = token.partition("=")
+            if val:
+                return val
+    m = re.match(r".*\(([^)]+)\)", title)
+    if m:
+        return m.group(1)
+    if "=" in title:
+        parts = title.split("=", 1)
+        if len(parts) > 1:
+            return parts[1].strip()
+    return ""
+
+
 def component_from_finding(finding: Finding) -> SoftwareComponent | None:
     """Extract a SoftwareComponent from a scanner finding if possible.
 
     Looks for structured evidence strings like ``"openssl=1.1.1f arch=amd64"``
     or ``"kernel=6.8.0-35-generic"`` in finding evidence or title.
     """
-    name = ""
-    version = ""
+    name, version = _extract_from_evidence(finding.evidence or "")
 
-    # Try evidence string
-    ev = finding.evidence or ""
-    for part in ev.split():
-        if "=" in part:
-            key, _, val = part.partition("=")
-            if key == "kernel":
-                name = "linux-kernel"
-                version = val
-            elif key in ("package", "name") and not name:
-                name = val
-
-    # Try title patterns
-    title = finding.title or ""
     if not name:
-        for prefix in ("Kernel: ", "Installed: "):
-            if title.startswith(prefix):
-                rest = title[len(prefix):]
-                if " (" in rest:
-                    name = rest.split(" (")[0]
-                elif "=" in rest:
-                    name = rest.split("=")[0]
-                else:
-                    name = rest.split()[0] if rest else rest
+        name = _extract_name_from_title(finding.title or "")
 
     if not name:
         return None
 
-    # Try to find version in title
     if not version:
-        for token in title.split():
-            if "=" in token:
-                _, _, val = token.partition("=")
-                if val and not version:
-                    version = val
-                    break
-
-    # Extract from Installed: name (version) or name=version patterns
-    if not version and title:
-        m = re.match(r".*\(([^)]+)\)", title)
-        if m:
-            version = m.group(1)
-        elif "=" in title:
-            parts = title.split("=", 1)
-            if len(parts) > 1:
-                version = parts[1].strip()
+        version = _extract_version_from_title(finding.title or "")
 
     return SoftwareComponent(
         name=name or "unknown",
@@ -889,9 +923,15 @@ def build_software_inventory(findings: list[Finding]) -> list[SoftwareComponent]
 @dataclass(slots=True)
 class VulnStats:
     total_vulnerabilities: int = 0
-    by_severity: dict[str, int] = field(default_factory=lambda: {
-        "critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0,
-    })
+    by_severity: dict[str, int] = field(
+        default_factory=lambda: {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "info": 0,
+        }
+    )
     total_components: int = 0
     critical_cves: int = 0
     kev_count: int = 0
@@ -934,14 +974,16 @@ def compute_vuln_stats(
     # Top 5 by risk score
     sorted_matches = sorted(matches, key=lambda m: m.risk_score, reverse=True)
     for m in sorted_matches[:5]:
-        top.append({
-            "cve": m.vulnerability.cve,
-            "severity": m.vulnerability.severity,
-            "cvss_v3": m.vulnerability.cvss_v3,
-            "risk_score": m.risk_score,
-            "component": m.component.name,
-            "installed": m.component.version,
-        })
+        top.append(
+            {
+                "cve": m.vulnerability.cve,
+                "severity": m.vulnerability.severity,
+                "cvss_v3": m.vulnerability.cvss_v3,
+                "risk_score": m.risk_score,
+                "component": m.component.name,
+                "installed": m.component.version,
+            }
+        )
 
     avg_risk = total_risk / len(matches) if matches else 0
     penalty = min((len(matches) * 2), 30)
@@ -979,25 +1021,25 @@ def compute_vuln_stats(
 # ---------------------------------------------------------------------------
 
 __all__ = [
-    "SoftwareComponent",
-    "Vulnerability",
-    "VulnerabilityMatch",
-    "VulnerabilityDatabase",
-    "VulnerabilityEngine",
-    "VulnEngineConfig",
-    "VulnStats",
-    "VersionPattern",
-    "compare_versions",
-    "parse_version_pattern",
-    "version_matches",
-    "compute_vuln_stats",
-    "scan_components",
-    "component_from_finding",
-    "build_software_inventory",
-    "get_default_db",
-    "reload_db",
     "FeedCache",
     "NVDProvider",
     "OSVProvider",
+    "SoftwareComponent",
+    "VersionPattern",
+    "VulnEngineConfig",
     "VulnFeedProvider",
+    "VulnStats",
+    "Vulnerability",
+    "VulnerabilityDatabase",
+    "VulnerabilityEngine",
+    "VulnerabilityMatch",
+    "build_software_inventory",
+    "compare_versions",
+    "component_from_finding",
+    "compute_vuln_stats",
+    "get_default_db",
+    "parse_version_pattern",
+    "reload_db",
+    "scan_components",
+    "version_matches",
 ]

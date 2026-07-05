@@ -36,6 +36,9 @@ class HistoricalUrlModule:
             timeout_seconds=self.context.timeout_seconds,
         )
         collected = unique_lines(f"{gau.stdout}\n{wayback.stdout}")
-        urls = [HistoricalUrlEntry(url=value, source=gau.command if value in lines(gau.stdout) else wayback.command) for value in collected]
+        urls = [
+            HistoricalUrlEntry(url=value, source=gau.command if value in lines(gau.stdout) else wayback.command)
+            for value in collected
+        ]
         warnings = [result.stderr for result in (gau, wayback) if result.stderr and not result.succeeded]
         return HistoricalUrlResult(urls=urls, warnings=warnings, command_results=[gau, wayback])

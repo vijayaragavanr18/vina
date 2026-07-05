@@ -5,15 +5,16 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 from urllib.parse import urlparse
 
 from ...core.config import AppConfig
 from ...core.runner import CommandResult
 from ...models.common import TargetInput
-from ...models.findings import Finding, make_finding
+from ...models.findings import Finding
 from ...modules.common import ModuleContext
 
 logger = logging.getLogger(__name__)
@@ -105,23 +106,14 @@ class KatanaModule:
         if command_result.missing_executable:
             warnings.append(f"Missing executable: {executable}")
         if command_result.timed_out:
-            warnings.append(
-                f"Katana timed out after {self.context.timeout_seconds} seconds"
-            )
+            warnings.append(f"Katana timed out after {self.context.timeout_seconds} seconds")
         if (
             command_result.returncode not in (0, None)
             and not command_result.timed_out
             and not command_result.missing_executable
         ):
-            warnings.append(
-                f"Katana failed with exit code {command_result.returncode}"
-            )
-        if (
-            alive_hosts
-            and not endpoints
-            and command_result.stdout.strip()
-            and not command_result.timed_out
-        ):
+            warnings.append(f"Katana failed with exit code {command_result.returncode}")
+        if alive_hosts and not endpoints and command_result.stdout.strip() and not command_result.timed_out:
             warnings.append("No valid JSON records were produced")
         if not endpoints:
             warnings.append("No endpoints discovered")
@@ -184,10 +176,7 @@ class KatanaModule:
         """Parse a single Katana JSON line into a KatanaEndpoint."""
         url = payload.get("url") or payload.get("request")
         if not url or not isinstance(url, str):
-            msg = (
-                f"Skipping record on line {line_number}: "
-                f"missing url"
-            )
+            msg = f"Skipping record on line {line_number}: missing url"
             logger.warning(msg)
             warnings.append(msg)
             return None
@@ -199,12 +188,8 @@ class KatanaModule:
         raw_path = payload.get("path") or urlparse(url).path or None
         path = self._normalize_text(raw_path) if raw_path else None
 
-        method = self._normalize_text(
-            payload.get("method")
-        )
-        source = self._normalize_text(
-            payload.get("source")
-        )
+        method = self._normalize_text(payload.get("method"))
+        source = self._normalize_text(payload.get("source"))
         depth = self._parse_int(payload.get("depth"))
         content_type = self._normalize_text(
             payload.get(
@@ -229,11 +214,11 @@ class KatanaModule:
         links_list: list[str] = []
 
         endpoint_type = self._normalize_text(payload.get("type"))
-        if endpoint_type == "javascript":
-            js_files.append(url)
-        elif content_type and "javascript" in content_type.lower():
-            js_files.append(url)
-        elif path and path.lower().endswith(".js"):
+        if (
+            endpoint_type == "javascript"
+            or (content_type and "javascript" in content_type.lower())
+            or (path and path.lower().endswith(".js"))
+        ):
             js_files.append(url)
 
         if path and ("/api/" in path.lower() or "/v1/" in path.lower() or "/v2/" in path.lower()):
@@ -247,7 +232,22 @@ class KatanaModule:
             dot = path.rfind(".")
             if dot != -1 and "/" not in path[dot:]:
                 ext = path[dot:].lower()
-        asset_extensions = {".css", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".woff", ".woff2", ".ttf", ".eot", ".mp4", ".webp", ".pdf"}
+        asset_extensions = {
+            ".css",
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".svg",
+            ".ico",
+            ".woff",
+            ".woff2",
+            ".ttf",
+            ".eot",
+            ".mp4",
+            ".webp",
+            ".pdf",
+        }
         if ext in asset_extensions:
             assets.append(url)
 
@@ -404,7 +404,7 @@ class KatanaModule:
 
 
 __all__ = [
-    "KatanaModule",
     "KatanaEndpoint",
+    "KatanaModule",
     "KatanaResult",
 ]

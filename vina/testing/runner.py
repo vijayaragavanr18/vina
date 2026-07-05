@@ -9,13 +9,12 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from ..core.aggregator import FindingAggregator
 from ..core.config import AppConfig
-from ..core.dependency import DependencyChecker
 from ..models.findings import Finding
 from ..models.stages import StageResult
 from .metrics import MetricsCollector
@@ -27,14 +26,17 @@ def _run_async(coro):
         loop = asyncio.get_running_loop()
         if loop.is_running():
             import threading
+
             result = []
             exception = []
+
             def _run():
                 try:
                     r = asyncio.run(coro)
                     result.append(r)
                 except Exception as e:
                     exception.append(e)
+
             t = threading.Thread(target=_run, daemon=True)
             t.start()
             t.join()
@@ -44,6 +46,7 @@ def _run_async(coro):
     except RuntimeError:
         pass
     return asyncio.run(coro)
+
 
 logger = logging.getLogger("vina.testing.runner")
 
@@ -168,17 +171,17 @@ class TestPipelineRunner:
         self,
         target: str,
         inject_findings: list[Finding] | None = None,
-        enable_vuln_intel: bool = True,
-        enable_enrichment: bool = True,
-        enable_correlation: bool = True,
-        enable_exploitability: bool = True,
-        enable_reports: bool = True,
-        timeout: float = 300.0,
+        enable_vuln_intel: bool = True,  # noqa: ARG002
+        enable_enrichment: bool = True,  # noqa: ARG002
+        enable_correlation: bool = True,  # noqa: ARG002
+        enable_exploitability: bool = True,  # noqa: ARG002
+        enable_reports: bool = True,  # noqa: ARG002
+        timeout: float = 300.0,  # noqa: ARG002
     ) -> TestResult:
         result = TestResult(
             target=target,
             pipeline_type="os",
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
             output_dir=self.output_dir,
         )
 
@@ -214,7 +217,7 @@ class TestPipelineRunner:
             result.success = False
             result.errors.append(str(exc))
 
-        result.finished_at = datetime.now(timezone.utc)
+        result.finished_at = datetime.now(UTC)
         if result.total_duration == 0.0:
             result.total_duration = self._metrics.end_run()
 
@@ -244,13 +247,13 @@ class TestPipelineRunner:
         self,
         target: str,
         inject_findings: list[Finding] | None = None,
-        enable_reports: bool = True,
-        timeout: float = 600.0,
+        enable_reports: bool = True,  # noqa: ARG002
+        timeout: float = 600.0,  # noqa: ARG002
     ) -> TestResult:
         result = TestResult(
             target=target,
             pipeline_type="web",
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
             output_dir=self.output_dir,
         )
 
@@ -281,7 +284,7 @@ class TestPipelineRunner:
             result.success = False
             result.errors.append(str(exc))
 
-        result.finished_at = datetime.now(timezone.utc)
+        result.finished_at = datetime.now(UTC)
         if result.total_duration == 0.0:
             result.total_duration = self._metrics.end_run()
 

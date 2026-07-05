@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from ..models.common import ReportArtifact, TargetInput
@@ -15,11 +15,11 @@ from ..modules.historical_urls import HistoricalUrlModule, HistoricalUrlResult
 from ..modules.host_discovery import HostDiscoveryModule, HostDiscoveryResult
 from ..modules.parameter_discovery import ParameterDiscoveryModule, ParameterDiscoveryResult
 from ..modules.port_scan import PortScanModule, PortScanResult
-from ..scanners.recon import ReconModule, ReconResult
 from ..modules.tech_detection import TechnologyDetectionModule, TechnologyDetectionResult
 from ..modules.vulnerability_scan import VulnerabilityScanModule, VulnerabilityScanResult
 from ..reports.html import render_html
 from ..reports.markdown import render_markdown
+from ..scanners.recon import ReconModule, ReconResult
 from .config import AppConfig
 from .runner import AsyncCommandRunner
 from .storage import JsonStore
@@ -112,7 +112,9 @@ class ScanPipeline:
             report=report,
         )
 
-    def _render_report(self, target: TargetInput, aggregate: AggregateResult, analysis: AnalysisResult) -> ReportArtifact:
+    def _render_report(
+        self, target: TargetInput, aggregate: AggregateResult, analysis: AnalysisResult
+    ) -> ReportArtifact:
         markdown = render_markdown(
             target=target.normalized,
             findings=aggregate.findings,
@@ -142,7 +144,7 @@ class ScanPipeline:
 
     @staticmethod
     def _create_run_dir(root: Path) -> Path:
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
         run_dir = root / timestamp
         run_dir.mkdir(parents=True, exist_ok=True)
         return run_dir

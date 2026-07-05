@@ -13,7 +13,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from ...core.config import AppConfig
-from ...core.runner import CommandResult
+from ...core.runner import CommandResult, classify_command_error
 from ...models.common import TargetInput
 from ...modules.common import ModuleContext
 
@@ -95,14 +95,9 @@ class SudoModule:
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {executable}")
             if cr.timed_out:
-                warnings.append(
-                    f"{name} timed out after {self.context.timeout_seconds}s"
-                )
+                warnings.append(f"{name} timed out after {self.context.timeout_seconds}s")
             if cr.returncode not in (0, None) and not cr.timed_out and not cr.missing_executable:
-                stderr_snippet = cr.stderr.strip()[:120] if cr.stderr.strip() else ""
-                msg = f"{name} exited with code {cr.returncode}"
-                if stderr_snippet:
-                    msg += f": {stderr_snippet}"
+                _, msg = classify_command_error(name, cr)
                 warnings.append(msg)
 
         entries = self._parse_sudo_l(results, warnings)
@@ -125,14 +120,13 @@ class SudoModule:
                 if cr.timed_out:
                     warnings.append(f"cat {fpath} timed out")
                 if cr.returncode not in (0, None) and not cr.timed_out and not cr.missing_executable:
-                    stderr_snippet = cr.stderr.strip()[:120] if cr.stderr.strip() else ""
-                    msg = f"cat {fpath} exited with code {cr.returncode}"
-                    if stderr_snippet:
-                        msg += f": {stderr_snippet}"
+                    _, msg = classify_command_error(f"cat {fpath}", cr)
                     warnings.append(msg)
                 if cr.succeeded and cr.stdout.strip():
                     parsed = SudoModule._parse_sudoers_content(
-                        cr.stdout, fpath, warnings,
+                        cr.stdout,
+                        fpath,
+                        warnings,
                     )
                     entries.extend(parsed)
 
@@ -202,22 +196,17 @@ class SudoModule:
 
             try:
                 runas_end = stripped.index(")")
-                runas = stripped[1:runas_end].strip()
+                _ = stripped[1:runas_end].strip()
                 rest = stripped[runas_end + 1 :].strip()
                 nopasswd = "NOPASSWD" in rest
                 tags_end = rest.index(":") if ":" in rest else -1
-                if tags_end >= 0:
-                    commands_str = rest[tags_end + 1 :].strip()
-                else:
-                    commands_str = rest
+                commands_str = rest[tags_end + 1 :].strip() if tags_end >= 0 else rest
 
                 commands_str = commands_str.rstrip(",").strip()
                 if commands_str == "ALL":
                     commands_list = ["ALL"]
                 else:
-                    commands_list = [
-                        c.strip() for c in commands_str.split(",") if c.strip()
-                    ]
+                    commands_list = [c.strip() for c in commands_str.split(",") if c.strip()]
 
                 rule = stripped
                 for cmd in commands_list:
@@ -247,13 +236,15 @@ class SudoModule:
         if cr is None or not cr.succeeded or not cr.stdout.strip():
             return entries
         return SudoModule._parse_sudoers_content(
-            cr.stdout, "/etc/sudoers", warnings,
+            cr.stdout,
+            "/etc/sudoers",
+            warnings,
         )
 
     @staticmethod
     def _collect_sudoers_d_files(
         results: dict[str, CommandResult],
-        warnings: list[str],
+        _warnings: list[str],
     ) -> list[str]:
         """Collect file paths from ``ls /etc/sudoers.d`` output."""
         cr = results.get("ls_sudoers_d")
@@ -291,18 +282,13 @@ class SudoModule:
 
                 nopasswd = "NOPASSWD" in rest
                 tags_end = rest.index(":") if ":" in rest else -1
-                if tags_end >= 0:
-                    commands_str = rest[tags_end + 1 :].strip()
-                else:
-                    commands_str = rest.strip()
+                commands_str = rest[tags_end + 1 :].strip() if tags_end >= 0 else rest.strip()
 
                 commands_str = commands_str.rstrip(",").strip()
                 if commands_str == "ALL":
                     commands_list = ["ALL"]
                 else:
-                    commands_list = [
-                        c.strip() for c in commands_str.split(",") if c.strip()
-                    ]
+                    commands_list = [c.strip() for c in commands_str.split(",") if c.strip()]
 
                 rule = line
                 for cmd in commands_list:
@@ -372,4 +358,4 @@ class SudoModule:
         )
 
 
-__all__ = ["SudoModule", "SudoEntry", "SudoResult"]
+__all__ = ["SudoEntry", "SudoModule", "SudoResult"]

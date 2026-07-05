@@ -3,19 +3,14 @@
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 import time
-from collections import OrderedDict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from vina.core.feed_manager import (
-    DEFAULT_CACHE_TTL_HOURS,
-    DEFAULT_FEED_DIR,
     FeedCache,
     FeedEntry,
     FeedManager,
@@ -24,7 +19,6 @@ from vina.core.feed_manager import (
     FeedSource,
     FeedType,
     FeedUpdater,
-    UpdateResult,
     UpdateStatus,
     _compute_checksum,
     _exponential_backoff,
@@ -36,9 +30,7 @@ from vina.core.feed_manager import (
     _parse_osv_response,
     get_default_manager,
     get_feed_status,
-    update_feeds,
 )
-
 
 # =========================================================================
 #  Fixtures
@@ -66,11 +58,7 @@ NVD_SAMPLE = {
                 "published": "2024-01-01T00:00:00Z",
                 "lastModified": "2024-06-01T00:00:00Z",
                 "descriptions": [{"lang": "en", "value": "Test vulnerability in product 1.0"}],
-                "metrics": {
-                    "cvssMetricV31": [
-                        {"cvssData": {"baseScore": 9.8, "baseSeverity": "CRITICAL"}}
-                    ]
-                },
+                "metrics": {"cvssMetricV31": [{"cvssData": {"baseScore": 9.8, "baseSeverity": "CRITICAL"}}]},
                 "configurations": [
                     {
                         "nodes": [
@@ -280,6 +268,7 @@ class TestFeedCache:
     def test_concurrent_safe(self, tmp_cache: FeedCache):
         """Basic concurrent access should not crash."""
         import threading
+
         errors = []
 
         def worker():
@@ -338,13 +327,14 @@ class TestFeedMetadata:
         assert meta.feed_age_hours == -1.0
 
     def test_feed_age_hours_recent(self):
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         meta = FeedMetadata(last_updated=now)
         assert meta.feed_age_hours < 0.01
 
     def test_feed_age_hours_old(self):
         from datetime import timedelta
-        old = (datetime.now(timezone.utc) - timedelta(hours=48)).isoformat()
+
+        old = (datetime.now(UTC) - timedelta(hours=48)).isoformat()
         meta = FeedMetadata(last_updated=old)
         assert meta.feed_age_hours > 47
         assert meta.feed_age_hours < 49
@@ -446,6 +436,7 @@ class TestParsers:
 
     def test_parse_epss_csv_gzipped(self):
         import gzip
+
         compressed = gzip.compress(EPSS_CSV_SAMPLE.encode())
         entries = _parse_epss_csv(compressed)
         assert len(entries) == 3
@@ -594,7 +585,9 @@ class TestFeedUpdater:
         mock_resp.read.return_value = nvd_bytes
         mock_urlopen.return_value.__enter__.return_value = mock_resp
 
-        source = FeedSource(name="nvd", feed_type=FeedType.NVD, url="http://example.com/nvd", cache_ttl_hours=24, rate_limit_sleep=0)
+        source = FeedSource(
+            name="nvd", feed_type=FeedType.NVD, url="http://example.com/nvd", cache_ttl_hours=24, rate_limit_sleep=0
+        )
         updater = FeedUpdater(tmp_cache, source)
         result = updater.update(force=True)
 
@@ -623,8 +616,9 @@ class TestFeedUpdater:
         """Rate limit sleep should be called between requests (on retries)."""
         mock_urlopen.side_effect = ConnectionError("timeout")
 
-        source = FeedSource(name="nvd", feed_type=FeedType.NVD, url="http://example.com/nvd",
-                            rate_limit_sleep=0.01)  # very short for test
+        source = FeedSource(
+            name="nvd", feed_type=FeedType.NVD, url="http://example.com/nvd", rate_limit_sleep=0.01
+        )  # very short for test
         updater = FeedUpdater(tmp_cache, source)
         start = time.perf_counter()
         updater.update()
@@ -642,7 +636,9 @@ class TestFeedUpdater:
         mock_resp.read.return_value = kev_bytes
         mock_urlopen.return_value.__enter__.return_value = mock_resp
 
-        source = FeedSource(name="cisa_kev", feed_type=FeedType.CISA_KEV, url="http://example.com/kev", rate_limit_sleep=0)
+        source = FeedSource(
+            name="cisa_kev", feed_type=FeedType.CISA_KEV, url="http://example.com/kev", rate_limit_sleep=0
+        )
         updater = FeedUpdater(tmp_cache, source)
         result = updater.update()
 
@@ -661,7 +657,9 @@ class TestFeedUpdater:
         mock_resp.read.return_value = ga_bytes
         mock_urlopen.return_value.__enter__.return_value = mock_resp
 
-        source = FeedSource(name="github", feed_type=FeedType.GITHUB_ADVISORY, url="http://example.com/gh", rate_limit_sleep=0)
+        source = FeedSource(
+            name="github", feed_type=FeedType.GITHUB_ADVISORY, url="http://example.com/gh", rate_limit_sleep=0
+        )
         updater = FeedUpdater(tmp_cache, source)
         result = updater.update()
 
@@ -722,8 +720,8 @@ class TestFeedScheduler:
         }
         url_to_source = {v: k for k, v in urls_by_source.items()}
 
-        def side_effect(req, *args, **kwargs):
-            url = req.get_full_url() if hasattr(req, 'get_full_url') else str(req)
+        def side_effect(req, *_args, **_kwargs):
+            url = req.get_full_url() if hasattr(req, "get_full_url") else str(req)
             source_name = url_to_source.get(url, "unknown")
             data = feed_data_by_source.get(source_name, b"")
             response = MagicMock()
@@ -738,10 +736,17 @@ class TestFeedScheduler:
 
         sources = [
             FeedSource(name="nvd", feed_type=FeedType.NVD, url=urls_by_source["nvd"], rate_limit_sleep=0),
-            FeedSource(name="cisa_kev", feed_type=FeedType.CISA_KEV, url=urls_by_source["cisa_kev"], rate_limit_sleep=0),
+            FeedSource(
+                name="cisa_kev", feed_type=FeedType.CISA_KEV, url=urls_by_source["cisa_kev"], rate_limit_sleep=0
+            ),
             FeedSource(name="epss", feed_type=FeedType.EPSS, url=urls_by_source["epss"], rate_limit_sleep=0),
             FeedSource(name="osv", feed_type=FeedType.OSV, url=urls_by_source["osv"], rate_limit_sleep=0),
-            FeedSource(name="github_advisory", feed_type=FeedType.GITHUB_ADVISORY, url=urls_by_source["github_advisory"], rate_limit_sleep=0),
+            FeedSource(
+                name="github_advisory",
+                feed_type=FeedType.GITHUB_ADVISORY,
+                url=urls_by_source["github_advisory"],
+                rate_limit_sleep=0,
+            ),
         ]
         scheduler = FeedScheduler(tmp_cache, sources)
         results = scheduler.update_all()
@@ -784,9 +789,10 @@ class TestFeedManager:
     @patch("vina.core.feed_manager.urlopen")
     def test_update_populates_cache(self, mock_urlopen, tmp_path: Path):
         """After update, cache should contain entries."""
+
         # Default URLs used by FeedManager
-        def side_effect(req, *args, **kwargs):
-            url = req.get_full_url() if hasattr(req, 'get_full_url') else str(req)
+        def side_effect(req, *_args, **_kwargs):
+            url = req.get_full_url() if hasattr(req, "get_full_url") else str(req)
             # Match on known URL patterns
             if "nvd.nist" in url:
                 data = json.dumps(NVD_SAMPLE).encode()
@@ -970,7 +976,7 @@ class TestVulnEngineIntegration:
         mock_resp.read.return_value = nvd_bytes
         mock_urlopen.return_value.__enter__.return_value = mock_resp
 
-        from vina.core.vuln_intel import VulnerabilityEngine, VulnEngineConfig, SoftwareComponent
+        from vina.core.vuln_intel import SoftwareComponent, VulnerabilityEngine
 
         # Create feed manager with data
         fm = FeedManager(feed_dir=tmp_path / "feeds")
@@ -989,5 +995,6 @@ class TestVulnEngineIntegration:
     def test_engine_fallback_without_feed_manager(self):
         """Without feed_manager, VulnerabilityEngine falls back to default DB."""
         from vina.core.vuln_intel import VulnerabilityEngine
+
         engine = VulnerabilityEngine()
         assert engine.database is not None

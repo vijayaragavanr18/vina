@@ -3,43 +3,36 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
-import pytest
-
-from vina.models.findings import Finding, Severity
-from vina.models.stages import StageResult, StageState
+from vina.models.findings import Severity
+from vina.models.stages import StageState
 from vina.testing.benchmark import (
-    BenchmarkMetrics,
     BenchmarkProfile,
-    BenchmarkResult,
     BenchmarkRunner,
     get_benchmark_profiles,
     register_benchmark_profile,
 )
 from vina.testing.datasets import (
-    MOCK_CVES,
-    MOCK_NVD_RESPONSE,
-    MOCK_CISA_KEV_RESPONSE,
-    MOCK_EPSS_CSV,
-    MOCK_OSV_RESPONSE,
-    MOCK_GITHUB_ADVISORY_RESPONSE,
     DVWA_SCENARIO,
     JUICE_SHOP_SCENARIO,
     METASPLOITABLE_OS_SCENARIO,
+    MOCK_CISA_KEV_RESPONSE,
+    MOCK_CVES,
+    MOCK_EPSS_CSV,
+    MOCK_GITHUB_ADVISORY_RESPONSE,
+    MOCK_NVD_RESPONSE,
+    MOCK_OSV_RESPONSE,
 )
 from vina.testing.fixtures import (
     MockCommandRunner,
     MockFindingFactory,
-    MockPipelineContext,
     make_mock_finding,
     make_mock_stage_result,
 )
 from vina.testing.integration import IntegrationTestResult, IntegrationTestSuite, run_integration_suite
-from vina.testing.metrics import BenchmarkMetrics as BM, MetricsCollector, compute_metrics, compare_cves
+from vina.testing.metrics import BenchmarkMetrics, MetricsCollector, compare_cves, compute_metrics
 from vina.testing.runner import TestPipelineRunner, TestResult
 from vina.testing.sandbox import TestSandbox
-
 
 # =========================================================================
 #  Fixtures
@@ -86,6 +79,7 @@ class TestMockCommandRunner:
     def test_run_default(self):
         runner = MockCommandRunner()
         import asyncio
+
         result = asyncio.run(runner.run("test", ("--flag",)))
         assert result.returncode == 0
 
@@ -93,12 +87,14 @@ class TestMockCommandRunner:
         runner = MockCommandRunner()
         runner.set_result("mycmd", {"custom": "result"})
         import asyncio
+
         result = asyncio.run(runner.run("mycmd"))
         assert result == {"custom": "result"}
 
     def test_tracks_commands(self):
         runner = MockCommandRunner()
         import asyncio
+
         asyncio.run(runner.run("cmd1"))
         asyncio.run(runner.run("cmd2"))
         assert len(runner.executed_commands) == 2
@@ -265,6 +261,7 @@ class TestMetricsCollector:
         mc = MetricsCollector()
         mc.start_run()
         import time
+
         time.sleep(0.01)
         elapsed = mc.end_run()
         assert elapsed > 0.0
@@ -273,6 +270,7 @@ class TestMetricsCollector:
         mc = MetricsCollector()
         mc.start_timer("test")
         import time
+
         time.sleep(0.01)
         mc.stop_timer("test")
         assert mc.get_timing("test") > 0.0
@@ -294,24 +292,26 @@ class TestMetricsCollector:
 
 class TestBenchmarkMetrics:
     def test_default_values(self):
-        m = BM()
+        m = BenchmarkMetrics()
         assert m.true_positives == 0
         assert m.runtime_within_budget is True
 
     def test_to_dict(self):
-        m = BM(true_positives=5, false_positives=1, false_negatives=2, precision=0.833, recall=0.714, f1_score=0.769)
+        m = BenchmarkMetrics(
+            true_positives=5, false_positives=1, false_negatives=2, precision=0.833, recall=0.714, f1_score=0.769
+        )
         d = m.to_dict()
         assert d["true_positives"] == 5
         assert d["precision"] == 0.833
 
     def test_to_markdown(self):
-        m = BM(precision=0.9, recall=0.8, f1_score=0.85)
+        m = BenchmarkMetrics(precision=0.9, recall=0.8, f1_score=0.85)
         md = m.to_markdown()
         assert "Precision" in md
         assert "90.0%" in md
 
     def test_to_html(self):
-        m = BM(precision=0.9, recall=0.8, f1_score=0.85)
+        m = BenchmarkMetrics(precision=0.9, recall=0.8, f1_score=0.85)
         html = m.to_html()
         assert "90.0%" in html
 
@@ -475,6 +475,7 @@ class TestIntegrationTestSuite:
         path = suite.save_report(Path("/tmp/vina-int-test"))
         assert path.exists()
         import json
+
         data = json.loads(path.read_text())
         assert data["name"] == "test"
         assert data["passed"] == 1
@@ -504,6 +505,7 @@ class TestTestSandbox:
             path = sandbox.write_json("data.json", {"key": "val"})
             assert path.exists()
             import json
+
             assert json.loads(path.read_text()) == {"key": "val"}
 
     def test_write_text(self):
@@ -517,6 +519,7 @@ class TestTestSandbox:
             assert port > 0
             sandbox.set_feed_response("/test", 200, b'{"ok": true}', "application/json")
             import urllib.request
+
             resp = urllib.request.urlopen(f"http://127.0.0.1:{port}/test")
             assert resp.status == 200
             assert resp.read() == b'{"ok": true}'
@@ -525,6 +528,7 @@ class TestTestSandbox:
         with TestSandbox() as sandbox:
             port = sandbox.start_mock_feed_server()
             import urllib.request
+
             try:
                 urllib.request.urlopen(f"http://127.0.0.1:{port}/nonexistent")
             except urllib.error.HTTPError as e:

@@ -23,8 +23,8 @@ def version_tuple() -> tuple[int, int, int]:
 
 
 __all__ = [
-    "__version__",
     "VERSION_INFO",
+    "__version__",
     "version_str",
     "version_tuple",
 ]

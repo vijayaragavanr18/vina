@@ -52,7 +52,11 @@ class KernelResult:
 
 _SECURITY_SYSCTLS = {
     "kernel.randomize_va_space": ("ASLR", "2", "kernel address space layout randomization is enabled"),
-    "kernel.yama.ptrace_scope": ("ptrace", "1", "ptrace scope is restricted (non-root users cannot ptrace non-child processes)"),
+    "kernel.yama.ptrace_scope": (
+        "ptrace",
+        "1",
+        "ptrace scope is restricted (non-root users cannot ptrace non-child processes)",
+    ),
     "net.ipv4.conf.all.rp_filter": ("RP filter", "1", "reverse path filtering is enabled"),
     "net.ipv4.conf.default.rp_filter": ("RP filter", "1", "reverse path filtering is enabled"),
     "net.ipv4.tcp_syncookies": ("SYN cookies", "1", "TCP SYN cookies are enabled"),
@@ -115,52 +119,62 @@ class KernelModule:
         ptrace_val = self._stdout_or_none(results.get("sysctl_ptrace")) or ""
 
         if kernel_release:
-            findings.append(make_finding(
-                title=f"Kernel: {kernel_release}",
-                description=f"Running kernel version {kernel_release}",
-                severity="info",
-                category="system",
-                source_stage="kernel",
-                target=target_str,
-                evidence=f"kernel={kernel_release} arch={self._stdout_or_none(results.get('uname_m')) or ''}",
-            ))
+            findings.append(
+                make_finding(
+                    title=f"Kernel: {kernel_release}",
+                    description=f"Running kernel version {kernel_release}",
+                    severity="info",
+                    category="system",
+                    source_stage="kernel",
+                    target=target_str,
+                    evidence=f"kernel={kernel_release} arch={self._stdout_or_none(results.get('uname_m')) or ''}",
+                )
+            )
 
         if aslr_enabled is not None:
             if aslr_enabled:
-                findings.append(make_finding(
-                    title="ASLR is enabled",
-                    description="Kernel address space layout randomization is enabled (value=2, full randomization)",
-                    severity="info",
-                    category="security_control",
-                    source_stage="kernel",
-                    target=target_str,
-                    evidence="kernel.randomize_va_space=2",
-                ))
+                findings.append(
+                    make_finding(
+                        title="ASLR is enabled",
+                        description="Kernel address space layout randomization is enabled (value=2, full randomization)",
+                        severity="info",
+                        category="security_control",
+                        source_stage="kernel",
+                        target=target_str,
+                        evidence="kernel.randomize_va_space=2",
+                    )
+                )
             else:
-                findings.append(make_finding(
-                    title="ASLR is disabled",
-                    description="Kernel address space layout randomization is disabled",
-                    severity="high",
-                    category="misconfiguration",
-                    source_stage="kernel",
-                    target=target_str,
-                    evidence=f"kernel.randomize_va_space={aslr_val}",
-                    recommendation="Enable ASLR: sysctl -w kernel.randomize_va_space=2",
-                ))
+                findings.append(
+                    make_finding(
+                        title="ASLR is disabled",
+                        description="Kernel address space layout randomization is disabled",
+                        severity="high",
+                        category="misconfiguration",
+                        source_stage="kernel",
+                        target=target_str,
+                        evidence=f"kernel.randomize_va_space={aslr_val}",
+                        recommendation="Enable ASLR: sysctl -w kernel.randomize_va_space=2",
+                    )
+                )
 
         if modules:
-            suspicious = [m.name for m in modules if any(x in m.name.lower() for x in ("tcpdump", "nfs", "cifs", "vbox", "vmw"))]
+            suspicious = [
+                m.name for m in modules if any(x in m.name.lower() for x in ("tcpdump", "nfs", "cifs", "vbox", "vmw"))
+            ]
             for mod_name in suspicious:
-                findings.append(make_finding(
-                    title=f"Potentially sensitive kernel module: {mod_name}",
-                    description=f"Kernel module '{mod_name}' is loaded",
-                    severity="low",
-                    category="kernel_module",
-                    source_stage="kernel",
-                    target=target_str,
-                    evidence=mod_name,
-                    recommendation="Verify this module is needed for the system's purpose",
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Potentially sensitive kernel module: {mod_name}",
+                        description=f"Kernel module '{mod_name}' is loaded",
+                        severity="low",
+                        category="kernel_module",
+                        source_stage="kernel",
+                        target=target_str,
+                        evidence=mod_name,
+                        recommendation="Verify this module is needed for the system's purpose",
+                    )
+                )
 
         primary = results.get("uname_r") or results.get("lsmod") or self._empty_command_result()
 
@@ -196,7 +210,9 @@ class KernelModule:
                 modules.append(LoadedKernelModule(name=parts[0], size=parts[1], used_by=parts[2]))
         return modules
 
-    def _parse_sysctl(self, results: dict[str, CommandResult], findings: list[Finding], target_str: str) -> list[SysctlSetting]:
+    def _parse_sysctl(
+        self, results: dict[str, CommandResult], findings: list[Finding], target_str: str
+    ) -> list[SysctlSetting]:
         settings: list[SysctlSetting] = []
         for key, (label, expected, description) in _SECURITY_SYSCTLS.items():
             safe = key.replace(".", "_").replace("/", "_")
@@ -207,16 +223,20 @@ class KernelModule:
             secure = value == expected
             settings.append(SysctlSetting(key=key, value=value, secure=secure))
             if not secure:
-                findings.append(make_finding(
-                    title=f"{label}: {key}={value} (expected {expected})",
-                    description=description.replace("is", "should be").replace("are", "should be") if not secure else description,
-                    severity="medium" if not secure else "info",
-                    category="security_control",
-                    source_stage="kernel",
-                    target=target_str,
-                    evidence=f"sysctl {key}={value}",
-                    recommendation=f"Set sysctl {key}={expected}: sysctl -w {key}={expected}",
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"{label}: {key}={value} (expected {expected})",
+                        description=description.replace("is", "should be").replace("are", "should be")
+                        if not secure
+                        else description,
+                        severity="medium" if not secure else "info",
+                        category="security_control",
+                        source_stage="kernel",
+                        target=target_str,
+                        evidence=f"sysctl {key}={value}",
+                        recommendation=f"Set sysctl {key}={expected}: sysctl -w {key}={expected}",
+                    )
+                )
         return settings
 
     @staticmethod
@@ -251,12 +271,24 @@ class KernelModule:
         print("----------------------------------------")
         print(f"Kernel        : {result.kernel_release or 'N/A'}")
         print(f"Modules       : {len(result.loaded_modules)}")
-        print(f"ASLR          : {'enabled' if result.aslr_enabled else 'disabled' if result.aslr_enabled is False else 'unknown'}")
+        print(
+            f"ASLR          : {'enabled' if result.aslr_enabled else 'disabled' if result.aslr_enabled is False else 'unknown'}"
+        )
         print(f"Findings      : {len(result.findings)}")
 
     @staticmethod
     def _empty_command_result() -> CommandResult:
-        return CommandResult(command="kernel", args=(), returncode=1, stdout="", stderr="", duration_seconds=0.0, timed_out=False, missing_executable=False, full_command="kernel")
+        return CommandResult(
+            command="kernel",
+            args=(),
+            returncode=1,
+            stdout="",
+            stderr="",
+            duration_seconds=0.0,
+            timed_out=False,
+            missing_executable=False,
+            full_command="kernel",
+        )
 
 
-__all__ = ["KernelModule", "LoadedKernelModule", "SysctlSetting", "KernelResult"]
+__all__ = ["KernelModule", "KernelResult", "LoadedKernelModule", "SysctlSetting"]

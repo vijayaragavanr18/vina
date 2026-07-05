@@ -20,10 +20,27 @@ from ...modules.common import ModuleContext
 logger = logging.getLogger(__name__)
 
 _SUSPICIOUS_BINARIES = (
-    "nc", "netcat", "ncat", "socat", "tcpdump", "tshark",
-    "john", "hashcat", "hydra", "medusa", "sqlmap", "nikto",
-    "nmap", "masscan", "crack", "aircrack", "reaver",
-    "miner", "xmrig", "cpuminer", "stratum",
+    "nc",
+    "netcat",
+    "ncat",
+    "socat",
+    "tcpdump",
+    "tshark",
+    "john",
+    "hashcat",
+    "hydra",
+    "medusa",
+    "sqlmap",
+    "nikto",
+    "nmap",
+    "masscan",
+    "crack",
+    "aircrack",
+    "reaver",
+    "miner",
+    "xmrig",
+    "cpuminer",
+    "stratum",
 )
 
 _SUSPICIOUS_PATHS = ("/tmp", "/dev/shm", "/var/tmp", "/home/")
@@ -109,7 +126,9 @@ class ProcessesModule:
         self._print_summary(result)
         return result
 
-    def _parse_processes(self, results: dict[str, CommandResult], warnings: list[str], findings: list[Finding], target_str: str) -> tuple[list[ProcessInfo], int, int]:
+    def _parse_processes(
+        self, results: dict[str, CommandResult], _warnings: list[str], findings: list[Finding], target_str: str
+    ) -> tuple[list[ProcessInfo], int, int]:
         processes: list[ProcessInfo] = []
         root_count = 0
         susp_count = 0
@@ -138,7 +157,7 @@ class ProcessesModule:
                 cpu = parts[2]
                 mem = parts[3]
                 cmd_start = 10 if len(parts) > 10 else len(parts)
-                command = " ".join(parts[cmd_start - 1:]) if cmd_start > 0 else ""
+                command = " ".join(parts[cmd_start - 1 :]) if cmd_start > 0 else ""
                 full_cmd = " ".join(parts[10:]) if len(parts) > 10 else ""
                 ppid = 0
             else:  # ps -ef format
@@ -157,51 +176,61 @@ class ProcessesModule:
             is_suspicious = self._is_suspicious(bin_name, full_cmd)
 
             if is_suspicious:
-                findings.append(make_finding(
-                    title=f"Suspicious process: {bin_name}",
-                    description=f"Suspicious binary running: {bin_name}",
-                    severity="high",
-                    category="process",
-                    source_stage="processes",
-                    target=target_str,
-                    evidence=f"pid={pid} user={user} cmd={command[:120]}",
-                    recommendation="Investigate this process. It may indicate a compromised system.",
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Suspicious process: {bin_name}",
+                        description=f"Suspicious binary running: {bin_name}",
+                        severity="high",
+                        category="process",
+                        source_stage="processes",
+                        target=target_str,
+                        evidence=f"pid={pid} user={user} cmd={command[:120]}",
+                        recommendation="Investigate this process. It may indicate a compromised system.",
+                    )
+                )
                 susp_count += 1
 
-            processes.append(ProcessInfo(
-                pid=pid, user=user, command=command[:100], cpu=cpu, mem=mem,
-                parent_pid=ppid, full_command=full_cmd, running_as_root=is_root,
-                suspicious=is_suspicious,
-            ))
+            processes.append(
+                ProcessInfo(
+                    pid=pid,
+                    user=user,
+                    command=command[:100],
+                    cpu=cpu,
+                    mem=mem,
+                    parent_pid=ppid,
+                    full_command=full_cmd,
+                    running_as_root=is_root,
+                    suspicious=is_suspicious,
+                )
+            )
             if is_root:
                 root_count += 1
 
         # Alert on too many root processes
         if root_count > 50:
-            findings.append(make_finding(
-                title=f"High number of root processes ({root_count})",
-                description=f"Found {root_count} processes running as root",
-                severity="low",
-                category="process",
-                source_stage="processes",
-                target=target_str,
-                evidence=f"{root_count} root processes",
-                recommendation="Review whether all root processes are necessary",
-            ))
+            findings.append(
+                make_finding(
+                    title=f"High number of root processes ({root_count})",
+                    description=f"Found {root_count} processes running as root",
+                    severity="low",
+                    category="process",
+                    source_stage="processes",
+                    target=target_str,
+                    evidence=f"{root_count} root processes",
+                    recommendation="Review whether all root processes are necessary",
+                )
+            )
 
         return processes, root_count, susp_count
 
     @staticmethod
-    def _is_suspicious(bin_name: str, full_cmd: str) -> bool:
+    def _is_suspicious(bin_name: str, _full_cmd: str) -> bool:
         if not bin_name:
             return False
         base = bin_name.split("/")[-1].lower() if "/" in bin_name else bin_name.lower()
         if base in _SUSPICIOUS_BINARIES:
             return True
-        if any(bin_name.startswith(p) for p in _SUSPICIOUS_PATHS):
-            return True
-        return False
+        return any(bin_name.startswith(p) for p in _SUSPICIOUS_PATHS)
 
     def _save_results(self, result: ProcessesResult) -> Path:
         payload = {
@@ -231,7 +260,17 @@ class ProcessesModule:
 
     @staticmethod
     def _empty_command_result() -> CommandResult:
-        return CommandResult(command="processes", args=(), returncode=1, stdout="", stderr="", duration_seconds=0.0, timed_out=False, missing_executable=False, full_command="processes")
+        return CommandResult(
+            command="processes",
+            args=(),
+            returncode=1,
+            stdout="",
+            stderr="",
+            duration_seconds=0.0,
+            timed_out=False,
+            missing_executable=False,
+            full_command="processes",
+        )
 
 
-__all__ = ["ProcessesModule", "ProcessInfo", "ProcessesResult"]
+__all__ = ["ProcessInfo", "ProcessesModule", "ProcessesResult"]

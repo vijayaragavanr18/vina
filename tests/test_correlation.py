@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
 
 import pytest
 
@@ -11,13 +10,11 @@ from vina.core.correlation import (
     AttackPath,
     CorrelationEngine,
     CorrelationRule,
-    CorrelationStats,
     FindingMatcher,
     compute_correlation_stats,
     correlate,
 )
-from vina.models.findings import Finding, Severity
-
+from vina.models.findings import Finding
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -46,7 +43,7 @@ def _make_finding(
         target=target,
         evidence=evidence or f"evidence for {_UNIQUE_ID}",
         recommendation="fix it",
-        timestamp=datetime.now(timezone.utc).isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
     )
 
 
@@ -104,18 +101,32 @@ class TestAttackPathModel:
 
     def test_attack_path_with_prerequisites(self):
         path = AttackPath(
-            id="AP-3", title="Prereq Path", description="desc",
-            severity="medium", confidence=0.5, likelihood=0.5, impact=0.5,
-            score=40.0, attack_type="lateral_movement", findings=[],
+            id="AP-3",
+            title="Prereq Path",
+            description="desc",
+            severity="medium",
+            confidence=0.5,
+            likelihood=0.5,
+            impact=0.5,
+            score=40.0,
+            attack_type="lateral_movement",
+            findings=[],
             prerequisites=["user shell", "network access"],
         )
         assert "user shell" in path.prerequisites
 
     def test_attack_path_empty_findings(self):
         path = AttackPath(
-            id="AP-4", title="Empty", description="desc",
-            severity="low", confidence=0.3, likelihood=0.3, impact=0.3,
-            score=15.0, attack_type="exploitation", findings=[],
+            id="AP-4",
+            title="Empty",
+            description="desc",
+            severity="low",
+            confidence=0.3,
+            likelihood=0.3,
+            impact=0.3,
+            score=15.0,
+            attack_type="exploitation",
+            findings=[],
         )
         assert path.findings == []
 
@@ -128,7 +139,7 @@ class TestAttackPathModel:
 class TestFindingMatcher:
     def test_title_contains(self):
         matcher = FindingMatcher(title_contains="SUDO")
-        engine = CorrelationEngine(rules=[])
+        CorrelationEngine(rules=[])
         f = _make_finding(title="sudoers misconfiguration")
         # Use the engine's static matching method
         assert CorrelationEngine._finding_matches(matcher, f)
@@ -203,7 +214,7 @@ class TestCorrelationRule:
 
 
 # ---------------------------------------------------------------------------
-# CorrelationEngine – integration
+# CorrelationEngine - integration
 # ---------------------------------------------------------------------------
 
 
@@ -258,6 +269,7 @@ class TestCorrelationEngine:
 
     def test_risk_scoring_with_gtfo_bins(self):
         from vina.core.knowledge import EnrichedFinding
+
         f = _make_finding(title="gtfo bin found", evidence="/usr/bin/find")
         enriched = EnrichedFinding(
             finding=f,
@@ -338,12 +350,42 @@ class TestCorrelationStats:
 
     def test_stats_with_paths(self):
         paths = [
-            AttackPath(id="a", title="a", description="", severity="critical", confidence=0.9,
-                       likelihood=0.9, impact=0.9, score=95.0, attack_type="pe", findings=[]),
-            AttackPath(id="b", title="b", description="", severity="high", confidence=0.7,
-                       likelihood=0.7, impact=0.7, score=70.0, attack_type="pe", findings=[]),
-            AttackPath(id="c", title="c", description="", severity="medium", confidence=0.5,
-                       likelihood=0.5, impact=0.5, score=45.0, attack_type="pe", findings=[]),
+            AttackPath(
+                id="a",
+                title="a",
+                description="",
+                severity="critical",
+                confidence=0.9,
+                likelihood=0.9,
+                impact=0.9,
+                score=95.0,
+                attack_type="pe",
+                findings=[],
+            ),
+            AttackPath(
+                id="b",
+                title="b",
+                description="",
+                severity="high",
+                confidence=0.7,
+                likelihood=0.7,
+                impact=0.7,
+                score=70.0,
+                attack_type="pe",
+                findings=[],
+            ),
+            AttackPath(
+                id="c",
+                title="c",
+                description="",
+                severity="medium",
+                confidence=0.5,
+                likelihood=0.5,
+                impact=0.5,
+                score=45.0,
+                attack_type="pe",
+                findings=[],
+            ),
         ]
         stats = compute_correlation_stats(paths)
         assert stats.total_paths == 3
@@ -356,8 +398,18 @@ class TestCorrelationStats:
 
     def test_risk_score_weighted(self):
         paths = [
-            AttackPath(id="a", title="a", description="", severity="critical", confidence=0.9,
-                       likelihood=0.9, impact=0.9, score=90.0, attack_type="pe", findings=[]),
+            AttackPath(
+                id="a",
+                title="a",
+                description="",
+                severity="critical",
+                confidence=0.9,
+                likelihood=0.9,
+                impact=0.9,
+                score=90.0,
+                attack_type="pe",
+                findings=[],
+            ),
         ]
         stats = compute_correlation_stats(paths)
         assert stats.overall_risk_score == pytest.approx(90.0)
@@ -389,10 +441,18 @@ class TestCorrelationIntegration:
 
         f = _make_finding("test")
         path = AttackPath(
-            id="AP-JSON", title="JSON Path", description="desc",
-            severity="high", confidence=0.8, likelihood=0.7, impact=0.7,
-            score=80.0, attack_type="lateral_movement", findings=[f],
-            attack_chain=["step 1", "step 2"], explanation="chain",
+            id="AP-JSON",
+            title="JSON Path",
+            description="desc",
+            severity="high",
+            confidence=0.8,
+            likelihood=0.7,
+            impact=0.7,
+            score=80.0,
+            attack_type="lateral_movement",
+            findings=[f],
+            attack_chain=["step 1", "step 2"],
+            explanation="chain",
             prerequisites=["shell"],
         )
         d = path.to_dict()
@@ -425,7 +485,9 @@ class TestRiskScoreEdgeCases:
             rule_id="CAP",
             required=[FindingMatcher(title_contains="a")],
             optional=[FindingMatcher(title_contains="b")],
-            exploitability_bonus=50.0, credential_bonus=50.0, gtfo_bonus=50.0,
+            exploitability_bonus=50.0,
+            credential_bonus=50.0,
+            gtfo_bonus=50.0,
         )
         engine = _engine(rules=[rule])
         f1 = _make_finding(title="a is required", evidence="/usr/bin/find")
@@ -447,10 +509,30 @@ class TestRiskScoreEdgeCases:
 class TestCorrelationStatsEdgeCases:
     def test_all_same_severity(self):
         paths = [
-            AttackPath(id="a", title="a", description="", severity="high", confidence=0.5,
-                       likelihood=0.5, impact=0.5, score=50.0, attack_type="pe", findings=[]),
-            AttackPath(id="b", title="b", description="", severity="high", confidence=0.6,
-                       likelihood=0.6, impact=0.6, score=60.0, attack_type="pe", findings=[]),
+            AttackPath(
+                id="a",
+                title="a",
+                description="",
+                severity="high",
+                confidence=0.5,
+                likelihood=0.5,
+                impact=0.5,
+                score=50.0,
+                attack_type="pe",
+                findings=[],
+            ),
+            AttackPath(
+                id="b",
+                title="b",
+                description="",
+                severity="high",
+                confidence=0.6,
+                likelihood=0.6,
+                impact=0.6,
+                score=60.0,
+                attack_type="pe",
+                findings=[],
+            ),
         ]
         stats = compute_correlation_stats(paths)
         assert stats.by_severity == {"critical": 0, "high": 2, "medium": 0, "low": 0, "info": 0}

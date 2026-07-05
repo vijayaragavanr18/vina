@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 import os
 import time
 from dataclasses import dataclass, field
@@ -170,6 +169,7 @@ class MetricsCollector:
     def sample_resources(self) -> None:
         try:
             import psutil
+
             proc = psutil.Process(os.getpid())
             self._memory_samples.append(proc.memory_info().rss / (1024 * 1024))
             self._cpu_samples.append(proc.cpu_percent(interval=0))
@@ -205,8 +205,8 @@ def compute_metrics(
     -------
     BenchmarkMetrics with computed values.
     """
-    expected_set = set(t.lower() for t in expected_titles)
-    actual_set = set(t.lower() for t in actual_titles)
+    expected_set = {t.lower() for t in expected_titles}
+    actual_set = {t.lower() for t in actual_titles}
 
     true_positives = 0
     for exp in expected_set:
@@ -258,6 +258,6 @@ def compare_cves(expected_cves: list[str], actual_cves: list[str]) -> dict[str, 
 __all__ = [
     "BenchmarkMetrics",
     "MetricsCollector",
-    "compute_metrics",
     "compare_cves",
+    "compute_metrics",
 ]

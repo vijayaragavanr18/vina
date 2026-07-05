@@ -13,17 +13,26 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from ...core.config import AppConfig
-from ...core.runner import CommandResult
+from ...core.runner import CommandResult, classify_command_error
 from ...models.common import TargetInput
 from ...modules.common import ModuleContext
 
 logger = logging.getLogger(__name__)
 
 _INTERESTING_WRITABLE_PREFIXES = (
-    "/etc", "/usr", "/opt", "/root", "/var", "/home",
+    "/etc",
+    "/usr",
+    "/opt",
+    "/root",
+    "/var",
+    "/home",
 )
 _UNINTERESTING_PREFIXES = (
-    "/proc", "/sys", "/dev", "/run", "/tmp",
+    "/proc",
+    "/sys",
+    "/dev",
+    "/run",
+    "/tmp",
 )
 
 
@@ -37,6 +46,7 @@ class PrivilegeEscalationFinding:
     description: str
     evidence: str
     recommendation: str
+    target: str
     source_command: str | None = None
 
 
@@ -149,34 +159,30 @@ class PrivilegeEscalationModule:
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {executable}")
             if cr.timed_out:
-                warnings.append(
-                    f"{name} timed out after {self.context.timeout_seconds}s"
-                )
+                warnings.append(f"{name} timed out after {self.context.timeout_seconds}s")
             if cr.returncode not in (0, None) and not cr.timed_out and not cr.missing_executable:
-                stderr_snippet = cr.stderr.strip()[:120] if cr.stderr.strip() else ""
-                msg = f"{name} exited with code {cr.returncode}"
-                if stderr_snippet:
-                    msg += f": {stderr_snippet}"
+                _, msg = classify_command_error(name, cr)
                 warnings.append(msg)
 
         findings: list[PrivilegeEscalationFinding] = []
+        target_str = target_input.normalized
 
-        suid_findings = self._check_suid(results, warnings)
+        suid_findings = self._check_suid(results, warnings, target_str)
         findings.extend(suid_findings)
 
-        cap_findings = self._check_capabilities(results, warnings)
+        cap_findings = self._check_capabilities(results, warnings, target_str)
         findings.extend(cap_findings)
 
-        sudo_findings = self._check_sudo(results, warnings)
+        sudo_findings = self._check_sudo(results, warnings, target_str)
         findings.extend(sudo_findings)
 
-        writable_findings = self._check_writable_dirs(results, warnings)
+        writable_findings = self._check_writable_dirs(results, warnings, target_str)
         findings.extend(writable_findings)
 
-        systemd_findings = self._check_systemd(results, warnings)
+        systemd_findings = self._check_systemd(results, warnings, target_str)
         findings.extend(systemd_findings)
 
-        cron_findings = self._check_cron(results, warnings)
+        cron_findings = self._check_cron(results, warnings, target_str)
         findings.extend(cron_findings)
 
         if not findings:
@@ -213,7 +219,8 @@ class PrivilegeEscalationModule:
     @staticmethod
     def _check_suid(
         results: dict[str, CommandResult],
-        warnings: list[str],
+        _warnings: list[str],
+        target: str,
     ) -> list[PrivilegeEscalationFinding]:
         """Check for SUID binaries that may be worth investigating."""
         findings: list[PrivilegeEscalationFinding] = []
@@ -269,9 +276,9 @@ class PrivilegeEscalationModule:
                     severity=severity,
                     description=description,
                     evidence=binary,
+                    target=target,
                     recommendation=(
-                        "Verify that the SUID bit is required for this binary. "
-                        "If not, remove it with: chmod u-s <path>"
+                        "Verify that the SUID bit is required for this binary. If not, remove it with: chmod u-s <path>"
                     ),
                     source_command="find / -perm -4000 -type f",
                 )
@@ -287,6 +294,7 @@ class PrivilegeEscalationModule:
     def _check_capabilities(
         results: dict[str, CommandResult],
         warnings: list[str],
+        target: str,
     ) -> list[PrivilegeEscalationFinding]:
         """Check for dangerous file capabilities."""
         findings: list[PrivilegeEscalationFinding] = []
@@ -295,9 +303,14 @@ class PrivilegeEscalationModule:
             return findings
 
         dangerous_caps = [
-            "cap_setuid", "cap_setgid", "cap_sys_admin",
-            "cap_dac_override", "cap_dac_read_search",
-            "cap_sys_ptrace", "cap_sys_module", "cap_net_admin",
+            "cap_setuid",
+            "cap_setgid",
+            "cap_sys_admin",
+            "cap_dac_override",
+            "cap_dac_read_search",
+            "cap_sys_ptrace",
+            "cap_sys_module",
+            "cap_net_admin",
         ]
 
         for line in cr.stdout.splitlines():
@@ -308,15 +321,11 @@ class PrivilegeEscalationModule:
                 path, caps_str = line.split(" =", 1)
                 path = path.strip()
                 caps_str = caps_str.strip()
-                matched_dangerous = [
-                    c for c in dangerous_caps if c in caps_str
-                ]
+                matched_dangerous = [c for c in dangerous_caps if c in caps_str]
                 severity = "high" if matched_dangerous else "medium"
                 title = f"Capability: {path}"
                 bits = ", ".join(matched_dangerous) if matched_dangerous else caps_str
-                description = (
-                    f"The binary {path} has file capabilities: {caps_str}. "
-                )
+                description = f"The binary {path} has file capabilities: {caps_str}. "
                 if matched_dangerous:
                     description += (
                         f"This includes potentially dangerous capabilities: {bits}. "
@@ -330,6 +339,7 @@ class PrivilegeEscalationModule:
                         severity=severity,
                         description=description,
                         evidence=evidence,
+                        target=target,
                         recommendation=(
                             "Review whether these capabilities are necessary. "
                             "Remove unnecessary capabilities with: "
@@ -351,6 +361,7 @@ class PrivilegeEscalationModule:
     def _check_sudo(
         results: dict[str, CommandResult],
         warnings: list[str],
+        target: str,
     ) -> list[PrivilegeEscalationFinding]:
         """Check for NOPASSWD sudo rules or overly permissive access."""
         findings: list[PrivilegeEscalationFinding] = []
@@ -423,9 +434,9 @@ class PrivilegeEscalationModule:
                         severity=severity,
                         description=description,
                         evidence=evidence,
+                        target=target,
                         recommendation=(
-                            "Restrict sudo rules to the minimum required commands "
-                            "and require password authentication."
+                            "Restrict sudo rules to the minimum required commands and require password authentication."
                         ),
                         source_command="sudo -n -l",
                     )
@@ -442,7 +453,8 @@ class PrivilegeEscalationModule:
     @staticmethod
     def _check_writable_dirs(
         results: dict[str, CommandResult],
-        warnings: list[str],
+        _warnings: list[str],
+        target: str,
     ) -> list[PrivilegeEscalationFinding]:
         """Check for writable directories under system paths."""
         findings: list[PrivilegeEscalationFinding] = []
@@ -477,6 +489,7 @@ class PrivilegeEscalationModule:
                         "through file replacement or symlink attacks."
                     ),
                     evidence=evidence_lines,
+                    target=target,
                     recommendation=(
                         "Review writable permissions on system directories. "
                         "Restrict write access to authorised users only."
@@ -494,7 +507,8 @@ class PrivilegeEscalationModule:
     @staticmethod
     def _check_systemd(
         results: dict[str, CommandResult],
-        warnings: list[str],
+        _warnings: list[str],
+        target: str,
     ) -> list[PrivilegeEscalationFinding]:
         """Check for writable or modified systemd service files."""
         findings: list[PrivilegeEscalationFinding] = []
@@ -518,10 +532,7 @@ class PrivilegeEscalationModule:
             findings.append(
                 PrivilegeEscalationFinding(
                     category="Systemd Services",
-                    title=(
-                        f"Systemd services available ({service_count} total, "
-                        f"{enabled_count} enabled)"
-                    ),
+                    title=(f"Systemd services available ({service_count} total, {enabled_count} enabled)"),
                     severity="low",
                     description=(
                         f"There are {service_count} systemd service units "
@@ -531,10 +542,8 @@ class PrivilegeEscalationModule:
                         f"find /etc/systemd/system /usr/lib/systemd/system "
                         "-writable -type f 2>/dev/null"
                     ),
-                    evidence=(
-                        f"Total services: {service_count}, "
-                        f"Enabled: {enabled_count}"
-                    ),
+                    evidence=(f"Total services: {service_count}, Enabled: {enabled_count}"),
+                    target=target,
                     recommendation=(
                         "Ensure systemd unit files are owned by root and not "
                         "world-writable. Check with: "
@@ -553,7 +562,8 @@ class PrivilegeEscalationModule:
     @staticmethod
     def _check_cron(
         results: dict[str, CommandResult],
-        warnings: list[str],
+        _warnings: list[str],
+        target: str,
     ) -> list[PrivilegeEscalationFinding]:
         """Check for interesting scheduled tasks and writable cron dirs."""
         findings: list[PrivilegeEscalationFinding] = []
@@ -569,25 +579,27 @@ class PrivilegeEscalationModule:
         }
 
         has_user_crontab = crontab_cr and crontab_cr.succeeded and crontab_cr.stdout.strip()
-        has_system_crontab = (
-            cat_crontab_cr and cat_crontab_cr.succeeded and cat_crontab_cr.stdout.strip()
-        )
+        has_system_crontab = cat_crontab_cr and cat_crontab_cr.succeeded and cat_crontab_cr.stdout.strip()
 
         if has_user_crontab or has_system_crontab:
             evidence_parts: list[str] = []
             if has_user_crontab:
+                assert crontab_cr is not None
                 user_lines = [
-                    l for l in crontab_cr.stdout.splitlines()
-                    if l.strip() and not l.strip().startswith("#")
+                    _line
+                    for _line in crontab_cr.stdout.splitlines()
+                    if _line.strip() and not _line.strip().startswith("#")
                 ]
                 if user_lines:
                     evidence_parts.append("--- User crontab ---")
                     evidence_parts.extend(user_lines[:15])
 
             if has_system_crontab:
+                assert cat_crontab_cr is not None
                 sys_lines = [
-                    l for l in cat_crontab_cr.stdout.splitlines()
-                    if l.strip() and not l.strip().startswith("#")
+                    _line
+                    for _line in cat_crontab_cr.stdout.splitlines()
+                    if _line.strip() and not _line.strip().startswith("#")
                 ]
                 if sys_lines:
                     evidence_parts.append("--- /etc/crontab ---")
@@ -606,9 +618,9 @@ class PrivilegeEscalationModule:
                             "other privileged users that may be exploitable."
                         ),
                         evidence=evidence,
+                        target=target,
                         recommendation=(
-                            "Review all cron jobs for potential abuse. "
-                            "Ensure cron scripts are not world-writable."
+                            "Review all cron jobs for potential abuse. Ensure cron scripts are not world-writable."
                         ),
                         source_command="crontab -l / cat /etc/crontab",
                     )
@@ -617,13 +629,6 @@ class PrivilegeEscalationModule:
         for dirname, dir_cr in cron_dirs.items():
             if dir_cr is None or not dir_cr.succeeded or not dir_cr.stdout.strip():
                 continue
-            files: list[str] = []
-            for line in dir_cr.stdout.splitlines():
-                line = line.strip()
-                if not line or line.startswith("total") or line.startswith("d"):
-                    continue
-                if line.startswith("-") and line.endswith(".sh"):
-                    files.append(line)
 
             dir_path = f"/etc/{dirname}"
             writable_entries: list[str] = []
@@ -651,10 +656,8 @@ class PrivilegeEscalationModule:
                             "scheduled user (often root)."
                         ),
                         evidence="\n".join(writable_entries),
-                        recommendation=(
-                            "Ensure cron scripts are not world-writable and "
-                            "are owned by root."
-                        ),
+                        target=target,
+                        recommendation=("Ensure cron scripts are not world-writable and are owned by root."),
                         source_command=f"ls -la {dir_path}",
                     )
                 )
@@ -719,7 +722,7 @@ class PrivilegeEscalationModule:
 
 
 __all__ = [
-    "PrivilegeEscalationModule",
     "PrivilegeEscalationFinding",
+    "PrivilegeEscalationModule",
     "PrivilegeEscalationResult",
 ]

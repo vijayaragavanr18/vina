@@ -50,7 +50,9 @@ class ParameterDiscoveryModule:
                     )
                 )
         warnings = [result.stderr for result in (normalized, qsreplace) if result.stderr and not result.succeeded]
-        return ParameterDiscoveryResult(parameters=self._dedupe(parameters), warnings=warnings, command_results=[normalized, qsreplace])
+        return ParameterDiscoveryResult(
+            parameters=self._dedupe(parameters), warnings=warnings, command_results=[normalized, qsreplace]
+        )
 
     @staticmethod
     def _dedupe(parameters: list[ParameterCandidate]) -> list[ParameterCandidate]:

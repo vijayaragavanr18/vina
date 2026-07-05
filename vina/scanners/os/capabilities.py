@@ -86,9 +86,7 @@ class CapabilitiesModule:
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {executable}")
             if cr.timed_out:
-                warnings.append(
-                    f"{name} timed out after {self.context.timeout_seconds}s"
-                )
+                warnings.append(f"{name} timed out after {self.context.timeout_seconds}s")
             if cr.returncode not in (0, None) and not cr.timed_out and not cr.missing_executable:
                 stderr_snippet = cr.stderr.strip()[:120] if cr.stderr.strip() else ""
                 msg = f"{name} exited with code {cr.returncode}"
@@ -100,7 +98,7 @@ class CapabilitiesModule:
         paths = [e.path for e in entries if e.path]
 
         if paths:
-            stat_args = ["--format=%a %U %G %s %n"] + paths
+            stat_args = ["--format=%a %U %G %s %n", *paths]
             stat_cr = await self.context.runner.run(
                 self.config.tool_bin("stat", "stat"),
                 stat_args,
@@ -123,11 +121,7 @@ class CapabilitiesModule:
         if not entries:
             warnings.append("No capability binaries could be discovered")
 
-        primary = (
-            results.get("getcap")
-            or results.get("stat")
-            or self._empty_command_result()
-        )
+        primary = results.get("getcap") or results.get("stat") or self._empty_command_result()
 
         result = CapabilitiesResult(
             target=target_input,
@@ -287,4 +281,4 @@ class CapabilitiesModule:
         )
 
 
-__all__ = ["CapabilitiesModule", "CapabilityEntry", "CapabilitiesResult"]
+__all__ = ["CapabilitiesModule", "CapabilitiesResult", "CapabilityEntry"]
