@@ -1,0 +1,44 @@
+services:
+  vina:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vina:latest
+    container_name: vina
+    user: "1001:1001"
+    volumes:
+      - vina-feeds:/var/lib/vina/feeds
+      - vina-plugins:/var/lib/vina/plugins
+      - vina-cache:/var/lib/vina/cache
+      - ./output:/home/vina/output
+    environment:
+      - VINA_HOME=/var/lib/vina
+      - VINA_CACHE_DIR=/var/lib/vina/cache
+      - VINA_FEED_DIR=/var/lib/vina/feeds
+      - VINA_PLUGIN_DIR=/var/lib/vina/plugins
+    command: ["--help"]
+
+  vina-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: vina:dev
+    container_name: vina-dev
+    user: "1001:1001"
+    volumes:
+      - .:/home/vina
+      - vina-feeds:/var/lib/vina/feeds
+      - vina-plugins:/var/lib/vina/plugins
+      - vina-cache:/var/lib/vina/cache
+    environment:
+      - VINA_HOME=/var/lib/vina
+      - VINA_CACHE_DIR=/var/lib/vina/cache
+      - VINA_FEED_DIR=/var/lib/vina/feeds
+      - VINA_PLUGIN_DIR=/var/lib/vina/plugins
+    stdin_open: true
+    tty: true
+
+volumes:
+  vina-feeds:
+  vina-plugins:
+  vina-cache:

@@ -13,6 +13,7 @@ from urllib.parse import urlparse, urlunparse
 from ...core.config import AppConfig
 from ...core.runner import CommandResult
 from ...models.common import TargetInput
+from ...models.findings import Finding, make_finding
 from ...modules.common import ModuleContext
 
 logger = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ class HttpxResult:
     warnings: list[str] = field(default_factory=list)
     output_file: Path | None = None
     execution_time_seconds: float = 0.0
+    findings: list[Finding] = field(default_factory=list)
 
 
 class HttpxModule:
@@ -101,6 +103,19 @@ class HttpxModule:
         if not alive_hosts:
             warnings.append("No alive hosts discovered")
 
+        findings = [
+            make_finding(
+                title=f"Alive host: {url}",
+                description=f"Discovered alive host via httpx (status: {next((r.status_code for r in records if r.url == url), '?')})",
+                severity="info",
+                category="alive_host",
+                source_stage="httpx",
+                target=target_input.root_domain or target_input.hostname or target_input.normalized,
+                url=url,
+            )
+            for url in alive_hosts
+        ]
+
         result = HttpxResult(
             target=target_input,
             command_result=command_result,
@@ -110,6 +125,7 @@ class HttpxModule:
             https_count=https_count,
             warnings=warnings,
             execution_time_seconds=time.perf_counter() - started_at,
+            findings=findings,
         )
         result.output_file = self._save_results(result)
         self._print_summary(result)

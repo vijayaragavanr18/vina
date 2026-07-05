@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 from ...core.config import AppConfig
 from ...core.runner import CommandResult
 from ...models.common import TargetInput
+from ...models.findings import Finding, make_finding
 from ...modules.common import ModuleContext
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ class NaabuResult:
     warnings: list[str] = field(default_factory=list)
     output_file: Path | None = None
     execution_time_seconds: float = 0.0
+    findings: list[Finding] = field(default_factory=list)
 
 
 class NaabuModule:
@@ -111,6 +113,28 @@ class NaabuModule:
         if not open_ports:
             warnings.append("No open ports discovered")
 
+        findings = []
+        for port_str in open_ports:
+            host = port_str.split(":")[0] if ":" in port_str else ""
+            port_part = port_str.split(":")[-1] if ":" in port_str else ""
+            port_num = port_part.split("/")[0] if "/" in port_part else port_part
+            protocol = port_part.split("/")[-1] if "/" in port_part else "tcp"
+            try:
+                port_int = int(port_num) if port_num else None
+            except ValueError:
+                port_int = None
+            findings.append(make_finding(
+                title=f"Open port: {port_str}",
+                description=f"Open port discovered via naabu",
+                severity="medium",
+                category="open_port",
+                source_stage="naabu",
+                target=target_input.root_domain or target_input.hostname or target_input.normalized,
+                host=host,
+                port=port_int,
+                protocol=protocol,
+            ))
+
         result = NaabuResult(
             target=target_input,
             command_result=command_result,
@@ -119,6 +143,7 @@ class NaabuModule:
             input_count=input_count,
             warnings=warnings,
             execution_time_seconds=time.perf_counter() - started_at,
+            findings=findings,
         )
         result.output_file = self._save_results(result)
         self._print_summary(result)

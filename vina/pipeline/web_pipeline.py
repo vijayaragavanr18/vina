@@ -1,22 +1,38 @@
 """Web pipeline orchestration for VINA.
 
-Coordinates all web scanner modules in a fixed order,
-passing structured dataclasses between stages.
+Coordinates all web scanner modules using a dependency-aware scheduler
+that executes independent stages concurrently, with retry logic,
+checkpointing, and resume support.
 """
 
 from __future__ import annotations
 
-import asyncio
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
-from typing import Literal
+from typing import Any
 
+from ..core.aggregator import FindingAggregator
+from ..core.checkpoint import CheckpointManager
 from ..core.config import AppConfig
-from ..core.runner import AsyncCommandRunner
+from ..core.dependency import DependencyChecker
+from ..core.runner import AsyncCommandRunner, CommandResult
+from ..core.scheduler import PipelineScheduler, RetryConfig, StageDef
 from ..core.storage import JsonStore
 from ..models.common import TargetInput
+from ..models.findings import Finding
+from ..reports import generate_reports
+from ..models.stages import (
+    StageResult,
+    StageState,
+    build_missing_dependency_stage,
+    build_skipped_stage,
+    build_stage_result,
+    log_stage_result,
+    summary_for_stages,
+)
 from ..modules.common import ModuleContext
 from ..scanners.web.gau import GauModule
 from ..scanners.web.httpx import HttpxModule
@@ -29,18 +45,47 @@ from ..scanners.web.url_aggregator import UrlAggregatorModule
 from ..scanners.web.waybackurls import WaybackurlsModule
 from ..scanners.web.whatweb import WhatWebModule
 
-StageStatus = Literal["success", "empty", "failed", "skipped"]
+logger = logging.getLogger(__name__)
 
+# Tools required by the web pipeline, keyed by the stage name used in
+# the skip-check.  Stages that are pure Python (e.g. url_aggregator)
+# are omitted.
+_REQUIRED_WEB_TOOLS: dict[str, str] = {
+    "subfinder": "subfinder",
+    "httpx": "httpx",
+    "naabu": "naabu",
+    "nmap": "nmap",
+    "whatweb": "whatweb",
+    "katana": "katana",
+    "gau": "gau",
+    "waybackurls": "waybackurls",
+    "nuclei": "nuclei",
+}
 
-@dataclass(slots=True)
-class StageStatistics:
-    """Execution metadata for one pipeline stage."""
+# Dependency graph.
+# Each stage lists the stages it depends on.  Stages with no deps are
+# eligible to run immediately.
+_STAGE_DEPS: dict[str, list[str]] = {
+    "subfinder": [],
+    "httpx": ["subfinder"],
+    "gau": ["subfinder"],
+    "waybackurls": ["subfinder"],
+    "naabu": ["httpx"],
+    "whatweb": ["httpx"],
+    "katana": ["httpx"],
+    "nmap": ["naabu"],
+    "url_aggregator": ["katana", "gau", "waybackurls"],
+    "nuclei": ["url_aggregator"],
+}
 
-    name: str
-    status: StageStatus
-    execution_time: float
-    warnings: list[str]
-    record_count: int
+# Per-stage timeout overrides (seconds).  Stages not listed inherit the
+# global timeout from the configuration.
+_STAGE_TIMEOUTS: dict[str, int] = {
+    "subfinder": 180,
+    "httpx": 120,
+    "naabu": 300,
+    "nuclei": 900,
+}
 
 
 @dataclass(slots=True)
@@ -51,12 +96,23 @@ class PipelineResult:
     started_at: datetime
     finished_at: datetime
     total_duration: float
-    stage_results: list[StageStatistics] = field(default_factory=list)
+    stage_results: list[StageResult] = field(default_factory=list)
     summary: str = ""
 
 
 class WebPipeline:
-    """Coordinate the fixed web recon chain for a target."""
+    """Coordinate the fixed web recon chain for a target.
+
+    Stages run according to the dependency graph defined in
+    ``_STAGE_DEPS``, with independent stages executed concurrently
+    up to ``_MAX_PARALLEL``.
+
+    Supports checkpointing, resume (``--resume``), forced re-run
+    (``--force``), automatic retry of transient failures, and
+    per-stage timeout overrides.
+    """
+
+    _MAX_PARALLEL = 4
 
     def __init__(self, config: AppConfig, output_dir: Path | None = None) -> None:
         self.config = config
@@ -66,192 +122,293 @@ class WebPipeline:
         self.context = ModuleContext(
             self.runner, self.store, self.config.timeout_seconds
         )
+        self._dep_checker = DependencyChecker(config)
 
-    async def run(self, target: str) -> PipelineResult:
-        """Run the full web pipeline and return a PipelineResult."""
+    async def run(
+        self,
+        target: str,
+        *,
+        resume: bool = False,
+        force: bool = False,
+    ) -> PipelineResult:
+        """Run the full web pipeline and return a PipelineResult.
+
+        Parameters
+        ----------
+        target:
+            The target domain or URL to scan.
+        resume:
+            When True, skip stages that completed successfully in a
+            previous run (requires a checkpoint file).
+        force:
+            When True, ignore any existing checkpoint and re-run every
+            stage.
+        """
+        # Pre-flight dependency check --------------------------------------
+        self._run_dep_check()
+
         target_input = TargetInput.from_raw(target)
         started_at = datetime.now(timezone.utc)
         started_perf = perf_counter()
 
-        stage_results: list[StageStatistics] = []
-        subdomains: list[str] = []
-        alive_hosts: list[str] = []
-        open_ports: list[str] = []
+        # Shared mutable state for passing data between stages.
+        _results: dict[str, Any] = {}
+        _rc: dict[str, int] = {}
 
-        # Stage 1: Subfinder ---------------------------------------------------
-        subfinder = ReconModule(self.config, self.context)
-        subfinder_result = await subfinder.run(target_input)
-        subdomains = subfinder_result.subdomains
-        stage_results.append(
-            self._stats(
-                "subfinder",
-                subfinder_result.execution_time_seconds,
-                subfinder_result.warnings,
-                len(subdomains),
-                self._status(subfinder_result.command_result.succeeded, bool(subdomains)),
-            )
-        )
+        # Checkpoint setup ------------------------------------------------
+        cp = CheckpointManager(self.output_root, "web", target)
+        if force:
+            cp.clear()
 
-        # Stage 2: Httpx -------------------------------------------------------
-        httpx_result: HttpxResult | None = None  # noqa: F821
-        if not subdomains:
-            stage_results.append(StageStatistics("httpx", "skipped", 0.0, [], 0))
-        else:
-            httpx = HttpxModule(self.config, self.context)
-            httpx_result = await httpx.run(subdomains, target_input)
-            alive_hosts = httpx_result.alive_hosts
-            stage_results.append(
-                self._stats(
-                    "httpx",
-                    httpx_result.execution_time_seconds,
-                    httpx_result.warnings,
-                    len(alive_hosts),
-                    self._status(httpx_result.command_result.succeeded, bool(alive_hosts)),
-                )
-            )
+        _completed: set[str] = set()
+        if resume and cp.exists():
+            _completed = {
+                name for name in cp.completed_stage_names()
+                if cp.is_successfully_completed(name)
+            }
+            # Reconstruct shared outputs from checkpoint.
+            restored = cp.restore_outputs()
+            _results.update(restored)
+            if _completed:
+                print("Resuming from checkpoint...")
 
-        # Stage 3: Naabu -------------------------------------------------------
-        naabu_result: NaabuResult | None = None  # noqa: F821
-        if not alive_hosts:
-            stage_results.append(StageStatistics("naabu", "skipped", 0.0, [], 0))
-        else:
-            naabu = NaabuModule(self.config, self.context)
-            naabu_result = await naabu.run(alive_hosts, target_input)
-            open_ports = naabu_result.open_ports
-            stage_results.append(
-                self._stats(
-                    "naabu",
-                    naabu_result.execution_time_seconds,
-                    naabu_result.warnings,
-                    len(open_ports),
-                    self._status(naabu_result.command_result.succeeded, bool(open_ports)),
-                )
-            )
+        def _tool(name: str) -> bool:
+            tool = _REQUIRED_WEB_TOOLS.get(name)
+            return self._dep_checker.available(tool) if tool else True
 
-        # Stage 4: Nmap --------------------------------------------------------
-        nmap_result: NmapResult | None = None  # noqa: F821
-        if not open_ports:
-            stage_results.append(StageStatistics("nmap", "skipped", 0.0, [], 0))
-        else:
-            nmap = NmapModule(self.config, self.context)
-            nmap_result = await nmap.run(open_ports, target_input)
-            stage_results.append(
-                self._stats(
-                    "nmap",
-                    nmap_result.execution_time_seconds,
-                    nmap_result.warnings,
-                    nmap_result.host_count,
-                    self._status(nmap_result.command_result.succeeded, nmap_result.host_count > 0),
-                )
-            )
+        def _ctx(timeout: int | None = None) -> ModuleContext:
+            if timeout is None:
+                return self.context
+            return ModuleContext(self.runner, self.store, timeout)
 
-        # Stage 5: WhatWeb -----------------------------------------------------
-        whatweb_result: WhatWebResult | None = None  # noqa: F821
-        if not alive_hosts:
-            stage_results.append(StageStatistics("whatweb", "skipped", 0.0, [], 0))
-        else:
-            whatweb = WhatWebModule(self.config, self.context)
-            whatweb_result = await whatweb.run(alive_hosts, target_input)
-            stage_results.append(
-                self._stats(
-                    "whatweb",
-                    whatweb_result.execution_time_seconds,
-                    whatweb_result.warnings,
-                    whatweb_result.host_count,
-                    self._status(whatweb_result.command_result.succeeded, whatweb_result.host_count > 0),
-                )
-            )
+        # Stage coroutines ------------------------------------------------
 
-        # Stage 6: Katana ------------------------------------------------------
-        katana_result: KatanaResult | None = None  # noqa: F821
-        if not alive_hosts:
-            stage_results.append(StageStatistics("katana", "skipped", 0.0, [], 0))
-        else:
-            katana = KatanaModule(self.config, self.context)
-            katana_result = await katana.run(alive_hosts, target_input)
-            stage_results.append(
-                self._stats(
-                    "katana",
-                    katana_result.execution_time_seconds,
-                    katana_result.warnings,
-                    len(katana_result.endpoints),
-                    self._status(katana_result.command_result.succeeded, bool(katana_result.endpoints)),
-                )
-            )
+        async def _stage_subfinder() -> StageResult:
+            if "subfinder" in _completed:
+                print("  Skipping completed stage: subfinder")
+                return cp.restore_stage("subfinder")
+            if not _tool("subfinder"):
+                return self._finish("subfinder", cp, build_missing_dependency_stage("subfinder", "subfinder"), _results, _rc)
+            mod = ReconModule(self.config, _ctx(_STAGE_TIMEOUTS.get("subfinder")))
+            res = await mod.run(target_input)
+            _results["subdomains"] = res.subdomains
+            _results["subfinder_result"] = res
+            _rc["subfinder"] = len(res.subdomains)
+            return self._finish("subfinder", cp, self._record("subfinder", res, _rc["subfinder"]), _results, _rc)
 
-        # Stage 7: Gau + Waybackurls (concurrent) ----------------------------
-        gau_result: GauResult | None = None  # noqa: F821
-        wayback_result: WaybackurlsResult | None = None  # noqa: F821
-        if not alive_hosts:
-            stage_results.append(StageStatistics("gau", "skipped", 0.0, [], 0))
-            stage_results.append(StageStatistics("waybackurls", "skipped", 0.0, [], 0))
-        else:
-            gau = GauModule(self.config, self.context)
-            wayback = WaybackurlsModule(self.config, self.context)
-            gau_result, wayback_result = await asyncio.gather(
-                gau.run(alive_hosts, target_input),
-                wayback.run(alive_hosts, target_input),
-            )
-            stage_results.append(
-                self._stats(
-                    "gau",
-                    gau_result.execution_time_seconds,
-                    gau_result.warnings,
-                    len(gau_result.urls),
-                    self._status(gau_result.command_result.succeeded, bool(gau_result.urls)),
-                )
-            )
-            stage_results.append(
-                self._stats(
-                    "waybackurls",
-                    wayback_result.execution_time_seconds,
-                    wayback_result.warnings,
-                    len(wayback_result.urls),
-                    self._status(wayback_result.command_result.succeeded, bool(wayback_result.urls)),
-                )
-            )
+        async def _stage_httpx() -> StageResult:
+            if "httpx" in _completed:
+                print("  Skipping completed stage: httpx")
+                return cp.restore_stage("httpx")
+            subdomains = _results.get("subdomains", [])
+            if not subdomains:
+                return self._finish("httpx", cp, build_skipped_stage("httpx"), _results, _rc)
+            if not _tool("httpx"):
+                return self._finish("httpx", cp, build_missing_dependency_stage("httpx", "httpx"), _results, _rc)
+            mod = HttpxModule(self.config, _ctx(_STAGE_TIMEOUTS.get("httpx")))
+            res = await mod.run(subdomains, target_input)
+            _results["alive_hosts"] = res.alive_hosts
+            _results["httpx_result"] = res
+            _rc["httpx"] = len(res.alive_hosts)
+            return self._finish("httpx", cp, self._record("httpx", res, _rc["httpx"]), _results, _rc)
 
-        # Stage 8: UrlAggregator ----------------------------------------------
-        agg_result: UrlAggregatorResult | None = None  # noqa: F821
-        if katana_result is None:
-            stage_results.append(StageStatistics("url_aggregator", "skipped", 0.0, [], 0))
-        else:
-            aggregator = UrlAggregatorModule(self.config, self.context)
-            agg_result = await aggregator.run(
-                katana_result,
-                gau_result,
-                wayback_result,
-            )
-            stage_results.append(
-                self._stats(
-                    "url_aggregator",
-                    agg_result.execution_time_seconds,
-                    agg_result.warnings,
-                    agg_result.unique_count,
-                    self._status(agg_result.command_result.succeeded, agg_result.unique_count > 0),
-                )
-            )
+        async def _stage_gau() -> StageResult:
+            if "gau" in _completed:
+                print("  Skipping completed stage: gau")
+                return cp.restore_stage("gau")
+            subdomains = _results.get("subdomains", [])
+            if not subdomains:
+                return self._finish("gau", cp, build_skipped_stage("gau"), _results, _rc)
+            if not _tool("gau"):
+                return self._finish("gau", cp, build_missing_dependency_stage("gau", "gau"), _results, _rc)
+            mod = GauModule(self.config, self.context)
+            res = await mod.run(subdomains, target_input)
+            _results["gau"] = res
+            _rc["gau"] = len(res.urls)
+            return self._finish("gau", cp, self._record("gau", res, _rc["gau"]), _results, _rc)
 
-        # Stage 9: Nuclei ------------------------------------------------------
-        if agg_result is None or not agg_result.urls:
-            stage_results.append(StageStatistics("nuclei", "skipped", 0.0, [], 0))
-        else:
-            nuclei = NucleiModule(self.config, self.context)
-            nuclei_result = await nuclei.run(agg_result.urls, target_input)
-            stage_results.append(
-                self._stats(
-                    "nuclei",
-                    nuclei_result.execution_time_seconds,
-                    nuclei_result.warnings,
-                    len(nuclei_result.findings),
-                    self._status(nuclei_result.command_result.succeeded, bool(nuclei_result.findings)),
-                )
-            )
+        async def _stage_waybackurls() -> StageResult:
+            if "waybackurls" in _completed:
+                print("  Skipping completed stage: waybackurls")
+                return cp.restore_stage("waybackurls")
+            subdomains = _results.get("subdomains", [])
+            if not subdomains:
+                return self._finish("waybackurls", cp, build_skipped_stage("waybackurls"), _results, _rc)
+            if not _tool("waybackurls"):
+                return self._finish("waybackurls", cp, build_missing_dependency_stage("waybackurls", "waybackurls"), _results, _rc)
+            mod = WaybackurlsModule(self.config, self.context)
+            res = await mod.run(subdomains, target_input)
+            _results["waybackurls"] = res
+            _rc["waybackurls"] = len(res.urls)
+            return self._finish("waybackurls", cp, self._record("waybackurls", res, _rc["waybackurls"]), _results, _rc)
 
-        # Build result ---------------------------------------------------------
+        async def _stage_naabu() -> StageResult:
+            if "naabu" in _completed:
+                print("  Skipping completed stage: naabu")
+                return cp.restore_stage("naabu")
+            alive = _results.get("alive_hosts", [])
+            if not alive:
+                return self._finish("naabu", cp, build_skipped_stage("naabu"), _results, _rc)
+            if not _tool("naabu"):
+                return self._finish("naabu", cp, build_missing_dependency_stage("naabu", "naabu"), _results, _rc)
+            mod = NaabuModule(self.config, _ctx(_STAGE_TIMEOUTS.get("naabu")))
+            res = await mod.run(alive, target_input)
+            _results["open_ports"] = res.open_ports
+            _results["naabu_result"] = res
+            _rc["naabu"] = len(res.open_ports)
+            return self._finish("naabu", cp, self._record("naabu", res, _rc["naabu"]), _results, _rc)
+
+        async def _stage_nmap() -> StageResult:
+            if "nmap" in _completed:
+                print("  Skipping completed stage: nmap")
+                return cp.restore_stage("nmap")
+            ports = _results.get("open_ports", [])
+            if not ports:
+                return self._finish("nmap", cp, build_skipped_stage("nmap"), _results, _rc)
+            if not _tool("nmap"):
+                return self._finish("nmap", cp, build_missing_dependency_stage("nmap", "nmap"), _results, _rc)
+            mod = NmapModule(self.config, self.context)
+            res = await mod.run(ports, target_input)
+            _results["nmap_result"] = res
+            _rc["nmap"] = res.host_count
+            return self._finish("nmap", cp, self._record("nmap", res, _rc["nmap"]), _results, _rc)
+
+        async def _stage_whatweb() -> StageResult:
+            if "whatweb" in _completed:
+                print("  Skipping completed stage: whatweb")
+                return cp.restore_stage("whatweb")
+            alive = _results.get("alive_hosts", [])
+            if not alive:
+                return self._finish("whatweb", cp, build_skipped_stage("whatweb"), _results, _rc)
+            if not _tool("whatweb"):
+                return self._finish("whatweb", cp, build_missing_dependency_stage("whatweb", "whatweb"), _results, _rc)
+            mod = WhatWebModule(self.config, self.context)
+            res = await mod.run(alive, target_input)
+            _results["whatweb_result"] = res
+            _rc["whatweb"] = res.host_count
+            return self._finish("whatweb", cp, self._record("whatweb", res, _rc["whatweb"]), _results, _rc)
+
+        async def _stage_katana() -> StageResult:
+            if "katana" in _completed:
+                print("  Skipping completed stage: katana")
+                return cp.restore_stage("katana")
+            alive = _results.get("alive_hosts", [])
+            if not alive:
+                return self._finish("katana", cp, build_skipped_stage("katana"), _results, _rc)
+            if not _tool("katana"):
+                return self._finish("katana", cp, build_missing_dependency_stage("katana", "katana"), _results, _rc)
+            mod = KatanaModule(self.config, self.context)
+            res = await mod.run(alive, target_input)
+            _results["katana"] = res
+            _rc["katana"] = len(res.endpoints)
+            return self._finish("katana", cp, self._record("katana", res, _rc["katana"]), _results, _rc)
+
+        async def _stage_url_aggregator() -> StageResult:
+            if "url_aggregator" in _completed:
+                print("  Skipping completed stage: url_aggregator")
+                return cp.restore_stage("url_aggregator")
+            katana_res = _results.get("katana")
+            if katana_res is None:
+                return self._finish("url_aggregator", cp, build_skipped_stage("url_aggregator"), _results, _rc)
+            mod = UrlAggregatorModule(self.config, self.context)
+            res = await mod.run(
+                katana_res,
+                _results.get("gau"),
+                _results.get("waybackurls"),
+            )
+            _results["aggregated"] = res
+            _rc["url_aggregator"] = res.unique_count
+            return self._finish("url_aggregator", cp, self._record("url_aggregator", res, _rc["url_aggregator"]), _results, _rc)
+
+        async def _stage_nuclei() -> StageResult:
+            if "nuclei" in _completed:
+                print("  Skipping completed stage: nuclei")
+                return cp.restore_stage("nuclei")
+            agg = _results.get("aggregated")
+            if agg is None or not agg.urls:
+                return self._finish("nuclei", cp, build_skipped_stage("nuclei"), _results, _rc)
+            if not _tool("nuclei"):
+                return self._finish("nuclei", cp, build_missing_dependency_stage("nuclei", "nuclei"), _results, _rc)
+            mod = NucleiModule(self.config, _ctx(_STAGE_TIMEOUTS.get("nuclei")))
+            res = await mod.run(agg.urls, target_input)
+            _results["nuclei"] = res
+            _rc["nuclei"] = len(res.findings)
+            return self._finish("nuclei", cp, self._record("nuclei", res, _rc["nuclei"]), _results, _rc)
+
+        # Build stage definitions ------------------------------------------
+        stages = [
+            StageDef("subfinder", _STAGE_DEPS["subfinder"], _stage_subfinder, RetryConfig()),
+            StageDef("httpx", _STAGE_DEPS["httpx"], _stage_httpx, RetryConfig()),
+            StageDef("gau", _STAGE_DEPS["gau"], _stage_gau, RetryConfig()),
+            StageDef("waybackurls", _STAGE_DEPS["waybackurls"], _stage_waybackurls, RetryConfig()),
+            StageDef("naabu", _STAGE_DEPS["naabu"], _stage_naabu, RetryConfig()),
+            StageDef("nmap", _STAGE_DEPS["nmap"], _stage_nmap, RetryConfig()),
+            StageDef("whatweb", _STAGE_DEPS["whatweb"], _stage_whatweb, RetryConfig()),
+            StageDef("katana", _STAGE_DEPS["katana"], _stage_katana, RetryConfig()),
+            StageDef("url_aggregator", _STAGE_DEPS["url_aggregator"], _stage_url_aggregator),
+            StageDef("nuclei", _STAGE_DEPS["nuclei"], _stage_nuclei, RetryConfig()),
+        ]
+
+        scheduler = PipelineScheduler(max_parallel=self._MAX_PARALLEL)
+        scheduler_result = await scheduler.run(stages)
+
+        # Collect findings from scanner results ---------------------------
+        findings: list[Finding] = []
+        result_keys = {
+            "subfinder": "subfinder_result",
+            "httpx": "httpx_result",
+            "naabu": "naabu_result",
+            "nmap": "nmap_result",
+            "whatweb": "whatweb_result",
+            "katana": "katana",
+            "gau": "gau",
+            "waybackurls": "waybackurls",
+        }
+        for stage_name, result_key in result_keys.items():
+            stage_res = _results.get(result_key)
+            if stage_res is not None:
+                sf = getattr(stage_res, "findings", None) or []
+                findings.extend(sf)
+        # Nuclei has unified_findings separately
+        nuc_res = _results.get("nuclei")
+        if nuc_res is not None:
+            uf = getattr(nuc_res, "unified_findings", None) or []
+            findings.extend(uf)
+        # Also collect from aggregated result
+        agg_res = _results.get("aggregated")
+        if agg_res is not None:
+            sf = getattr(agg_res, "findings", None) or []
+            findings.extend(sf)
+
+        # Aggregate and generate reports ----------------------------------
+        agg = FindingAggregator()
+        agg.add_findings(findings)
+        stats = agg.statistics()
+        target_display = target_input.root_domain or target_input.hostname or target_input.normalized
+        reports_dir = self.output_root / "reports"
+        if findings:
+            generated = generate_reports(
+                target=target_display,
+                findings=findings,
+                stage_results=scheduler_result.stage_results,
+                stats=stats,
+                aggregator=agg,
+                output_dir=reports_dir,
+                started_at=started_at,
+                finished_at=datetime.now(timezone.utc),
+            )
+            for fmt, path in generated.items():
+                logger.info("Report generated: %s (%s)", path, fmt)
+
+        # Build result -----------------------------------------------------
         finished_at = datetime.now(timezone.utc)
         total_duration = perf_counter() - started_perf
-        summary = self._build_summary(target_input, stage_results, total_duration)
+        summary = summary_for_stages(
+            "Web Pipeline",
+            target_display,
+            scheduler_result.stage_results,
+            scheduler_result.total_duration,
+        )
         print(summary)
 
         return PipelineResult(
@@ -259,67 +416,61 @@ class WebPipeline:
             started_at=started_at,
             finished_at=finished_at,
             total_duration=total_duration,
-            stage_results=stage_results,
+            stage_results=scheduler_result.stage_results,
             summary=summary,
         )
 
     # ------------------------------------------------------------------
-    # Helpers
+    # Internal helpers
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _status(succeeded: bool, has_records: bool) -> StageStatus:
-        if not succeeded:
-            return "failed"
-        if not has_records:
-            return "empty"
-        return "success"
+    def _run_dep_check(self) -> None:
+        """Check all required web tools and print the pre-flight summary."""
+        results = self._dep_checker.check_all(list(_REQUIRED_WEB_TOOLS.values()))
+        self._dep_checker.print_summary(results)
 
     @staticmethod
-    def _stats(
+    def _finish(
         name: str,
-        execution_time: float,
-        warnings: list[str],
-        record_count: int,
-        status: StageStatus,
-    ) -> StageStatistics:
-        return StageStatistics(
-            name=name,
-            status=status,
-            execution_time=execution_time,
-            warnings=warnings,
-            record_count=record_count,
-        )
+        cp: CheckpointManager,
+        stage: StageResult,
+        results: dict[str, Any],
+        rc: dict[str, int],
+    ) -> StageResult:
+        """Record stage to checkpoint and log.  Returns the stage."""
+        outputs = {}
+        if name == "subfinder":
+            outputs["subdomains"] = results.get("subdomains", [])
+        elif name == "httpx":
+            outputs["alive_hosts"] = results.get("alive_hosts", [])
+        elif name == "naabu":
+            outputs["open_ports"] = results.get("open_ports", [])
+        cp.record_stage(stage, outputs=outputs)
+        return stage
 
     @staticmethod
-    def _build_summary(
-        target_input: TargetInput,
-        stage_results: list[StageStatistics],
-        total_duration: float,
-    ) -> str:
-        """Build a concise console summary."""
-        target_display = (
-            target_input.root_domain
-            or target_input.hostname
-            or target_input.normalized
-        )
+    def _record(name: str, result: Any, record_count: int) -> StageResult:
+        """Build and log a :class:`StageResult` from a module result.
 
-        lines = [
-            "=" * 41,
-            "VINA Web Pipeline",
-            "=" * 41,
-            f"Target:          {target_display}",
-        ]
-        for sr in stage_results:
-            lines.append(f"  {sr.name:<18} {sr.status:<8} {sr.record_count}")
-        lines.append(f"Total Duration:  {total_duration:.2f}s")
-        lines.append("=" * 41)
-        return "\n".join(lines)
+        Every module result is expected to expose ``command_result``
+        (a :class:`CommandResult`), ``warnings`` (list[str]) and
+        ``execution_time_seconds`` (float).
+        """
+        cr: CommandResult = result.command_result
+        stage = build_stage_result(
+            name=name,
+            command_result=cr,
+            record_count=record_count,
+            warnings=result.warnings,
+            extra_duration=result.execution_time_seconds,
+        )
+        log_stage_result(stage)
+        return stage
 
 
 __all__ = [
     "PipelineResult",
-    "StageStatistics",
-    "StageStatus",
+    "StageResult",
+    "StageState",
     "WebPipeline",
 ]

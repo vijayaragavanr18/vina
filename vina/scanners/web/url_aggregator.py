@@ -15,6 +15,7 @@ from urllib.parse import parse_qsl, urlparse
 from ...core.config import AppConfig
 from ...core.runner import CommandResult
 from ...models.common import TargetInput
+from ...models.findings import Finding, make_finding
 from ...modules.common import ModuleContext
 from ..web.gau import GauResult, GauUrl
 from ..web.katana import KatanaResult
@@ -51,6 +52,7 @@ class UrlAggregatorResult:
     warnings: list[str] = field(default_factory=list)
     output_file: Path | None = None
     execution_time_seconds: float = 0.0
+    findings: list[Finding] = field(default_factory=list)
 
 
 class UrlAggregatorModule:

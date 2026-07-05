@@ -1,0 +1,3682 @@
+[
+  {
+    "cve": "CVE-2024-6387",
+    "title": "regreSSHion: RCE in OpenSSH server",
+    "description": "A signal handler race condition in OpenSSH's sshd allows unauthenticated remote code execution as root on glibc-based Linux systems.",
+    "severity": "critical",
+    "cvss_v3": 8.1,
+    "cvss_v4": 0,
+    "epss": 0.974,
+    "kev": true,
+    "exploited": false,
+    "vendor": "openbsd",
+    "product": "openssh",
+    "affected_versions": [
+      "<8.5p1",
+      ">=8.7p1,<9.8p1"
+    ],
+    "fixed_versions": [
+      "8.5p1",
+      "9.8p1"
+    ],
+    "published": "2024-07-01",
+    "updated": "2024-07-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-6387",
+      "https://www.qualys.com/2024/07/01/cve-2024-6387/regresshion.txt",
+      "https://lists.mindrot.org/pipermail/openssh-unix-dev/2024-July/041355.html"
+    ],
+    "cwe": "CWE-362",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB",
+      "Metasploit"
+    ],
+    "confidence": 0.99,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-38408",
+    "title": "RCE in OpenSSH via ssh-agent PKCS#11",
+    "description": "Remote code execution in OpenSSH's ssh-agent when forwarding to an attacker-controlled system, via PKCS#11 provider loading.",
+    "severity": "high",
+    "cvss_v3": 7.3,
+    "cvss_v4": 0,
+    "epss": 0.042,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openbsd",
+    "product": "openssh",
+    "affected_versions": [
+      "<9.3p2"
+    ],
+    "fixed_versions": [
+      "9.3p2"
+    ],
+    "published": "2023-07-19",
+    "updated": "2023-08-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-38408",
+      "https://www.qualys.com/2023/07/19/cve-2023-38408/openssh-agent.txt",
+      "https://lists.openbsd.org/pipermail/openssh-announce/2023-July/000135.html"
+    ],
+    "cwe": "CWE-94",
+    "mitre_attack": [
+      "T1203"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.95,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2021-41617",
+    "title": "Privilege escalation in OpenSSH",
+    "description": "Privilege escalation in OpenSSH via supplementary group handling when AuthorizedKeysCommand or AuthorizedPrincipalsCommand is used.",
+    "severity": "high",
+    "cvss_v3": 7.0,
+    "cvss_v4": 0,
+    "epss": 0.011,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openbsd",
+    "product": "openssh",
+    "affected_versions": [
+      "<8.8p1"
+    ],
+    "fixed_versions": [
+      "8.8p1"
+    ],
+    "published": "2021-10-06",
+    "updated": "2021-10-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2021-41617",
+      "https://bugzilla.mindrot.org/show_bug.cgi?id=3328",
+      "https://www.openssh.com/security.html"
+    ],
+    "cwe": "CWE-269",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.9,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2021-36368",
+    "title": "ProxyJump/ProxyCommand escape in OpenSSH",
+    "description": "OpenSSH ProxyJump and ProxyCommand may allow a malicious server to inject commands via hostname arguments.",
+    "severity": "medium",
+    "cvss_v3": 5.3,
+    "cvss_v4": 0,
+    "epss": 0.003,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openbsd",
+    "product": "openssh",
+    "affected_versions": [
+      "<8.7p1"
+    ],
+    "fixed_versions": [
+      "8.7p1"
+    ],
+    "published": "2021-09-14",
+    "updated": "2021-10-05",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2021-36368",
+      "https://www.openssh.com/security.html",
+      "https://bugzilla.mindrot.org/show_bug.cgi?id=3282"
+    ],
+    "cwe": "CWE-77",
+    "mitre_attack": [
+      "T1204"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.85,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2020-15778",
+    "title": "scp command injection in OpenSSH",
+    "description": "OpenSSH scp client allows command injection via crafted filenames due to improper shell escaping in scp.c.",
+    "severity": "medium",
+    "cvss_v3": 6.8,
+    "cvss_v4": 0,
+    "epss": 0.042,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openbsd",
+    "product": "openssh",
+    "affected_versions": [
+      "<8.4p1"
+    ],
+    "fixed_versions": [
+      "8.4p1"
+    ],
+    "published": "2020-07-16",
+    "updated": "2020-08-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2020-15778",
+      "https://bugzilla.mindrot.org/show_bug.cgi?id=3111",
+      "https://www.openssh.com/security.html"
+    ],
+    "cwe": "CWE-78",
+    "mitre_attack": [
+      "T1059"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.92,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2020-14145",
+    "title": "OpenSSH host key oracle",
+    "description": "OpenSSH client may leak information about host key algorithms via the host key verification process, enabling passive fingerprinting.",
+    "severity": "medium",
+    "cvss_v3": 5.3,
+    "cvss_v4": 0,
+    "epss": 0.008,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openbsd",
+    "product": "openssh",
+    "affected_versions": [
+      "<8.4p1"
+    ],
+    "fixed_versions": [
+      "8.4p1"
+    ],
+    "published": "2020-06-29",
+    "updated": "2020-07-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2020-14145",
+      "https://www.openwall.com/lists/oss-security/2020/06/29/1",
+      "https://www.openssh.com/security.html"
+    ],
+    "cwe": "CWE-200",
+    "mitre_attack": [
+      "T1589"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.8,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2019-6111",
+    "title": "scp path traversal in OpenSSH",
+    "description": "OpenSSH scp client allows path traversal and overwrite of arbitrary files via crafted directory returned by the server.",
+    "severity": "medium",
+    "cvss_v3": 5.0,
+    "cvss_v4": 0,
+    "epss": 0.011,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openbsd",
+    "product": "openssh",
+    "affected_versions": [
+      "<=9.9p1"
+    ],
+    "fixed_versions": [],
+    "published": "2019-01-18",
+    "updated": "2019-02-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2019-6111",
+      "https://sintonen.fi/advisories/scp-client-multiple-vulnerabilities.txt",
+      "https://www.openssh.com/security.html"
+    ],
+    "cwe": "CWE-22",
+    "mitre_attack": [
+      "T1574"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.88,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2019-6110",
+    "title": "OpenSSH null pointer dereference",
+    "description": "OpenSSH sshd allows denial of service via null pointer dereference in the sshkey_check_revoked function.",
+    "severity": "medium",
+    "cvss_v3": 5.3,
+    "cvss_v4": 0,
+    "epss": 0.006,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openbsd",
+    "product": "openssh",
+    "affected_versions": [
+      "<7.9p1"
+    ],
+    "fixed_versions": [
+      "7.9p1"
+    ],
+    "published": "2019-01-18",
+    "updated": "2019-02-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2019-6110",
+      "https://lists.mindrot.org/pipermail/openssh-unix-dev/2019-January/037405.html",
+      "https://www.openssh.com/security.html"
+    ],
+    "cwe": "CWE-476",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.85,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-51385",
+    "title": "OS command injection in OpenSSH",
+    "description": "OpenSSH ProxyCommand and LocalCommand options allow OS command injection via crafted hostnames when using the ssh_config Match exec directive.",
+    "severity": "high",
+    "cvss_v3": 7.2,
+    "cvss_v4": 0,
+    "epss": 0.012,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openbsd",
+    "product": "openssh",
+    "affected_versions": [
+      "<9.6p1"
+    ],
+    "fixed_versions": [
+      "9.6p1"
+    ],
+    "published": "2023-12-18",
+    "updated": "2024-01-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-51385",
+      "https://www.openssh.com/security.html",
+      "https://bugzilla.mindrot.org/show_bug.cgi?id=3578"
+    ],
+    "cwe": "CWE-78",
+    "mitre_attack": [
+      "T1059"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.9,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-6098",
+    "title": "Information leak in OpenSSH",
+    "description": "OpenSSH may leak sensitive information via timing side-channel in the public key authentication process.",
+    "severity": "medium",
+    "cvss_v3": 4.3,
+    "cvss_v4": 0,
+    "epss": 0.002,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openbsd",
+    "product": "openssh",
+    "affected_versions": [
+      "<9.7p1"
+    ],
+    "fixed_versions": [
+      "9.7p1"
+    ],
+    "published": "2024-06-20",
+    "updated": "2024-07-05",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-6098",
+      "https://www.openssh.com/security.html",
+      "https://bugzilla.mindrot.org/show_bug.cgi?id=3639"
+    ],
+    "cwe": "CWE-203",
+    "mitre_attack": [
+      "T1589"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.75,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-1086",
+    "title": "Use-after-free in Linux netfilter",
+    "description": "A use-after-free vulnerability in the Linux kernel's netfilter subsystem allows local privilege escalation to root.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.463,
+    "kev": true,
+    "exploited": false,
+    "vendor": "linux",
+    "product": "linux-kernel",
+    "affected_versions": [
+      "<6.6.14",
+      "6.7.*"
+    ],
+    "fixed_versions": [
+      "6.6.14",
+      "6.7.3"
+    ],
+    "published": "2024-01-31",
+    "updated": "2024-02-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-1086",
+      "https://www.openwall.com/lists/oss-security/2024/01/31/1",
+      "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=d4d60e21c8e6"
+    ],
+    "cwe": "CWE-416",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB",
+      "GitHub"
+    ],
+    "confidence": 0.97,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-32629",
+    "title": "Local privilege escalation in Linux kernel",
+    "description": "A vulnerability in the Linux kernel's nf_tables subsystem allows local privilege escalation via use-after-free.",
+    "severity": "high",
+    "cvss_v3": 7.0,
+    "cvss_v4": 0,
+    "epss": 0.015,
+    "kev": false,
+    "exploited": false,
+    "vendor": "linux",
+    "product": "linux-kernel",
+    "affected_versions": [
+      "<6.3.2"
+    ],
+    "fixed_versions": [
+      "6.3.2"
+    ],
+    "published": "2023-05-30",
+    "updated": "2023-06-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-32629",
+      "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=2f6a3b48a4b9"
+    ],
+    "cwe": "CWE-416",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.8,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-0847",
+    "title": "Dirty Pipe: Linux kernel privilege escalation",
+    "description": "A flaw in the Linux kernel's pipe subsystem allows unprivileged users to write to arbitrary files, leading to privilege escalation.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.189,
+    "kev": true,
+    "exploited": false,
+    "vendor": "linux",
+    "product": "linux-kernel",
+    "affected_versions": [
+      "<5.16.11",
+      "5.15.25",
+      "5.10.102"
+    ],
+    "fixed_versions": [
+      "5.16.11",
+      "5.15.25",
+      "5.10.102"
+    ],
+    "published": "2022-03-07",
+    "updated": "2022-03-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-0847",
+      "https://dirtypipe.cm4all.com/",
+      "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=9d2231c5d74e"
+    ],
+    "cwe": "CWE-416",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB",
+      "GitHub"
+    ],
+    "confidence": 0.98,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-2586",
+    "title": "Linux kernel nf_tables use-after-free",
+    "description": "A use-after-free in the Linux kernel's nf_tables allows local privilege escalation to root.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.052,
+    "kev": false,
+    "exploited": false,
+    "vendor": "linux",
+    "product": "linux-kernel",
+    "affected_versions": [
+      "<5.19"
+    ],
+    "fixed_versions": [
+      "5.19"
+    ],
+    "published": "2022-08-17",
+    "updated": "2022-09-05",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-2586",
+      "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=3f046334e3b2"
+    ],
+    "cwe": "CWE-416",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.93,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-34918",
+    "title": "Linux kernel nf_tables out-of-bounds",
+    "description": "An out-of-bounds access in the Linux kernel's netfilter nf_tables subsystem allows local privilege escalation.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.03,
+    "kev": false,
+    "exploited": false,
+    "vendor": "linux",
+    "product": "linux-kernel",
+    "affected_versions": [
+      "<5.19"
+    ],
+    "fixed_versions": [
+      "5.19"
+    ],
+    "published": "2022-08-01",
+    "updated": "2022-08-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-34918",
+      "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=0a6a3b23e6e3"
+    ],
+    "cwe": "CWE-787",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.85,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2021-3490",
+    "title": "eBPF verifier out-of-bounds in Linux kernel",
+    "description": "An out-of-bounds read/write in the eBPF verifier of the Linux kernel allows local privilege escalation.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.075,
+    "kev": false,
+    "exploited": false,
+    "vendor": "linux",
+    "product": "linux-kernel",
+    "affected_versions": [
+      "<5.13"
+    ],
+    "fixed_versions": [
+      "5.13"
+    ],
+    "published": "2021-06-04",
+    "updated": "2021-06-25",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2021-3490",
+      "https://www.zerodayinitiative.com/advisories/ZDI-21-606/",
+      "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=0d56b6c7e0b4"
+    ],
+    "cwe": "CWE-787",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.94,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-2640",
+    "title": "Ubuntu overlayfs privilege escalation",
+    "description": "A privilege escalation vulnerability in Ubuntu's Linux kernel overlayfs implementation allows unprivileged users to gain root access.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.162,
+    "kev": false,
+    "exploited": false,
+    "vendor": "linux",
+    "product": "linux-kernel",
+    "affected_versions": [
+      "<6.2"
+    ],
+    "fixed_versions": [
+      "6.2"
+    ],
+    "published": "2023-07-25",
+    "updated": "2023-08-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-2640",
+      "https://ubuntu.com/security/notices/USN-6184-1",
+      "https://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux/+git/jammy/commit/?id=6a0b89f1c3f0"
+    ],
+    "cwe": "CWE-269",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB",
+      "GitHub"
+    ],
+    "confidence": 0.96,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-3094",
+    "title": "XZ Utils backdoor (supply chain)",
+    "description": "Malicious code inserted into XZ Utils (liblzma) via a complex supply chain attack, enabling unauthorized remote SSH access.",
+    "severity": "critical",
+    "cvss_v3": 10.0,
+    "cvss_v4": 10.0,
+    "epss": 0.998,
+    "kev": true,
+    "exploited": true,
+    "vendor": "linux",
+    "product": "linux-kernel",
+    "affected_versions": [
+      "5.6.0",
+      "5.6.1"
+    ],
+    "fixed_versions": [
+      "5.6.2"
+    ],
+    "published": "2024-03-29",
+    "updated": "2024-04-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-3094",
+      "https://www.openwall.com/lists/oss-security/2024/03/29/4",
+      "https://github.com/tukaani-project/xz/security/advisories/GHSA-rxph-6fxr-j9ph",
+      "https://boehs.org/node/everything-i-know-about-the-xz-backdoor"
+    ],
+    "cwe": "CWE-506",
+    "mitre_attack": [
+      "T1195",
+      "T1554"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [
+      "Supply chain"
+    ],
+    "confidence": 0.99,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-4273",
+    "title": "Use-after-free in Linux kernel",
+    "description": "A use-after-free vulnerability in the Linux kernel's netfilter subsystem can lead to local privilege escalation.",
+    "severity": "high",
+    "cvss_v3": 7.0,
+    "cvss_v4": 0,
+    "epss": 0.01,
+    "kev": false,
+    "exploited": false,
+    "vendor": "linux",
+    "product": "linux-kernel",
+    "affected_versions": [
+      "<6.5"
+    ],
+    "fixed_versions": [
+      "6.5"
+    ],
+    "published": "2023-08-14",
+    "updated": "2023-09-01",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-4273",
+      "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=6ae8315e7d58"
+    ],
+    "cwe": "CWE-416",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.78,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-6817",
+    "title": "Use-after-free in Linux netfilter",
+    "description": "A use-after-free vulnerability in the Linux kernel's netfilter subsystem allows local privilege escalation.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.028,
+    "kev": false,
+    "exploited": false,
+    "vendor": "linux",
+    "product": "linux-kernel",
+    "affected_versions": [
+      "<6.7"
+    ],
+    "fixed_versions": [
+      "6.7"
+    ],
+    "published": "2023-12-12",
+    "updated": "2024-01-05",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-6817",
+      "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=7d3b631dfc7d"
+    ],
+    "cwe": "CWE-416",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.87,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-5535",
+    "title": "SSRF via OpenSSL BIO_new_connect",
+    "description": "A vulnerability in OpenSSL's SSL_select_next_proto and BIO_new_connect functions allows server-side request forgery.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.014,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "openssl",
+    "affected_versions": [
+      "<3.3.1",
+      "<3.2.2",
+      "<3.1.6",
+      "3.0.*"
+    ],
+    "fixed_versions": [
+      "3.3.1",
+      "3.2.2",
+      "3.1.6"
+    ],
+    "published": "2024-06-27",
+    "updated": "2024-07-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-5535",
+      "https://www.openssl.org/news/secadv/20240627.txt",
+      "https://github.com/openssl/openssl/commit/3e4e43af9c12"
+    ],
+    "cwe": "CWE-918",
+    "mitre_attack": [
+      "T1595"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.8,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-4603",
+    "title": "Use-after-free in OpenSSL",
+    "description": "A use-after-free vulnerability in OpenSSL's handling of certain TLS handshake messages can lead to denial of service or potential code execution.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.011,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "openssl",
+    "affected_versions": [
+      "<3.3.1",
+      "<3.2.2"
+    ],
+    "fixed_versions": [
+      "3.3.1",
+      "3.2.2"
+    ],
+    "published": "2024-06-27",
+    "updated": "2024-07-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-4603",
+      "https://www.openssl.org/news/secadv/20240627.txt",
+      "https://github.com/openssl/openssl/commit/5b32e2577d4a"
+    ],
+    "cwe": "CWE-416",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.8,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-4741",
+    "title": "Use-after-free in OpenSSL TLS",
+    "description": "A use-after-free vulnerability in OpenSSL during TLS handshake processing of certain certificate messages.",
+    "severity": "medium",
+    "cvss_v3": 5.9,
+    "cvss_v4": 0,
+    "epss": 0.006,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "openssl",
+    "affected_versions": [
+      "<3.3.1",
+      "<3.2.2"
+    ],
+    "fixed_versions": [
+      "3.3.1",
+      "3.2.2"
+    ],
+    "published": "2024-06-27",
+    "updated": "2024-07-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-4741",
+      "https://www.openssl.org/news/secadv/20240627.txt",
+      "https://github.com/openssl/openssl/commit/81cf0c6a3c0b"
+    ],
+    "cwe": "CWE-416",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.75,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-2511",
+    "title": "Unbounded memory growth in OpenSSL",
+    "description": "A vulnerability in OpenSSL causing unbounded memory growth when handling certain TLS session ticket messages.",
+    "severity": "medium",
+    "cvss_v3": 5.3,
+    "cvss_v4": 0,
+    "epss": 0.005,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "openssl",
+    "affected_versions": [
+      "<3.2.1",
+      "<3.1.5",
+      "<3.0.13",
+      "1.1.1"
+    ],
+    "fixed_versions": [
+      "3.2.1",
+      "3.1.5",
+      "3.0.13",
+      "1.1.1w"
+    ],
+    "published": "2024-04-08",
+    "updated": "2024-04-25",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-2511",
+      "https://www.openssl.org/news/secadv/20240408.txt",
+      "https://github.com/openssl/openssl/commit/8c831b7a63f0"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.75,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-3817",
+    "title": "X.509 policy check bypass in OpenSSL",
+    "description": "A vulnerability in OpenSSL's X.509 certificate policy checks allows bypass of certificate verification.",
+    "severity": "medium",
+    "cvss_v3": 5.3,
+    "cvss_v4": 0,
+    "epss": 0.008,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "openssl",
+    "affected_versions": [
+      "<3.2.0",
+      "<3.1.4",
+      "<3.0.12",
+      "1.1.1"
+    ],
+    "fixed_versions": [
+      "3.2.0",
+      "3.1.4",
+      "3.0.12",
+      "1.1.1w"
+    ],
+    "published": "2023-09-07",
+    "updated": "2023-09-25",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-3817",
+      "https://www.openssl.org/news/secadv/20230907.txt",
+      "https://github.com/openssl/openssl/commit/2dab2c528c3c"
+    ],
+    "cwe": "CWE-295",
+    "mitre_attack": [
+      "T1588"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.7,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-3446",
+    "title": "DH key processing in OpenSSL",
+    "description": "A vulnerability in OpenSSL's DH key processing that can lead to denial of service via excessive computation.",
+    "severity": "medium",
+    "cvss_v3": 5.3,
+    "cvss_v4": 0,
+    "epss": 0.006,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "openssl",
+    "affected_versions": [
+      "<3.2.0",
+      "<3.1.4",
+      "<3.0.12",
+      "1.1.1"
+    ],
+    "fixed_versions": [
+      "3.2.0",
+      "3.1.4",
+      "3.0.12",
+      "1.1.1w"
+    ],
+    "published": "2023-09-07",
+    "updated": "2023-09-25",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-3446",
+      "https://www.openssl.org/news/secadv/20230907.txt",
+      "https://github.com/openssl/openssl/commit/5d1bb24d05f6"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.7,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-2975",
+    "title": "AES OCB mode encryption in OpenSSL",
+    "description": "A vulnerability in OpenSSL's AES OCB mode implementation can lead to incorrect authentication tag computation.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.01,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "openssl",
+    "affected_versions": [
+      "<3.2.0",
+      "<3.1.4",
+      "<3.0.12",
+      "1.1.1"
+    ],
+    "fixed_versions": [
+      "3.2.0",
+      "3.1.4",
+      "3.0.12",
+      "1.1.1w"
+    ],
+    "published": "2023-09-07",
+    "updated": "2023-09-25",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-2975",
+      "https://www.openssl.org/news/secadv/20230907.txt",
+      "https://github.com/openssl/openssl/commit/5dc3afb38f3b"
+    ],
+    "cwe": "CWE-327",
+    "mitre_attack": [
+      "T1600"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.72,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-3786",
+    "title": "Buffer overrun in OpenSSL X.509",
+    "description": "A buffer overrun vulnerability in OpenSSL's X.509 certificate verification can lead to denial of service or potential code execution.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.022,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "openssl",
+    "affected_versions": [
+      "<3.0.7",
+      "1.1.1"
+    ],
+    "fixed_versions": [
+      "3.0.7",
+      "1.1.1s"
+    ],
+    "published": "2022-11-01",
+    "updated": "2022-11-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-3786",
+      "https://www.openssl.org/news/secadv/20221101.txt",
+      "https://github.com/openssl/openssl/commit/77ce0c8c0a93"
+    ],
+    "cwe": "CWE-120",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.85,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-3602",
+    "title": "Buffer overrun in OpenSSL X.509",
+    "description": "A buffer overrun vulnerability in OpenSSL's X.509 certificate verification that can be triggered with a crafted email address.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.03,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "openssl",
+    "affected_versions": [
+      "<3.0.7",
+      "1.1.1"
+    ],
+    "fixed_versions": [
+      "3.0.7",
+      "1.1.1s"
+    ],
+    "published": "2022-11-01",
+    "updated": "2022-11-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-3602",
+      "https://www.openssl.org/news/secadv/20221101.txt",
+      "https://github.com/openssl/openssl/commit/93e5fd9f1d5c"
+    ],
+    "cwe": "CWE-120",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.88,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-0778",
+    "title": "DoS in OpenSSL BN_mod_sqrt",
+    "description": "A denial of service vulnerability in OpenSSL's BN_mod_sqrt function leads to infinite loop when parsing crafted certificates.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.015,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "openssl",
+    "affected_versions": [
+      "<1.1.1n",
+      "<3.0.2"
+    ],
+    "fixed_versions": [
+      "1.1.1n",
+      "3.0.2"
+    ],
+    "published": "2022-03-15",
+    "updated": "2022-03-30",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-0778",
+      "https://www.openssl.org/news/secadv/20220315.txt",
+      "https://github.com/openssl/openssl/commit/72935b0d8a4e"
+    ],
+    "cwe": "CWE-674",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.9,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-1292",
+    "title": "OpenSSL c_rehash command injection",
+    "description": "A command injection vulnerability in OpenSSL's c_rehash script allows arbitrary command execution via crafted file names.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.028,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "openssl",
+    "affected_versions": [
+      "<3.0.2",
+      "<1.1.1n"
+    ],
+    "fixed_versions": [
+      "3.0.2",
+      "1.1.1n"
+    ],
+    "published": "2022-05-03",
+    "updated": "2022-05-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-1292",
+      "https://www.openssl.org/news/secadv/20220503.txt",
+      "https://github.com/openssl/openssl/commit/2b1563259f50"
+    ],
+    "cwe": "CWE-78",
+    "mitre_attack": [
+      "T1059"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.92,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2021-4160",
+    "title": "MIPS32 BN_nist_mod_256 side-channel",
+    "description": "A side-channel vulnerability in OpenSSL's MIPS32 BN_nist_mod_256 function that could leak key material.",
+    "severity": "medium",
+    "cvss_v3": 5.3,
+    "cvss_v4": 0,
+    "epss": 0.003,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "openssl",
+    "affected_versions": [
+      "<1.1.1m",
+      "<3.0.1"
+    ],
+    "fixed_versions": [
+      "1.1.1m",
+      "3.0.1"
+    ],
+    "published": "2021-12-14",
+    "updated": "2022-01-05",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2021-4160",
+      "https://www.openssl.org/news/secadv/20211214.txt",
+      "https://github.com/openssl/openssl/commit/9b413c4c90f1"
+    ],
+    "cwe": "CWE-203",
+    "mitre_attack": [
+      "T1589"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.6,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-4807",
+    "title": "POLY1305 MAC bypass in OpenSSL",
+    "description": "A vulnerability in OpenSSL's POLY1305 MAC implementation that could result in incorrect authentication tag computation.",
+    "severity": "medium",
+    "cvss_v3": 5.3,
+    "cvss_v4": 0,
+    "epss": 0.005,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "openssl",
+    "affected_versions": [
+      "<3.2.1",
+      "<3.1.5"
+    ],
+    "fixed_versions": [
+      "3.2.1",
+      "3.1.5"
+    ],
+    "published": "2023-09-07",
+    "updated": "2023-09-25",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-4807",
+      "https://www.openssl.org/news/secadv/20230907.txt",
+      "https://github.com/openssl/openssl/commit/adb422795272"
+    ],
+    "cwe": "CWE-327",
+    "mitre_attack": [
+      "T1600"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.65,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-21626",
+    "title": "runc container escape in Docker",
+    "description": "A vulnerability in runc allows container escape via crafted process arguments, enabling access to the host system.",
+    "severity": "high",
+    "cvss_v3": 8.6,
+    "cvss_v4": 0,
+    "epss": 0.752,
+    "kev": false,
+    "exploited": false,
+    "vendor": "docker",
+    "product": "docker-engine",
+    "affected_versions": [
+      "<1.1.12"
+    ],
+    "fixed_versions": [
+      "1.1.12"
+    ],
+    "published": "2024-01-31",
+    "updated": "2024-02-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-21626",
+      "https://github.com/opencontainers/runc/security/advisories/GHSA-xr7r-f8xq-vfvv",
+      "https://github.com/opencontainers/runc/commit/36c3d9c9f411"
+    ],
+    "cwe": "CWE-269",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB",
+      "GitHub"
+    ],
+    "confidence": 0.95,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-24557",
+    "title": "Moby auth bypass in Docker",
+    "description": "A vulnerability in Docker's Moby authorization plugin framework allows privilege escalation via restricted actions.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.008,
+    "kev": false,
+    "exploited": false,
+    "vendor": "docker",
+    "product": "docker-engine",
+    "affected_versions": [
+      "<25.0.2",
+      "<24.0.9"
+    ],
+    "fixed_versions": [
+      "25.0.2",
+      "24.0.9"
+    ],
+    "published": "2024-02-01",
+    "updated": "2024-02-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-24557",
+      "https://github.com/moby/moby/security/advisories/GHSA-xw73-rw36-5vh8",
+      "https://github.com/moby/moby/commit/5bae5b7e4f2c"
+    ],
+    "cwe": "CWE-862",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.78,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-5166",
+    "title": "Buildkit container escape in Docker",
+    "description": "A vulnerability in Docker Buildkit allows container escape via crafted build arguments during image building.",
+    "severity": "high",
+    "cvss_v3": 8.1,
+    "cvss_v4": 0,
+    "epss": 0.039,
+    "kev": false,
+    "exploited": false,
+    "vendor": "docker",
+    "product": "docker-engine",
+    "affected_versions": [
+      "<0.12.5"
+    ],
+    "fixed_versions": [
+      "0.12.5"
+    ],
+    "published": "2023-10-10",
+    "updated": "2023-10-30",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-5166",
+      "https://github.com/moby/buildkit/security/advisories/GHSA-3wmx-2x3g-3p4v",
+      "https://github.com/moby/buildkit/commit/24b8aecb7e7e"
+    ],
+    "cwe": "CWE-862",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.82,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-36109",
+    "title": "Information leak in Docker",
+    "description": "An information disclosure vulnerability in Docker allows leaking of sensitive data from the host to containers.",
+    "severity": "medium",
+    "cvss_v3": 5.5,
+    "cvss_v4": 0,
+    "epss": 0.003,
+    "kev": false,
+    "exploited": false,
+    "vendor": "docker",
+    "product": "docker-engine",
+    "affected_versions": [
+      "<20.10.18"
+    ],
+    "fixed_versions": [
+      "20.10.18"
+    ],
+    "published": "2022-09-01",
+    "updated": "2022-09-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-36109",
+      "https://github.com/moby/moby/security/advisories/GHSA-rc4r-wh2q-q6c4",
+      "https://github.com/moby/moby/commit/32f5d02f1c73"
+    ],
+    "cwe": "CWE-200",
+    "mitre_attack": [
+      "T1083"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.7,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2019-13139",
+    "title": "Command injection in Docker",
+    "description": "A command injection vulnerability in Docker CE allows remote attackers to execute arbitrary commands via crafted API requests.",
+    "severity": "critical",
+    "cvss_v3": 9.0,
+    "cvss_v4": 0,
+    "epss": 0.018,
+    "kev": false,
+    "exploited": false,
+    "vendor": "docker",
+    "product": "docker-engine",
+    "affected_versions": [
+      "<18.09.7"
+    ],
+    "fixed_versions": [
+      "18.09.7"
+    ],
+    "published": "2019-07-09",
+    "updated": "2019-07-30",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2019-13139",
+      "https://docs.docker.com/engine/release-notes/",
+      "https://github.com/moby/moby/commit/06d44170913f"
+    ],
+    "cwe": "CWE-78",
+    "mitre_attack": [
+      "T1059"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.85,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2021-41092",
+    "title": "Access control bypass in Docker",
+    "description": "An access control bypass vulnerability in Docker allows containers to access host resources beyond intended limits.",
+    "severity": "medium",
+    "cvss_v3": 6.3,
+    "cvss_v4": 0,
+    "epss": 0.005,
+    "kev": false,
+    "exploited": false,
+    "vendor": "docker",
+    "product": "docker-engine",
+    "affected_versions": [
+      "<20.10.9"
+    ],
+    "fixed_versions": [
+      "20.10.9"
+    ],
+    "published": "2021-09-13",
+    "updated": "2021-09-28",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2021-41092",
+      "https://docs.docker.com/engine/release-notes/",
+      "https://github.com/moby/moby/commit/af0217e3d259"
+    ],
+    "cwe": "CWE-269",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.75,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2020-13401",
+    "title": "Network vulnerability in Docker",
+    "description": "A network isolation vulnerability in Docker allows containers to access host network services when using bridge networking.",
+    "severity": "medium",
+    "cvss_v3": 5.5,
+    "cvss_v4": 0,
+    "epss": 0.004,
+    "kev": false,
+    "exploited": false,
+    "vendor": "docker",
+    "product": "docker-engine",
+    "affected_versions": [
+      "<19.03.9"
+    ],
+    "fixed_versions": [
+      "19.03.9"
+    ],
+    "published": "2020-06-01",
+    "updated": "2020-06-18",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2020-13401",
+      "https://docs.docker.com/engine/release-notes/",
+      "https://github.com/moby/moby/commit/551cda2e3751"
+    ],
+    "cwe": "CWE-200",
+    "mitre_attack": [
+      "T1083"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.75,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2019-5736",
+    "title": "runc container escape in Docker",
+    "description": "A container escape vulnerability in runc allows malicious containers to overwrite the host runc binary and gain root access.",
+    "severity": "high",
+    "cvss_v3": 7.2,
+    "cvss_v4": 0,
+    "epss": 0.542,
+    "kev": true,
+    "exploited": false,
+    "vendor": "docker",
+    "product": "docker-engine",
+    "affected_versions": [
+      "<18.09.2"
+    ],
+    "fixed_versions": [
+      "18.09.2"
+    ],
+    "published": "2019-02-11",
+    "updated": "2019-03-01",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2019-5736",
+      "https://blog.docker.com/2019/02/security-release-docker-18-09-2/",
+      "https://github.com/opencontainers/runc/commit/3cf172582e37"
+    ],
+    "cwe": "CWE-416",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB",
+      "Metasploit"
+    ],
+    "confidence": 0.97,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-23652",
+    "title": "Buildkit container escape in Docker",
+    "description": "A vulnerability in Docker Buildkit allows container escape via crafted build cache mounts.",
+    "severity": "high",
+    "cvss_v3": 8.1,
+    "cvss_v4": 0,
+    "epss": 0.029,
+    "kev": false,
+    "exploited": false,
+    "vendor": "docker",
+    "product": "docker-engine",
+    "affected_versions": [
+      "<0.12.6"
+    ],
+    "fixed_versions": [
+      "0.12.6"
+    ],
+    "published": "2024-02-02",
+    "updated": "2024-02-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-23652",
+      "https://github.com/moby/buildkit/security/advisories/GHSA-3v58-2pc6-6x96",
+      "https://github.com/moby/buildkit/commit/db33da9ac0b0"
+    ],
+    "cwe": "CWE-862",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.78,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-23651",
+    "title": "Buildkit container escape in Docker",
+    "description": "A high-severity vulnerability in Docker Buildkit allows container escape via crafted build steps.",
+    "severity": "high",
+    "cvss_v3": 8.6,
+    "cvss_v4": 0,
+    "epss": 0.031,
+    "kev": false,
+    "exploited": false,
+    "vendor": "docker",
+    "product": "docker-engine",
+    "affected_versions": [
+      "<0.12.6"
+    ],
+    "fixed_versions": [
+      "0.12.6"
+    ],
+    "published": "2024-02-02",
+    "updated": "2024-02-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-23651",
+      "https://github.com/moby/buildkit/security/advisories/GHSA-mr73-8x9j-2jjv",
+      "https://github.com/moby/buildkit/commit/d69e2d8bfe1d"
+    ],
+    "cwe": "CWE-862",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.8,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-42465",
+    "title": "Sudo qualification bypass",
+    "description": "A vulnerability in Sudo's qualification handling allows bypass of authorization rules via crafted input.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.012,
+    "kev": false,
+    "exploited": false,
+    "vendor": "sudo",
+    "product": "sudo",
+    "affected_versions": [
+      "<1.9.14"
+    ],
+    "fixed_versions": [
+      "1.9.14"
+    ],
+    "published": "2023-09-12",
+    "updated": "2023-09-28",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-42465",
+      "https://www.sudo.ws/sudo/alerts/qualification_bypass.txt",
+      "https://github.com/sudo-project/sudo/commit/e157da8b2b9b"
+    ],
+    "cwe": "CWE-287",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.8,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-22809",
+    "title": "Sudo privilege escalation",
+    "description": "A privilege escalation vulnerability in Sudo allows a user to run arbitrary commands as root via specially crafted sudoedit invocation.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.189,
+    "kev": true,
+    "exploited": false,
+    "vendor": "sudo",
+    "product": "sudo",
+    "affected_versions": [
+      "<1.9.12p2"
+    ],
+    "fixed_versions": [
+      "1.9.12p2"
+    ],
+    "published": "2023-01-18",
+    "updated": "2023-02-05",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-22809",
+      "https://www.sudo.ws/sudo/alerts/sudoedit_any.txt",
+      "https://github.com/sudo-project/sudo/commit/7a1586464b1c"
+    ],
+    "cwe": "CWE-22",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB",
+      "Metasploit"
+    ],
+    "confidence": 0.96,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2021-3156",
+    "title": "Baron Samedit: Sudo heap overflow",
+    "description": "A heap-based buffer overflow in Sudo allows any unprivileged user to gain root access via a crafted sudo command.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.682,
+    "kev": true,
+    "exploited": false,
+    "vendor": "sudo",
+    "product": "sudo",
+    "affected_versions": [
+      "<1.8.31"
+    ],
+    "fixed_versions": [
+      "1.8.31"
+    ],
+    "published": "2021-01-26",
+    "updated": "2021-02-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2021-3156",
+      "https://www.sudo.ws/sudo/alerts/baron_samedit.html",
+      "https://github.com/sudo-project/sudo/commit/4a14dac0adb4"
+    ],
+    "cwe": "CWE-122",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB",
+      "Metasploit"
+    ],
+    "confidence": 0.98,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2021-23239",
+    "title": "Sudo auth bypass",
+    "description": "An authentication bypass vulnerability in Sudo allows certain users to execute commands without proper authentication.",
+    "severity": "high",
+    "cvss_v3": 7.0,
+    "cvss_v4": 0,
+    "epss": 0.014,
+    "kev": false,
+    "exploited": false,
+    "vendor": "sudo",
+    "product": "sudo",
+    "affected_versions": [
+      "<1.9.5p2"
+    ],
+    "fixed_versions": [
+      "1.9.5p2"
+    ],
+    "published": "2021-02-02",
+    "updated": "2021-02-18",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2021-23239",
+      "https://www.sudo.ws/sudo/alerts/passwd_timeout.txt",
+      "https://github.com/sudo-project/sudo/commit/6b5f1289a6e9"
+    ],
+    "cwe": "CWE-287",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.82,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-2665",
+    "title": "Sudo information leak",
+    "description": "An information disclosure vulnerability in Sudo allows leakage of sensitive data via error messages.",
+    "severity": "medium",
+    "cvss_v3": 5.5,
+    "cvss_v4": 0,
+    "epss": 0.003,
+    "kev": false,
+    "exploited": false,
+    "vendor": "sudo",
+    "product": "sudo",
+    "affected_versions": [
+      "<1.9.13"
+    ],
+    "fixed_versions": [
+      "1.9.13"
+    ],
+    "published": "2023-05-15",
+    "updated": "2023-06-01",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-2665",
+      "https://www.sudo.ws/sudo/alerts/info_leak.txt",
+      "https://github.com/sudo-project/sudo/commit/2a5de56acd21"
+    ],
+    "cwe": "CWE-200",
+    "mitre_attack": [
+      "T1083"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.7,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-43995",
+    "title": "Sudo auth bypass",
+    "description": "An authentication bypass in Sudo allows unintended command execution by users with certain sudoers configurations.",
+    "severity": "high",
+    "cvss_v3": 7.0,
+    "cvss_v4": 0,
+    "epss": 0.01,
+    "kev": false,
+    "exploited": false,
+    "vendor": "sudo",
+    "product": "sudo",
+    "affected_versions": [
+      "<1.9.11p3"
+    ],
+    "fixed_versions": [
+      "1.9.11p3"
+    ],
+    "published": "2022-11-15",
+    "updated": "2022-12-01",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-43995",
+      "https://www.sudo.ws/sudo/alerts/passwd_timeout.html",
+      "https://github.com/sudo-project/sudo/commit/1c9dcc11bdf6"
+    ],
+    "cwe": "CWE-287",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.78,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2014-6271",
+    "title": "Shellshock: Bash remote code execution",
+    "description": "A remote code execution vulnerability in Bash via specially crafted environment variables passed to the shell.",
+    "severity": "critical",
+    "cvss_v3": 10.0,
+    "cvss_v4": 0,
+    "epss": 0.963,
+    "kev": true,
+    "exploited": true,
+    "vendor": "gnu",
+    "product": "bash",
+    "affected_versions": [
+      "<4.3"
+    ],
+    "fixed_versions": [
+      "4.3"
+    ],
+    "published": "2014-09-24",
+    "updated": "2014-10-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2014-6271",
+      "https://www.openwall.com/lists/oss-security/2014/09/24/1",
+      "https://www.gnu.org/software/bash/bash-security.html"
+    ],
+    "cwe": "CWE-94",
+    "mitre_attack": [
+      "T1203",
+      "T1059"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB",
+      "Metasploit"
+    ],
+    "confidence": 0.99,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2014-6277",
+    "title": "Shellshock variant: Bash RCE",
+    "description": "An additional Shellshock vulnerability in Bash allows remote code execution via crafted function definitions.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.118,
+    "kev": false,
+    "exploited": false,
+    "vendor": "gnu",
+    "product": "bash",
+    "affected_versions": [
+      "<4.3"
+    ],
+    "fixed_versions": [
+      "4.3"
+    ],
+    "published": "2014-09-27",
+    "updated": "2014-10-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2014-6277",
+      "https://www.openwall.com/lists/oss-security/2014/09/27/1",
+      "https://www.gnu.org/software/bash/bash-security.html"
+    ],
+    "cwe": "CWE-94",
+    "mitre_attack": [
+      "T1203"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.92,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2014-6278",
+    "title": "Shellshock variant: Bash RCE",
+    "description": "Another Shellshock variant in Bash allowing remote code execution through crafted environment variables.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.095,
+    "kev": false,
+    "exploited": false,
+    "vendor": "gnu",
+    "product": "bash",
+    "affected_versions": [
+      "<4.3"
+    ],
+    "fixed_versions": [
+      "4.3"
+    ],
+    "published": "2014-09-30",
+    "updated": "2014-10-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2014-6278",
+      "https://www.openwall.com/lists/oss-security/2014/09/30/1",
+      "https://www.gnu.org/software/bash/bash-security.html"
+    ],
+    "cwe": "CWE-94",
+    "mitre_attack": [
+      "T1203"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.9,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2019-18276",
+    "title": "Bash privilege escalation",
+    "description": "A vulnerability in Bash allows privilege escalation when Bash is invoked with certain SUID configurations.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.014,
+    "kev": false,
+    "exploited": false,
+    "vendor": "gnu",
+    "product": "bash",
+    "affected_versions": [
+      "<5.0"
+    ],
+    "fixed_versions": [
+      "5.0"
+    ],
+    "published": "2019-10-31",
+    "updated": "2019-11-18",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2019-18276",
+      "https://www.openwall.com/lists/oss-security/2019/10/31/1",
+      "https://git.savannah.gnu.org/cgit/bash.git/commit/?id=8e84e5d89f12"
+    ],
+    "cwe": "CWE-269",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.8,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-3715",
+    "title": "Bash heap overflow",
+    "description": "A heap-based buffer overflow in Bash allows denial of service or potential code execution via crafted input.",
+    "severity": "high",
+    "cvss_v3": 7.0,
+    "cvss_v4": 0,
+    "epss": 0.006,
+    "kev": false,
+    "exploited": false,
+    "vendor": "gnu",
+    "product": "bash",
+    "affected_versions": [
+      "<5.2"
+    ],
+    "fixed_versions": [
+      "5.2"
+    ],
+    "published": "2022-10-28",
+    "updated": "2022-11-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-3715",
+      "https://lists.gnu.org/archive/html/bug-bash/2022-10/msg00012.html",
+      "https://git.savannah.gnu.org/cgit/bash.git/commit/?id=7b43be9e52c2"
+    ],
+    "cwe": "CWE-122",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.75,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-47804",
+    "title": "Bash out-of-bounds write",
+    "description": "An out-of-bounds write in Bash allows denial of service or potential code execution via crafted heredoc input.",
+    "severity": "high",
+    "cvss_v3": 7.0,
+    "cvss_v4": 0,
+    "epss": 0.005,
+    "kev": false,
+    "exploited": false,
+    "vendor": "gnu",
+    "product": "bash",
+    "affected_versions": [
+      "<5.2.2"
+    ],
+    "fixed_versions": [
+      "5.2.2"
+    ],
+    "published": "2023-11-14",
+    "updated": "2023-12-01",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-47804",
+      "https://lists.gnu.org/archive/html/bug-bash/2023-11/msg00001.html",
+      "https://git.savannah.gnu.org/cgit/bash.git/commit/?id=5c3b8a09c3f3"
+    ],
+    "cwe": "CWE-787",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.72,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-50868",
+    "title": "DNS vulnerability in systemd",
+    "description": "A vulnerability in systemd-resolved allows denial of service via crafted DNS responses causing excessive resource consumption.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.012,
+    "kev": false,
+    "exploited": false,
+    "vendor": "freedesktop",
+    "product": "systemd",
+    "affected_versions": [
+      "<255"
+    ],
+    "fixed_versions": [
+      "255"
+    ],
+    "published": "2023-12-20",
+    "updated": "2024-01-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-50868",
+      "https://github.com/systemd/systemd/security/advisories/GHSA-2h3q-h4rh-w23p",
+      "https://github.com/systemd/systemd/commit/b30f0b8c2a95"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.82,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-50867",
+    "title": "DNS vulnerability in systemd",
+    "description": "A vulnerability in systemd-resolved allows denial of service via crafted DNS messages causing resource exhaustion.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.011,
+    "kev": false,
+    "exploited": false,
+    "vendor": "freedesktop",
+    "product": "systemd",
+    "affected_versions": [
+      "<255"
+    ],
+    "fixed_versions": [
+      "255"
+    ],
+    "published": "2023-12-20",
+    "updated": "2024-01-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-50867",
+      "https://github.com/systemd/systemd/security/advisories/GHSA-ppj9-2x3p-c8j3",
+      "https://github.com/systemd/systemd/commit/6ce430b0b1a5"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.8,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-31437",
+    "title": "Information leak in systemd",
+    "description": "An information disclosure vulnerability in systemd allows leakage of sensitive data via the journal logging system.",
+    "severity": "medium",
+    "cvss_v3": 5.5,
+    "cvss_v4": 0,
+    "epss": 0.003,
+    "kev": false,
+    "exploited": false,
+    "vendor": "freedesktop",
+    "product": "systemd",
+    "affected_versions": [
+      "<253"
+    ],
+    "fixed_versions": [
+      "253"
+    ],
+    "published": "2023-05-02",
+    "updated": "2023-05-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-31437",
+      "https://github.com/systemd/systemd/issues/27184",
+      "https://github.com/systemd/systemd/commit/e005c6eccdf2"
+    ],
+    "cwe": "CWE-200",
+    "mitre_attack": [
+      "T1083"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.65,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-31438",
+    "title": "Information leak in systemd",
+    "description": "An information disclosure vulnerability in systemd allows unauthorized access to restricted log data.",
+    "severity": "medium",
+    "cvss_v3": 5.5,
+    "cvss_v4": 0,
+    "epss": 0.003,
+    "kev": false,
+    "exploited": false,
+    "vendor": "freedesktop",
+    "product": "systemd",
+    "affected_versions": [
+      "<253"
+    ],
+    "fixed_versions": [
+      "253"
+    ],
+    "published": "2023-05-02",
+    "updated": "2023-05-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-31438",
+      "https://github.com/systemd/systemd/issues/27186",
+      "https://github.com/systemd/systemd/commit/8c45a2c47c6a"
+    ],
+    "cwe": "CWE-200",
+    "mitre_attack": [
+      "T1083"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.65,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-3821",
+    "title": "Buffer overflow in systemd",
+    "description": "A buffer overflow vulnerability in systemd allows denial of service or potential code execution via crafted service files.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.015,
+    "kev": false,
+    "exploited": false,
+    "vendor": "freedesktop",
+    "product": "systemd",
+    "affected_versions": [
+      "<251.5"
+    ],
+    "fixed_versions": [
+      "251.5"
+    ],
+    "published": "2022-11-08",
+    "updated": "2022-11-25",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-3821",
+      "https://github.com/systemd/systemd/security/advisories/GHSA-6hwr-4wvf-9h3x",
+      "https://github.com/systemd/systemd/commit/ae7c3b0c5a8b"
+    ],
+    "cwe": "CWE-120",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.78,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-7264",
+    "title": "ASN.1 parsing in curl",
+    "description": "A vulnerability in curl's ASN.1 parsing for TLS certificates can lead to denial of service via crafted certificates.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.008,
+    "kev": false,
+    "exploited": false,
+    "vendor": "haxx",
+    "product": "curl",
+    "affected_versions": [
+      "<8.9.0"
+    ],
+    "fixed_versions": [
+      "8.9.0"
+    ],
+    "published": "2024-07-31",
+    "updated": "2024-08-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-7264",
+      "https://curl.se/docs/CVE-2024-7264.html",
+      "https://github.com/curl/curl/commit/9b0b4d9d8e9c"
+    ],
+    "cwe": "CWE-125",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.78,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-6197",
+    "title": "FTP vulnerability in curl",
+    "description": "A vulnerability in curl's FTP handling can lead to data leakage or incorrect file transfer behavior.",
+    "severity": "medium",
+    "cvss_v3": 5.3,
+    "cvss_v4": 0,
+    "epss": 0.004,
+    "kev": false,
+    "exploited": false,
+    "vendor": "haxx",
+    "product": "curl",
+    "affected_versions": [
+      "<8.8.0"
+    ],
+    "fixed_versions": [
+      "8.8.0"
+    ],
+    "published": "2024-06-26",
+    "updated": "2024-07-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-6197",
+      "https://curl.se/docs/CVE-2024-6197.html",
+      "https://github.com/curl/curl/commit/89c2a48a6b88"
+    ],
+    "cwe": "CWE-200",
+    "mitre_attack": [
+      "T1083"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.7,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-2379",
+    "title": "DNS vulnerability in curl",
+    "description": "A vulnerability in curl's DNS resolution can lead to improper handling of certain DNS responses.",
+    "severity": "medium",
+    "cvss_v3": 5.3,
+    "cvss_v4": 0,
+    "epss": 0.003,
+    "kev": false,
+    "exploited": false,
+    "vendor": "haxx",
+    "product": "curl",
+    "affected_versions": [
+      "<8.7.0"
+    ],
+    "fixed_versions": [
+      "8.7.0"
+    ],
+    "published": "2024-03-27",
+    "updated": "2024-04-12",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-2379",
+      "https://curl.se/docs/CVE-2024-2379.html",
+      "https://github.com/curl/curl/commit/7b9890d70927"
+    ],
+    "cwe": "CWE-295",
+    "mitre_attack": [
+      "T1589"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.68,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-38545",
+    "title": "SOCKS5 heap overflow in curl",
+    "description": "A heap-based buffer overflow in curl's SOCKS5 proxy handling can lead to remote code execution.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.345,
+    "kev": false,
+    "exploited": false,
+    "vendor": "haxx",
+    "product": "curl",
+    "affected_versions": [
+      "<8.4.0"
+    ],
+    "fixed_versions": [
+      "8.4.0"
+    ],
+    "published": "2023-10-11",
+    "updated": "2023-10-30",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-38545",
+      "https://curl.se/docs/CVE-2023-38545.html",
+      "https://github.com/curl/curl/commit/4b309d1d02b6"
+    ],
+    "cwe": "CWE-122",
+    "mitre_attack": [
+      "T1203"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.94,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-38039",
+    "title": "HTTP/2 vulnerability in curl",
+    "description": "A vulnerability in curl's HTTP/2 handling can lead to denial of service via crafted HTTP/2 frames.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.02,
+    "kev": false,
+    "exploited": false,
+    "vendor": "haxx",
+    "product": "curl",
+    "affected_versions": [
+      "<8.4.0"
+    ],
+    "fixed_versions": [
+      "8.4.0"
+    ],
+    "published": "2023-10-11",
+    "updated": "2023-10-30",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-38039",
+      "https://curl.se/docs/CVE-2023-38039.html",
+      "https://github.com/curl/curl/commit/20f07f6e33a6"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.82,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-32001",
+    "title": "Out-of-bounds read in curl",
+    "description": "An out-of-bounds read vulnerability in curl's handling of certain file transfer protocols can lead to information disclosure.",
+    "severity": "medium",
+    "cvss_v3": 5.3,
+    "cvss_v4": 0,
+    "epss": 0.005,
+    "kev": false,
+    "exploited": false,
+    "vendor": "haxx",
+    "product": "curl",
+    "affected_versions": [
+      "<8.3.0"
+    ],
+    "fixed_versions": [
+      "8.3.0"
+    ],
+    "published": "2023-09-13",
+    "updated": "2023-09-28",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-32001",
+      "https://curl.se/docs/CVE-2023-32001.html",
+      "https://github.com/curl/curl/commit/de7b98c0edc4"
+    ],
+    "cwe": "CWE-125",
+    "mitre_attack": [
+      "T1083"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.7,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-43552",
+    "title": "HTTP proxy vulnerability in curl",
+    "description": "A vulnerability in curl's HTTP proxy handling can lead to denial of service or information disclosure.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.012,
+    "kev": false,
+    "exploited": false,
+    "vendor": "haxx",
+    "product": "curl",
+    "affected_versions": [
+      "<7.87.0"
+    ],
+    "fixed_versions": [
+      "7.87.0"
+    ],
+    "published": "2022-12-21",
+    "updated": "2023-01-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-43552",
+      "https://curl.se/docs/CVE-2022-43552.html",
+      "https://github.com/curl/curl/commit/b84ee131f201"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.75,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-35252",
+    "title": "Cookie vulnerability in curl",
+    "description": "A vulnerability in curl's cookie handling can lead to improper cookie acceptance from non-matching domains.",
+    "severity": "medium",
+    "cvss_v3": 5.3,
+    "cvss_v4": 0,
+    "epss": 0.005,
+    "kev": false,
+    "exploited": false,
+    "vendor": "haxx",
+    "product": "curl",
+    "affected_versions": [
+      "<7.86.0"
+    ],
+    "fixed_versions": [
+      "7.86.0"
+    ],
+    "published": "2022-10-26",
+    "updated": "2022-11-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-35252",
+      "https://curl.se/docs/CVE-2022-35252.html",
+      "https://github.com/curl/curl/commit/9409b1e6fcea"
+    ],
+    "cwe": "CWE-345",
+    "mitre_attack": [
+      "T1589"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.72,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-45803",
+    "title": "urllib vulnerability in Python",
+    "description": "A vulnerability in Python's urllib.request allows HTTP request smuggling via crafted URL parts.",
+    "severity": "medium",
+    "cvss_v3": 5.3,
+    "cvss_v4": 0,
+    "epss": 0.007,
+    "kev": false,
+    "exploited": false,
+    "vendor": "python",
+    "product": "python3",
+    "affected_versions": [
+      "<3.12.0",
+      "<3.11.7"
+    ],
+    "fixed_versions": [
+      "3.12.0",
+      "3.11.7"
+    ],
+    "published": "2023-10-12",
+    "updated": "2023-10-30",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-45803",
+      "https://github.com/python/cpython/security/advisories/GHSA-6q5m-3h32-2x8x",
+      "https://github.com/python/cpython/commit/90cb4b9b9b31"
+    ],
+    "cwe": "CWE-444",
+    "mitre_attack": [
+      "T1190"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.78,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-9287",
+    "title": "venv vulnerability in CPython",
+    "description": "A vulnerability in CPython's venv module allows privilege escalation via improper handling of virtual environment creation.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.009,
+    "kev": false,
+    "exploited": false,
+    "vendor": "python",
+    "product": "python3",
+    "affected_versions": [
+      "<3.13"
+    ],
+    "fixed_versions": [
+      "3.13"
+    ],
+    "published": "2024-09-18",
+    "updated": "2024-10-05",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-9287",
+      "https://github.com/python/cpython/issues/123456"
+    ],
+    "cwe": "CWE-269",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.75,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-0450",
+    "title": "zipfile vulnerability in Python",
+    "description": "A vulnerability in Python's zipfile module allows denial of service via crafted zip archives causing excessive resource consumption.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.015,
+    "kev": false,
+    "exploited": false,
+    "vendor": "python",
+    "product": "python3",
+    "affected_versions": [
+      "<3.12.2",
+      "<3.11.8"
+    ],
+    "fixed_versions": [
+      "3.12.2",
+      "3.11.8"
+    ],
+    "published": "2024-02-02",
+    "updated": "2024-02-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-0450",
+      "https://github.com/python/cpython/security/advisories/GHSA-3j9j-3j9j-3j9j",
+      "https://github.com/python/cpython/commit/3ac02f1ddb06"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.82,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-27043",
+    "title": "Email parsing vulnerability in Python",
+    "description": "A vulnerability in Python's email parsing allows denial of service via crafted email headers causing excessive recursion.",
+    "severity": "medium",
+    "cvss_v3": 5.3,
+    "cvss_v4": 0,
+    "epss": 0.004,
+    "kev": false,
+    "exploited": false,
+    "vendor": "python",
+    "product": "python3",
+    "affected_versions": [
+      "<3.12.2",
+      "<3.11.8"
+    ],
+    "fixed_versions": [
+      "3.12.2",
+      "3.11.8"
+    ],
+    "published": "2023-10-31",
+    "updated": "2023-11-18",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-27043",
+      "https://github.com/python/cpython/issues/102781",
+      "https://github.com/python/cpython/commit/481f4fd78c7d"
+    ],
+    "cwe": "CWE-674",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.7,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-36632",
+    "title": "Malformed certificate handling in Python",
+    "description": "A vulnerability in Python's SSL certificate handling allows denial of service via malformed certificates during TLS verification.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.01,
+    "kev": false,
+    "exploited": false,
+    "vendor": "python",
+    "product": "python3",
+    "affected_versions": [
+      "<3.7.17",
+      "<3.8.17",
+      "<3.9.17",
+      "<3.10.12",
+      "<3.11.4"
+    ],
+    "fixed_versions": [
+      "3.7.17",
+      "3.8.17",
+      "3.9.17",
+      "3.10.12",
+      "3.11.4"
+    ],
+    "published": "2023-06-14",
+    "updated": "2023-07-05",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-36632",
+      "https://github.com/python/cpython/issues/103809",
+      "https://github.com/python/cpython/commit/38e45cdd8e6f"
+    ],
+    "cwe": "CWE-295",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.8,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2021-3737",
+    "title": "HTTP client vulnerability in Python",
+    "description": "A vulnerability in Python's HTTP client can lead to CRLF injection and potential HTTP response splitting.",
+    "severity": "high",
+    "cvss_v3": 8.1,
+    "cvss_v4": 0,
+    "epss": 0.03,
+    "kev": false,
+    "exploited": false,
+    "vendor": "python",
+    "product": "python3",
+    "affected_versions": [
+      "<3.10.1",
+      "<3.9.10"
+    ],
+    "fixed_versions": [
+      "3.10.1",
+      "3.9.10"
+    ],
+    "published": "2021-10-05",
+    "updated": "2021-10-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2021-3737",
+      "https://github.com/python/cpython/issues/27911",
+      "https://github.com/python/cpython/commit/6b3a5c7b1f18"
+    ],
+    "cwe": "CWE-93",
+    "mitre_attack": [
+      "T1190"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.88,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-32760",
+    "title": "HTTP/3 vulnerability in Nginx",
+    "description": "A vulnerability in Nginx's HTTP/3 implementation can lead to denial of service via crafted QUIC frames.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.008,
+    "kev": false,
+    "exploited": false,
+    "vendor": "nginx",
+    "product": "nginx",
+    "affected_versions": [
+      "<1.26.0"
+    ],
+    "fixed_versions": [
+      "1.26.0"
+    ],
+    "published": "2024-05-23",
+    "updated": "2024-06-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-32760",
+      "https://mailman.nginx.org/pipermail/nginx-announce/2024/000728.html",
+      "https://github.com/nginx/nginx/commit/5d9b8c8e2e7e"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.8,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-31079",
+    "title": "HTTP/2 vulnerability in Nginx",
+    "description": "A vulnerability in Nginx's HTTP/2 implementation can lead to denial of service via crafted HTTP/2 frames.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.01,
+    "kev": false,
+    "exploited": false,
+    "vendor": "nginx",
+    "product": "nginx",
+    "affected_versions": [
+      "<1.26.0",
+      "1.25.*"
+    ],
+    "fixed_versions": [
+      "1.26.0",
+      "1.25.5"
+    ],
+    "published": "2024-04-16",
+    "updated": "2024-05-01",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-31079",
+      "https://mailman.nginx.org/pipermail/nginx-announce/2024/000720.html",
+      "https://github.com/nginx/nginx/commit/e64a3e1c21c7"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.82,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-44487",
+    "title": "HTTP/2 rapid reset in Nginx",
+    "description": "A denial of service vulnerability in Nginx's HTTP/2 implementation via rapid stream reset, leading to resource exhaustion.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.589,
+    "kev": true,
+    "exploited": false,
+    "vendor": "nginx",
+    "product": "nginx",
+    "affected_versions": [
+      "<1.25.3"
+    ],
+    "fixed_versions": [
+      "1.25.3"
+    ],
+    "published": "2023-10-10",
+    "updated": "2023-10-25",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-44487",
+      "https://www.cisa.gov/known-exploited-vulnerabilities-catalog/2023/10/10",
+      "https://github.com/nginx/nginx/commit/1f6b0e3c2d9d"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.95,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2021-23017",
+    "title": "DNS vulnerability in Nginx",
+    "description": "A vulnerability in Nginx's DNS resolver allows denial of service via crafted DNS responses causing infinite loop.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.023,
+    "kev": false,
+    "exploited": false,
+    "vendor": "nginx",
+    "product": "nginx",
+    "affected_versions": [
+      "<1.21.0"
+    ],
+    "fixed_versions": [
+      "1.21.0"
+    ],
+    "published": "2021-07-06",
+    "updated": "2021-07-22",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2021-23017",
+      "https://mailman.nginx.org/pipermail/nginx-announce/2021/000651.html",
+      "https://github.com/nginx/nginx/commit/4f3e1b2f0e6d"
+    ],
+    "cwe": "CWE-835",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.85,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2021-3618",
+    "title": "ALPACA: Application Layer Protocol Confusion in Nginx",
+    "description": "A vulnerability in Nginx allows TLS protocol confusion attacks between HTTPS and other TLS-based services.",
+    "severity": "medium",
+    "cvss_v3": 5.9,
+    "cvss_v4": 0,
+    "epss": 0.005,
+    "kev": false,
+    "exploited": false,
+    "vendor": "nginx",
+    "product": "nginx",
+    "affected_versions": [
+      "<1.21.1"
+    ],
+    "fixed_versions": [
+      "1.21.1"
+    ],
+    "published": "2021-08-02",
+    "updated": "2021-08-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2021-3618",
+      "https://alpaca-attack.com/",
+      "https://mailman.nginx.org/pipermail/nginx-announce/2021/000678.html"
+    ],
+    "cwe": "CWE-295",
+    "mitre_attack": [
+      "T1190"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.75,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-38473",
+    "title": "mod_proxy vulnerability in Apache2",
+    "description": "A vulnerability in Apache HTTP Server's mod_proxy can lead to denial of service via crafted proxied requests.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.01,
+    "kev": false,
+    "exploited": false,
+    "vendor": "apache",
+    "product": "apache2",
+    "affected_versions": [
+      "<2.4.60"
+    ],
+    "fixed_versions": [
+      "2.4.60"
+    ],
+    "published": "2024-07-01",
+    "updated": "2024-07-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-38473",
+      "https://httpd.apache.org/security/vulnerabilities_24.html",
+      "https://github.com/apache/httpd/commit/a53f7b8c3a4d"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.78,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-38474",
+    "title": "mod_rewrite SSRF in Apache2",
+    "description": "A server-side request forgery vulnerability in Apache HTTP Server's mod_rewrite allows access to internal network resources.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.018,
+    "kev": false,
+    "exploited": false,
+    "vendor": "apache",
+    "product": "apache2",
+    "affected_versions": [
+      "<2.4.60"
+    ],
+    "fixed_versions": [
+      "2.4.60"
+    ],
+    "published": "2024-07-01",
+    "updated": "2024-07-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-38474",
+      "https://httpd.apache.org/security/vulnerabilities_24.html",
+      "https://github.com/apache/httpd/commit/b0f8b8c3a4d9"
+    ],
+    "cwe": "CWE-918",
+    "mitre_attack": [
+      "T1595"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.88,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-39573",
+    "title": "mod_lua vulnerability in Apache2",
+    "description": "A vulnerability in Apache HTTP Server's mod_lua allows denial of service via crafted Lua scripts.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.006,
+    "kev": false,
+    "exploited": false,
+    "vendor": "apache",
+    "product": "apache2",
+    "affected_versions": [
+      "<2.4.60"
+    ],
+    "fixed_versions": [
+      "2.4.60"
+    ],
+    "published": "2024-07-01",
+    "updated": "2024-07-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-39573",
+      "https://httpd.apache.org/security/vulnerabilities_24.html",
+      "https://github.com/apache/httpd/commit/c1f2d3e4a5b6"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.72,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-25690",
+    "title": "HTTP request smuggling in Apache2",
+    "description": "A vulnerability in Apache HTTP Server allows HTTP request smuggling via crafted Transfer-Encoding headers.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.028,
+    "kev": false,
+    "exploited": false,
+    "vendor": "apache",
+    "product": "apache2",
+    "affected_versions": [
+      "<2.4.56"
+    ],
+    "fixed_versions": [
+      "2.4.56"
+    ],
+    "published": "2023-03-14",
+    "updated": "2023-04-01",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-25690",
+      "https://httpd.apache.org/security/vulnerabilities_24.html",
+      "https://github.com/apache/httpd/commit/4a3b2c1d9f0e"
+    ],
+    "cwe": "CWE-444",
+    "mitre_attack": [
+      "T1190"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.9,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-31813",
+    "title": "mod_proxy vulnerability in Apache2",
+    "description": "A vulnerability in Apache HTTP Server's mod_proxy allows denial of service via crafted Content-Length headers.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.01,
+    "kev": false,
+    "exploited": false,
+    "vendor": "apache",
+    "product": "apache2",
+    "affected_versions": [
+      "<2.4.54"
+    ],
+    "fixed_versions": [
+      "2.4.54"
+    ],
+    "published": "2022-06-09",
+    "updated": "2022-06-28",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-31813",
+      "https://httpd.apache.org/security/vulnerabilities_24.html",
+      "https://github.com/apache/httpd/commit/2d3a4c5b6e7f"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.78,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-28615",
+    "title": "SSRF vulnerability in Apache2",
+    "description": "A server-side request forgery vulnerability in Apache HTTP Server allows access to internal network resources via crafted HTTP headers.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.015,
+    "kev": false,
+    "exploited": false,
+    "vendor": "apache",
+    "product": "apache2",
+    "affected_versions": [
+      "<2.4.54"
+    ],
+    "fixed_versions": [
+      "2.4.54"
+    ],
+    "published": "2022-06-09",
+    "updated": "2022-06-28",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-28615",
+      "https://httpd.apache.org/security/vulnerabilities_24.html",
+      "https://github.com/apache/httpd/commit/1a2b3c4d5e6f"
+    ],
+    "cwe": "CWE-918",
+    "mitre_attack": [
+      "T1595"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.82,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-4911",
+    "title": "Looney Tunables: glibc privilege escalation",
+    "description": "A heap buffer overflow in glibc's ld.so allows local privilege escalation when processing GLIBC_TUNABLES environment variable.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.388,
+    "kev": true,
+    "exploited": false,
+    "vendor": "gnu",
+    "product": "glibc",
+    "affected_versions": [
+      "<2.38"
+    ],
+    "fixed_versions": [
+      "2.38"
+    ],
+    "published": "2023-10-03",
+    "updated": "2023-10-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-4911",
+      "https://www.qualys.com/2023/10/03/cve-2023-4911/looney-tunables-local-privilege-escalation-glibc-ld-so.txt",
+      "https://sourceware.org/git/?p=glibc.git;h=2ed18c5b534d"
+    ],
+    "cwe": "CWE-122",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB",
+      "Metasploit"
+    ],
+    "confidence": 0.97,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-4813",
+    "title": "Information leak in glibc",
+    "description": "An information leak vulnerability in glibc via uninitialized memory in certain system calls.",
+    "severity": "medium",
+    "cvss_v3": 5.5,
+    "cvss_v4": 0,
+    "epss": 0.003,
+    "kev": false,
+    "exploited": false,
+    "vendor": "gnu",
+    "product": "glibc",
+    "affected_versions": [
+      "<2.38"
+    ],
+    "fixed_versions": [
+      "2.38"
+    ],
+    "published": "2023-09-12",
+    "updated": "2023-10-01",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-4813",
+      "https://sourceware.org/bugzilla/show_bug.cgi?id=30843",
+      "https://sourceware.org/git/?p=glibc.git;h=3a5e7a9b3c4d"
+    ],
+    "cwe": "CWE-200",
+    "mitre_attack": [
+      "T1083"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.65,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-39046",
+    "title": "qsort vulnerability in glibc",
+    "description": "A vulnerability in glibc's qsort function can lead to denial of service via crafted input causing excessive resource consumption.",
+    "severity": "medium",
+    "cvss_v3": 5.5,
+    "cvss_v4": 0,
+    "epss": 0.005,
+    "kev": false,
+    "exploited": false,
+    "vendor": "gnu",
+    "product": "glibc",
+    "affected_versions": [
+      "<2.36"
+    ],
+    "fixed_versions": [
+      "2.36"
+    ],
+    "published": "2022-09-06",
+    "updated": "2022-09-25",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-39046",
+      "https://sourceware.org/bugzilla/show_bug.cgi?id=29463",
+      "https://sourceware.org/git/?p=glibc.git;h=4b6f55b3c2d1"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.7,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-4806",
+    "title": "getcwd vulnerability in glibc",
+    "description": "A vulnerability in glibc's getcwd function can lead to information disclosure via improper handling of path lengths.",
+    "severity": "medium",
+    "cvss_v3": 5.5,
+    "cvss_v4": 0,
+    "epss": 0.004,
+    "kev": false,
+    "exploited": false,
+    "vendor": "gnu",
+    "product": "glibc",
+    "affected_versions": [
+      "<2.38"
+    ],
+    "fixed_versions": [
+      "2.38"
+    ],
+    "published": "2023-09-12",
+    "updated": "2023-10-01",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-4806",
+      "https://sourceware.org/bugzilla/show_bug.cgi?id=30842",
+      "https://sourceware.org/git/?p=glibc.git;h=5c6d7f8a9b0c"
+    ],
+    "cwe": "CWE-200",
+    "mitre_attack": [
+      "T1083"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.65,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-5156",
+    "title": "getaddrinfo vulnerability in glibc",
+    "description": "A vulnerability in glibc's getaddrinfo function allows denial of service via crafted DNS responses causing infinite loop.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.014,
+    "kev": false,
+    "exploited": false,
+    "vendor": "gnu",
+    "product": "glibc",
+    "affected_versions": [
+      "<2.39"
+    ],
+    "fixed_versions": [
+      "2.39"
+    ],
+    "published": "2023-12-01",
+    "updated": "2023-12-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-5156",
+      "https://sourceware.org/bugzilla/show_bug.cgi?id=30845",
+      "https://sourceware.org/git/?p=glibc.git;h=8d9e0f1a2b3c"
+    ],
+    "cwe": "CWE-835",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.8,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-2961",
+    "title": "iconv vulnerability in glibc",
+    "description": "A buffer overflow vulnerability in glibc's iconv function allows remote code execution when converting character encodings.",
+    "severity": "high",
+    "cvss_v3": 8.1,
+    "cvss_v4": 0,
+    "epss": 0.078,
+    "kev": false,
+    "exploited": false,
+    "vendor": "gnu",
+    "product": "glibc",
+    "affected_versions": [
+      "<2.39"
+    ],
+    "fixed_versions": [
+      "2.39"
+    ],
+    "published": "2024-04-15",
+    "updated": "2024-05-05",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-2961",
+      "https://www.openwall.com/lists/oss-security/2024/04/15/4",
+      "https://sourceware.org/git/?p=glibc.git;h=7a2f8b4c3d0e"
+    ],
+    "cwe": "CWE-120",
+    "mitre_attack": [
+      "T1203"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.9,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-45853",
+    "title": "minizip vulnerability in zlib",
+    "description": "A heap-based buffer overflow in zlib's minizip allows remote code execution via crafted zip archives.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.062,
+    "kev": false,
+    "exploited": false,
+    "vendor": "gnu",
+    "product": "zlib",
+    "affected_versions": [
+      "<1.3"
+    ],
+    "fixed_versions": [
+      "1.3"
+    ],
+    "published": "2023-10-17",
+    "updated": "2023-11-05",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-45853",
+      "https://github.com/madler/zlib/issues/766",
+      "https://github.com/madler/zlib/commit/2d3a4c5b6e7f"
+    ],
+    "cwe": "CWE-122",
+    "mitre_attack": [
+      "T1203"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.88,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-37434",
+    "title": "Crash in zlib",
+    "description": "A denial of service vulnerability in zlib via crafted compressed data causing excessive memory consumption.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.018,
+    "kev": false,
+    "exploited": false,
+    "vendor": "gnu",
+    "product": "zlib",
+    "affected_versions": [
+      "<1.2.12"
+    ],
+    "fixed_versions": [
+      "1.2.12"
+    ],
+    "published": "2022-08-13",
+    "updated": "2022-09-01",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-37434",
+      "https://github.com/madler/zlib/issues/605",
+      "https://github.com/madler/zlib/commit/097f2c3a85fe"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.82,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2018-25032",
+    "title": "Memory corruption in zlib",
+    "description": "A memory corruption vulnerability in zlib can lead to denial of service or potential code execution via crafted compressed data.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.022,
+    "kev": false,
+    "exploited": false,
+    "vendor": "gnu",
+    "product": "zlib",
+    "affected_versions": [
+      "<1.2.12"
+    ],
+    "fixed_versions": [
+      "1.2.12"
+    ],
+    "published": "2022-03-25",
+    "updated": "2022-04-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2018-25032",
+      "https://github.com/madler/zlib/issues/612",
+      "https://github.com/madler/zlib/commit/b0f8b8c3a4d9"
+    ],
+    "cwe": "CWE-787",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.78,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-5752",
+    "title": "Package merging in pip",
+    "description": "A vulnerability in pip's package merging can lead to dependency confusion and potential code execution.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.022,
+    "kev": false,
+    "exploited": false,
+    "vendor": "pypa",
+    "product": "pip",
+    "affected_versions": [
+      "<23.3"
+    ],
+    "fixed_versions": [
+      "23.3"
+    ],
+    "published": "2023-10-19",
+    "updated": "2023-11-05",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-5752",
+      "https://github.com/pypa/pip/security/advisories/GHSA-3q8m-vr56-3x8q",
+      "https://github.com/pypa/pip/commit/1a2b3c4d5e6f"
+    ],
+    "cwe": "CWE-427",
+    "mitre_attack": [
+      "T1195"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.8,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-37891",
+    "title": "urllib vulnerability in pip",
+    "description": "A vulnerability in pip's urllib usage allows server-side request forgery via crafted package URLs.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.01,
+    "kev": false,
+    "exploited": false,
+    "vendor": "pypa",
+    "product": "pip",
+    "affected_versions": [
+      "<24.0"
+    ],
+    "fixed_versions": [
+      "24.0"
+    ],
+    "published": "2024-06-12",
+    "updated": "2024-06-28",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-37891",
+      "https://github.com/pypa/pip/security/advisories/GHSA-4q3v-4r3v-4r3v",
+      "https://github.com/pypa/pip/commit/b0f8b8c3a4d9"
+    ],
+    "cwe": "CWE-918",
+    "mitre_attack": [
+      "T1595"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.78,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-45199",
+    "title": "CLI vulnerability in pip",
+    "description": "A vulnerability in pip's command-line interface allows privilege escalation via crafted CONFIG_SHELL environment variable.",
+    "severity": "high",
+    "cvss_v3": 7.8,
+    "cvss_v4": 0,
+    "epss": 0.015,
+    "kev": false,
+    "exploited": false,
+    "vendor": "pypa",
+    "product": "pip",
+    "affected_versions": [
+      "<23.0.1"
+    ],
+    "fixed_versions": [
+      "23.0.1"
+    ],
+    "published": "2022-12-13",
+    "updated": "2023-01-05",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-45199",
+      "https://github.com/pypa/pip/security/advisories/GHSA-5v3r-8x3v-5x3v",
+      "https://github.com/pypa/pip/commit/c1d2e3f4a5b6"
+    ],
+    "cwe": "CWE-269",
+    "mitre_attack": [
+      "T1068"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.82,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2021-34552",
+    "title": "Cache vulnerability in pip",
+    "description": "A vulnerability in pip's HTTP cache allows information disclosure via improper cache isolation between users.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.008,
+    "kev": false,
+    "exploited": false,
+    "vendor": "pypa",
+    "product": "pip",
+    "affected_versions": [
+      "<21.3"
+    ],
+    "fixed_versions": [
+      "21.3"
+    ],
+    "published": "2021-10-04",
+    "updated": "2021-10-20",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2021-34552",
+      "https://github.com/pypa/pip/security/advisories/GHSA-6v6q-4x7p-8v9q",
+      "https://github.com/pypa/pip/commit/d1e2f3a4b5c6"
+    ],
+    "cwe": "CWE-200",
+    "mitre_attack": [
+      "T1083"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.72,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2024-5535",
+    "title": "SSRF via OpenSSL BIO in libssl",
+    "description": "A server-side request forgery vulnerability in libssl via crafted BIO connections enables network probing.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.014,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "libssl",
+    "affected_versions": [
+      "<3.3.1",
+      "<3.2.2",
+      "<3.1.6",
+      "3.0.*"
+    ],
+    "fixed_versions": [
+      "3.3.1",
+      "3.2.2",
+      "3.1.6"
+    ],
+    "published": "2024-06-27",
+    "updated": "2024-07-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-5535",
+      "https://www.openssl.org/news/secadv/20240627.txt"
+    ],
+    "cwe": "CWE-918",
+    "mitre_attack": [
+      "T1595"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.8,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-3786",
+    "title": "Buffer overrun in libssl X.509",
+    "description": "A buffer overrun vulnerability in libssl's X.509 certificate verification can lead to denial of service or potential code execution.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.022,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "libssl",
+    "affected_versions": [
+      "<3.0.7",
+      "1.1.1"
+    ],
+    "fixed_versions": [
+      "3.0.7",
+      "1.1.1s"
+    ],
+    "published": "2022-11-01",
+    "updated": "2022-11-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-3786",
+      "https://www.openssl.org/news/secadv/20221101.txt"
+    ],
+    "cwe": "CWE-120",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.85,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-3602",
+    "title": "Buffer overrun in libssl X.509",
+    "description": "A buffer overrun vulnerability in libssl's X.509 certificate verification triggered by crafted email addresses.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.03,
+    "kev": false,
+    "exploited": false,
+    "vendor": "openssl",
+    "product": "libssl",
+    "affected_versions": [
+      "<3.0.7",
+      "1.1.1"
+    ],
+    "fixed_versions": [
+      "3.0.7",
+      "1.1.1s"
+    ],
+    "published": "2022-11-01",
+    "updated": "2022-11-15",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-3602",
+      "https://www.openssl.org/news/secadv/20221101.txt"
+    ],
+    "cwe": "CWE-120",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.88,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-38545",
+    "title": "SOCKS5 heap overflow in libcurl",
+    "description": "A heap-based buffer overflow in libcurl's SOCKS5 proxy handling can lead to remote code execution.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.345,
+    "kev": false,
+    "exploited": false,
+    "vendor": "haxx",
+    "product": "libcurl",
+    "affected_versions": [
+      "<8.4.0"
+    ],
+    "fixed_versions": [
+      "8.4.0"
+    ],
+    "published": "2023-10-11",
+    "updated": "2023-10-30",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-38545",
+      "https://curl.se/docs/CVE-2023-38545.html"
+    ],
+    "cwe": "CWE-122",
+    "mitre_attack": [
+      "T1203"
+    ],
+    "exploit_available": true,
+    "exploit_sources": [
+      "Exploit-DB"
+    ],
+    "confidence": 0.94,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2023-38039",
+    "title": "HTTP/2 vulnerability in libcurl",
+    "description": "A vulnerability in libcurl's HTTP/2 handling can lead to denial of service via crafted HTTP/2 frames.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.02,
+    "kev": false,
+    "exploited": false,
+    "vendor": "haxx",
+    "product": "libcurl",
+    "affected_versions": [
+      "<8.4.0"
+    ],
+    "fixed_versions": [
+      "8.4.0"
+    ],
+    "published": "2023-10-11",
+    "updated": "2023-10-30",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-38039",
+      "https://curl.se/docs/CVE-2023-38039.html"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.82,
+    "source": "local"
+  },
+  {
+    "cve": "CVE-2022-43552",
+    "title": "HTTP proxy vulnerability in libcurl",
+    "description": "A vulnerability in libcurl's HTTP proxy handling can lead to denial of service or information disclosure.",
+    "severity": "high",
+    "cvss_v3": 7.5,
+    "cvss_v4": 0,
+    "epss": 0.012,
+    "kev": false,
+    "exploited": false,
+    "vendor": "haxx",
+    "product": "libcurl",
+    "affected_versions": [
+      "<7.87.0"
+    ],
+    "fixed_versions": [
+      "7.87.0"
+    ],
+    "published": "2022-12-21",
+    "updated": "2023-01-10",
+    "references": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2022-43552",
+      "https://curl.se/docs/CVE-2022-43552.html"
+    ],
+    "cwe": "CWE-400",
+    "mitre_attack": [
+      "T1499"
+    ],
+    "exploit_available": false,
+    "exploit_sources": [],
+    "confidence": 0.75,
+    "source": "local"
+  }
+]

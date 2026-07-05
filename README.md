@@ -1,56 +1,84 @@
 # VINA
 
-VINA stands for Vulnerability Intelligence & Network Analyzer.
+**Vulnerability Intelligence & Network Analyzer**
 
-It is a modular, async Python framework for running security reconnaissance and analysis workflows. The current implementation focuses on safe command execution, structured results, and a first working web recon pipeline powered by Subfinder.
+VINA is a modular, async Python framework for Linux security enumeration, vulnerability analysis, and attack-path correlation. It combines OS-level reconnaissance with a knowledge engine, CVE matching, exploitability analysis, and plugin-based extensibility.
 
-## What It Does
+## Features
 
-- Runs external security tools through a shared async runner.
-- Loads tool paths and runtime settings from configuration.
-- Persists JSON artifacts under `output/`.
-- Produces concise, structured console output.
-
-See `PROJECT_SPEC.md` for the full architecture and design constraints.
+- **OS enumeration** – 10 scanner modules: SSH, cron, systemd, Docker, kernel, environment, processes, packages, logs, secrets
+- **Web reconnaissance** – subdomain discovery via Subfinder, structured JSON output
+- **Vulnerability Intelligence** – CVE matching against software inventory with version-aware comparison (Debian/semver/ranges/wildcards), CVSS scoring, KEV & EPSS integration
+- **Knowledge & Remediation Engine** – 40+ enrichment rules, GTFOBins mapping, MITRE ATT&CK (30+ techniques), CIS benchmarks (50+ references), CWE mapping
+- **Correlation & Attack Paths** – dependency-aware chain detection (privilege escalation, persistence, container escape, lateral movement, credential exposure), risk scoring (0–100)
+- **Exploitability Analysis** – non-intrusive scoring of attack feasibility with complexity, maturity, prerequisites, mitigations, and attack-vector context
+- **Feed Management** – SQLite-backed cache with automatic NVD/CISA KEV/EPSS/OSV/GitHub Advisory updates, TTL expiry, retry/backoff, conditional requests
+- **Plugin SDK** – 14 hook points, 5 discovery mechanisms (built-in, local packages, entry points, module paths, manual registration), error-isolated execution
+- **Testing & Benchmarking** – mock fixtures, deterministic benchmark profiles, metrics (precision/recall/F1/FP/FN/runtime/memory/CPU), HTML+Markdown reports
+- **Reports** – Markdown, HTML (with JS search/filter), and JSON formats with vulnerability stats, attack path chains, enrichment details, and exploitability analysis
+- **CLI** – `scan`, `scan-os`, `scan-web`, `report`, `update-db`, `version`, `doctor`, `plugin` (list/info/enable/disable/doctor), `benchmark` (list/run/compare/report)
 
 ## Quick Start
 
-1. Create and activate a virtual environment:
+```bash
+# Create and activate a virtual environment
+python3 -m venv .venv && source .venv/bin/activate
+
+# Install with development extras
+pip install -e ".[dev]"
+
+# Run the test suite
+python -m pytest tests/
+
+# Run an OS scan
+vina scan-os
+
+# Run a web recon scan
+vina scan-web example.com
+
+# Update vulnerability feeds
+vina update-db
+```
+
+## Installation
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+# From PyPI
+pip install vina
+
+# With extras
+pip install vina[full]
 ```
 
-2. Install dependencies:
+## Documentation
 
-```bash
-pip install -r requirements.txt
+| Guide | Description |
+|-------|-------------|
+| [Architecture Guide](docs/ARCHITECTURE_GUIDE.md) | High-level design, data flow, component interaction |
+| [Developer Guide](docs/DEVELOPER_GUIDE.md) | Project structure, adding scanners/rules, development workflow |
+| [Plugin Author Guide](docs/PLUGIN_AUTHOR_GUIDE.md) | Plugin development, hooks, registration, lifecycle |
+| [Release Guide](docs/RELEASE_GUIDE.md) | Versioning, publishing, CI/CD pipeline |
+| [Contributing](docs/CONTRIBUTING.md) | Code of conduct, PR process, code standards |
+
+## Project Structure
+
+```
+vina/
+├── cli.py                  # Typer CLI (scan, update-db, plugin, benchmark, ...)
+├── core/                   # Engines: knowledge, correlation, vuln_intel, exploitability, feed_manager
+├── models/                 # Finding, Aggregator, stage models
+├── plugins/                # Plugin SDK (registry, loader, hooks, context)
+├── reports/                # Report renderers (markdown, HTML, JSON)
+├── scanners/               # OS modules (ssh, cron, systemd, docker, ...) + web pipeline
+├── testing/                # Testing & benchmarking framework
+└── data/                   # CVE database (104 entries)
 ```
 
-3. Run the test suite:
+## Requirements
 
-```bash
-python -m unittest discover -s tests -p 'test_*.py'
-```
+- Python 3.12+
+- Dependencies: aiohttp, typer, rich, pyyaml, psutil, typer
 
-4. Run a web recon scan:
+## License
 
-```bash
-./.venv/bin/python -m vina scan example.com
-```
-
-## Web Recon Output
-
-The web recon scanner uses Subfinder and writes deduplicated subdomains to:
-
-```text
-output/web/subdomains.json
-```
-
-## Notes
-
-- The CLI entry point is `vina`.
-- Configuration and logger defaults use the VINA project name.
-- Generated artifacts such as `.venv/`, `output/`, and `*.egg-info` are intentionally not tracked in source control.
-# vina
+MIT

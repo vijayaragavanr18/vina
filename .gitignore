@@ -8,3 +8,14 @@ output/
 logs/
 *.pyc
 *.egg-info/
+dist/
+build/
+htmlcov/
+.coverage
+coverage.xml
+*.sbom.json
+benchmark_output/
+docs/_build/
+*.swp
+*.swo
+.DS_Store

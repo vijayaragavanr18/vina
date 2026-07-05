@@ -12,6 +12,7 @@ from urllib.parse import parse_qsl, urlparse
 from ...core.config import AppConfig
 from ...core.runner import CommandResult
 from ...models.common import TargetInput
+from ...models.findings import Finding, make_finding
 from ...modules.common import ModuleContext
 
 logger = logging.getLogger(__name__)
@@ -43,6 +44,7 @@ class GauResult:
     warnings: list[str] = field(default_factory=list)
     output_file: Path | None = None
     execution_time_seconds: float = 0.0
+    findings: list[Finding] = field(default_factory=list)
 
 
 class GauModule:

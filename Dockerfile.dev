@@ -1,0 +1,33 @@
+FROM python:3.12-slim
+
+LABEL org.opencontainers.image.title="VINA (Development)"
+LABEL org.opencontainers.image.description="VINA development image with all tooling"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    git \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir \
+    pytest pytest-cov \
+    ruff black mypy \
+    bandit pip-audit \
+    pre-commit \
+    build twine
+
+RUN groupadd -r -g 1001 vina && \
+    useradd -r -u 1001 -g vina -m -d /home/vina -s /bin/bash vina
+
+RUN install -d -o vina -g vina /var/lib/vina /var/lib/vina/feeds /var/lib/vina/plugins /var/lib/vina/cache
+
+USER vina
+WORKDIR /home/vina
+
+ENV VINA_HOME=/var/lib/vina
+ENV VINA_CACHE_DIR=/var/lib/vina/cache
+ENV VINA_FEED_DIR=/var/lib/vina/feeds
+ENV VINA_PLUGIN_DIR=/var/lib/vina/plugins
+
+ENTRYPOINT ["/bin/bash"]

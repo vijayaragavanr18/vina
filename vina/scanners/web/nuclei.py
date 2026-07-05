@@ -12,6 +12,7 @@ from typing import Any, Mapping
 from ...core.config import AppConfig
 from ...core.runner import CommandResult
 from ...models.common import TargetInput
+from ...models.findings import Finding, make_finding
 from ...modules.common import ModuleContext
 from .url_aggregator import AggregatedUrl
 
@@ -46,6 +47,7 @@ class NucleiResult:
     warnings: list[str] = field(default_factory=list)
     output_file: Path | None = None
     execution_time_seconds: float = 0.0
+    unified_findings: list[Finding] = field(default_factory=list)
 
 
 class NucleiModule:
@@ -121,6 +123,22 @@ class NucleiModule:
         findings = self._deduplicate(findings)
         template_count = self._count_templates(findings)
 
+        unified_findings: list[Finding] = []
+        for nf in findings:
+            description = nf.template_name or nf.template_id
+            unified_findings.append(make_finding(
+                title=f"Nuclei: {nf.template_id}",
+                description=description,
+                severity=nf.severity or "info",
+                category="vulnerability",
+                source_stage="nuclei",
+                target=target_input.root_domain or target_input.hostname or target_input.normalized,
+                evidence=nf.matched_url or "",
+                host=nf.host or "",
+                url=nf.matched_url or "",
+                tags=nf.tags,
+            ))
+
         result = NucleiResult(
             target=target_input,
             command_result=command_result,
@@ -129,6 +147,7 @@ class NucleiModule:
             template_count=template_count,
             warnings=warnings,
             execution_time_seconds=time.perf_counter() - started_at,
+            unified_findings=unified_findings,
         )
         result.output_file = self._save_results(result)
         self._print_summary(result)
