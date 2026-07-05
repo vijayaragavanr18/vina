@@ -147,8 +147,10 @@ module = [
   "vina.plugins.*",
   "vina.testing.*",
   "tests.*",
+  "plugins.*",
 ]
 ignore_errors = true
+
 
 # =========================================================================
 #  Bandit (security linter)
