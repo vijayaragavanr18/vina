@@ -182,6 +182,8 @@ class SshModule:
             "PubkeyAuthentication": ("info", "SSH public key authentication is enabled", "", "info"),
         }
 
+        settings_dict = {s.key.lower(): s for s in settings}
+
         for s in settings:
             if s.key in audit_map:
                 _default_sev, default_title, default_rec, sev = audit_map[s.key]
@@ -238,6 +240,152 @@ class SshModule:
                             evidence=f"{s.key} = {s.value}",
                         )
                     )
+
+            key_lower = s.key.lower()
+            val_lower = s.value.lower()
+
+            if key_lower == "permitemptypasswords" and val_lower == "yes":
+                issues.append(f"{s.key} = {s.value}")
+                findings.append(
+                    make_finding(
+                        title="SSH PermitEmptyPasswords is enabled",
+                        description="PermitEmptyPasswords is set to yes. This allows users with empty passwords to log in via SSH.",
+                        severity="critical",
+                        category="misconfiguration",
+                        source_stage="ssh",
+                        target=target_str,
+                        evidence=f"{s.key} = {s.value}",
+                        recommendation="Set 'PermitEmptyPasswords no' in sshd_config",
+                    )
+                )
+
+            elif key_lower == "maxauthtries":
+                try:
+                    val_int = int(s.value)
+                    if val_int > 4:
+                        issues.append(f"{s.key} = {s.value}")
+                        findings.append(
+                            make_finding(
+                                title="SSH MaxAuthTries is set too high",
+                                description=f"MaxAuthTries is set to {s.value}. CIS recommends 4 or fewer to limit brute-force attempts.",
+                                severity="medium",
+                                category="misconfiguration",
+                                source_stage="ssh",
+                                target=target_str,
+                                evidence=f"{s.key} = {s.value}",
+                                recommendation="Set 'MaxAuthTries 4' in sshd_config",
+                            )
+                        )
+                except ValueError:
+                    pass
+
+            elif key_lower == "logingracetime":
+                try:
+                    val_clean = s.value.rstrip("sS")
+                    val_int = int(val_clean)
+                    if val_int > 60 or val_int == 0:
+                        issues.append(f"{s.key} = {s.value}")
+                        findings.append(
+                            make_finding(
+                                title="SSH LoginGraceTime is set too high",
+                                description=f"LoginGraceTime is set to {s.value}. Excessive grace time allows connection slots to be held open, potentially leading to denial of service.",
+                                severity="low",
+                                category="misconfiguration",
+                                source_stage="ssh",
+                                target=target_str,
+                                evidence=f"{s.key} = {s.value}",
+                                recommendation="Set 'LoginGraceTime 60' in sshd_config",
+                            )
+                        )
+                except ValueError:
+                    pass
+
+            elif key_lower == "ciphers":
+                weak_ciphers = ["3des", "cbc", "arcfour", "blowfish", "cast"]
+                found_weak = [c for c in weak_ciphers if c in val_lower]
+                if found_weak:
+                    issues.append(f"{s.key} = {s.value}")
+                    findings.append(
+                        make_finding(
+                            title="SSH weak Ciphers configured",
+                            description=f"SSHD is configured with weak or vulnerable ciphers: {s.value}. Avoid CBC, 3DES, and RC4 modes.",
+                            severity="medium",
+                            category="misconfiguration",
+                            source_stage="ssh",
+                            target=target_str,
+                            evidence=f"{s.key} = {s.value}",
+                            recommendation="Configure sshd_config to use only CTR or GCM ciphers, e.g. chacha20-poly1305@openssh.com, aes256-gcm@openssh.com.",
+                        )
+                    )
+
+            elif key_lower == "macs":
+                weak_macs = ["md5", "96", "sha1"]
+                found_weak = [m for m in weak_macs if m in val_lower]
+                if found_weak:
+                    issues.append(f"{s.key} = {s.value}")
+                    findings.append(
+                        make_finding(
+                            title="SSH weak MACs configured",
+                            description=f"SSHD is configured with weak message authentication codes: {s.value}.",
+                            severity="medium",
+                            category="misconfiguration",
+                            source_stage="ssh",
+                            target=target_str,
+                            evidence=f"{s.key} = {s.value}",
+                            recommendation="Use only SHA-2 based MACs, e.g. hmac-sha2-512, hmac-sha2-256.",
+                        )
+                    )
+
+            elif key_lower == "kexalgorithms":
+                weak_kex = ["sha1", "group1", "md5"]
+                found_weak = [k for k in weak_kex if k in val_lower]
+                if found_weak:
+                    issues.append(f"{s.key} = {s.value}")
+                    findings.append(
+                        make_finding(
+                            title="SSH weak KexAlgorithms configured",
+                            description=f"SSHD is configured with weak key exchange algorithms: {s.value}.",
+                            severity="medium",
+                            category="misconfiguration",
+                            source_stage="ssh",
+                            target=target_str,
+                            evidence=f"{s.key} = {s.value}",
+                            recommendation="Use modern curves and group exchange, e.g. curve25519-sha256, diffie-hellman-group-exchange-sha256.",
+                        )
+                    )
+
+            elif key_lower == "hostkeyalgorithms":
+                weak_hk = ["dss", "ssh-rsa"]
+                found_weak = [h for h in weak_hk if h in val_lower]
+                if found_weak:
+                    issues.append(f"{s.key} = {s.value}")
+                    findings.append(
+                        make_finding(
+                            title="SSH weak HostKeyAlgorithms configured",
+                            description=f"SSHD is configured with weak host key algorithms: {s.value}.",
+                            severity="medium",
+                            category="misconfiguration",
+                            source_stage="ssh",
+                            target=target_str,
+                            evidence=f"{s.key} = {s.value}",
+                            recommendation="Restrict host key algorithms to ecdsa-sha2-nistp256, ssh-ed25519.",
+                        )
+                    )
+
+        restrict_keys = {"allowusers", "allowgroups", "denyusers", "denygroups"}
+        if not any(rk in settings_dict for rk in restrict_keys):
+            findings.append(
+                make_finding(
+                    title="SSH access is not restricted by user or group",
+                    description="No AllowUsers, AllowGroups, DenyUsers, or DenyGroups settings found in sshd_config. All users with shell access can attempt SSH login.",
+                    severity="low",
+                    category="misconfiguration",
+                    source_stage="ssh",
+                    target=target_str,
+                    evidence="Missing AllowUsers/AllowGroups/DenyUsers/DenyGroups in sshd_config",
+                    recommendation="Add AllowUsers or AllowGroups to /etc/ssh/sshd_config to restrict who can log in.",
+                )
+            )
 
         return issues, findings
 

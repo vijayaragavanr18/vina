@@ -179,6 +179,7 @@ class MitreTechnique:
     T1569_002 = "T1569.002 - System Services: Service Execution"
     T1574_001 = "T1574.001 - Hijack Execution Flow: DLL Search Order Hijacking"
     T1574_002 = "T1574.002 - Hijack Execution Flow: DLL Side-Loading"
+    T1542 = "T1542 - Boot or Logon Autostart Execution"
     T1611 = "T1611 - Escape to Host"
     T1059_004 = "T1059.004 - Command and Scripting Interpreter: Unix Shell"
     T1059_006 = "T1059.006 - Command and Scripting Interpreter: Python"
@@ -189,6 +190,15 @@ class MitreTechnique:
     T1021_004 = "T1021.004 - Remote Services: SSH"
     T1036 = "T1036 - Masquerading"
     T1036_003 = "T1036.003 - Masquerading: Rename System Utilities"
+    T1098_001 = "T1098.001 - Account Manipulation: Additional Cloud Roles"
+    T1136_001 = "T1136.001 - Create Account: Local Account"
+    T1484 = "T1484 - Domain Policy Modification"
+    T1525 = "T1525 - Implant Internal Image"
+    T1552 = "T1552 - Unsecured Credentials"
+    T1556 = "T1556 - Modify Authentication Process"
+    T1556_003 = "T1556.003 - Modify Authentication Process: Pluggable Authentication Modules"
+    T1557 = "T1557 - Adversary-in-the-Middle"
+    T1090 = "T1090 - Proxy"
 
 
 # =========================================================================
@@ -290,6 +300,24 @@ class CisControl:
     ubuntu_6_2_6 = "CIS Ubuntu Benchmark 6.2.6 - Ensure no duplicate group names exist"
     ubuntu_6_2_7 = "CIS Ubuntu Benchmark 6.2.7 - Ensure root is the only UID 0 account"
     ubuntu_6_2_8 = "CIS Ubuntu Benchmark 6.2.8 - Ensure root PATH Integrity"
+
+    # Authentication & Password Policy
+    ubuntu_5_4_1_1 = "CIS Ubuntu Benchmark 5.4.1.1 - Ensure password creation requirements are configured"
+    ubuntu_5_4_1_2 = "CIS Ubuntu Benchmark 5.4.1.2 - Ensure lockout for failed password attempts is configured"
+    ubuntu_5_4_1_3 = "CIS Ubuntu Benchmark 5.4.1.3 - Ensure password hashing algorithm is up to date"
+    ubuntu_5_4_1_4 = "CIS Ubuntu Benchmark 5.4.1.4 - Ensure password reuse is limited"
+    ubuntu_5_4_2_1 = "CIS Ubuntu Benchmark 5.4.2.1 - Ensure account is locked after 35 days of inactivity"
+    ubuntu_5_4_2_2 = "CIS Ubuntu Benchmark 5.4.2.2 - Ensure system accounts are non-login"
+
+    # Session & Access
+    ubuntu_5_5_1_1 = "CIS Ubuntu Benchmark 5.5.1.1 - Ensure minimum days between password changes is configured"
+    ubuntu_5_5_1_2 = "CIS Ubuntu Benchmark 5.5.1.2 - Ensure password expiration is 365 days or less"
+    ubuntu_5_5_1_3 = "CIS Ubuntu Benchmark 5.5.1.3 - Ensure password expiration warning days is 7 or more"
+    ubuntu_5_5_1_4 = "CIS Ubuntu Benchmark 5.5.1.4 - Ensure inactive password lock is 30 days or less"
+
+    # Polkit
+    ubuntu_5_7_1 = "CIS Ubuntu Benchmark 5.7.1 - Ensure PolicyKit is installed and configured"
+    ubuntu_5_7_2 = "CIS Ubuntu Benchmark 5.7.2 - Ensure PolicyKit rules are secure"
 
 
 # =========================================================================
@@ -599,6 +627,145 @@ KERNEL_RULES = [
 ]
 
 # ------------------------------------------------------------------
+#  Kernel hardening rules
+# ------------------------------------------------------------------
+
+KERNEL_HARDENING_RULES = [
+    KnowledgeRule(
+        rule_id="KH-001",
+        title_patterns=["Secure Boot is disabled"],
+        explanation="UEFI Secure Boot is turned off, allowing unsigned or tampered bootloaders, "
+        "kernels, and kernel modules to be loaded during system boot.",
+        security_impact="High - An attacker with physical or root access could install a "
+        "persistent bootkit or unsigned kernel module that survives reboots.",
+        remediation="Enable Secure Boot in the UEFI firmware settings and re-sign "
+        "any custom kernel modules with a Machine Owner Key (MOK).",
+        cis_control="CIS Ubuntu Benchmark 1.7 - Ensure Secure Boot is enabled",
+        mitre_attack=[MitreTechnique.T1542],
+        cwe="CWE-284: Improper Access Control",
+        tags=["secure-boot", "kernel", "uefi", "boot-security"],
+        confidence_score=0.85,
+        source_stages=["kernel_hardening"],
+    ),
+    KnowledgeRule(
+        rule_id="KH-002",
+        title_patterns=["SELinux is permissive", "SELinux is disabled"],
+        explanation="SELinux mandatory access control is either in permissive mode "
+        "(logging but not enforcing) or completely disabled, reducing the system's "
+        "ability to contain compromised processes.",
+        security_impact="High - Without SELinux enforcement, a compromised process "
+        "has fewer restrictions. Permissive mode provides audit only with no actual protection.",
+        remediation="Enable SELinux enforcing mode: setenforce 1 and ensure "
+        "SELINUX=enforcing in /etc/selinux/config.",
+        cis_control="CIS Ubuntu Benchmark 1.6.1 - Ensure SELinux is installed",
+        mitre_attack=[MitreTechnique.T1562_001],
+        cwe="CWE-284: Improper Access Control",
+        tags=["selinux", "mac", "access-control", "kernel"],
+        confidence_score=0.85,
+        source_stages=["kernel_hardening"],
+    ),
+    KnowledgeRule(
+        rule_id="KH-003",
+        title_patterns=["AppArmor is disabled"],
+        explanation="AppArmor mandatory access control is not active. AppArmor provides "
+        "per-program profiles that restrict capabilities even for root-owned processes.",
+        security_impact="High - Without AppArmor, there is no MAC layer restricting "
+        "what programs can do, making exploit containment harder.",
+        remediation="Enable AppArmor: install apparmor-profiles, add 'apparmor=1 "
+        "security=apparmor' to kernel cmdline, and reboot.",
+        cis_control="CIS Ubuntu Benchmark 1.6.2 - Ensure AppArmor is enabled",
+        mitre_attack=[MitreTechnique.T1562_001],
+        cwe="CWE-284: Improper Access Control",
+        tags=["apparmor", "mac", "access-control", "kernel"],
+        confidence_score=0.85,
+        source_stages=["kernel_hardening"],
+    ),
+    KnowledgeRule(
+        rule_id="KH-004",
+        title_patterns=["seccomp is not available", "seccomp available without"],
+        explanation="Seccomp (secure computing mode) restricts the syscalls a process can make. "
+        "Without seccomp-bpf, container runtimes and sandboxed applications have reduced "
+        "isolation capabilities.",
+        security_impact="Medium - Container escapes and application sandbox bypasses are more "
+        "likely when seccomp-bpf filtering is unavailable.",
+        remediation="Rebuild the kernel with CONFIG_SECCOMP=y and CONFIG_SECCOMP_FILTER=y.",
+        mitre_attack=[MitreTechnique.T1562_001],
+        cwe="CWE-693: Protection Mechanism Failure",
+        tags=["seccomp", "kernel", "container-security", "sandbox"],
+        confidence_score=0.8,
+        source_stages=["kernel_hardening"],
+    ),
+    KnowledgeRule(
+        rule_id="KH-005",
+        title_patterns=["eBPF is accessible to unprivileged users"],
+        explanation="Unprivileged BPF (eBPF) allows non-root users to load and run BPF programs "
+        "in the kernel. This dramatically increases kernel attack surface and has been "
+        "used in multiple privilege escalation exploits (CVE-2020-8835, CVE-2021-3490, etc.).",
+        security_impact="High - Multiple known privilege escalation exploits leverage "
+        "unprivileged eBPF. Restricting to privileged users reduces kernel attack surface.",
+        remediation="Set kernel.unprivileged_bpf_disabled=1 via sysctl and add to /etc/sysctl.d/.",
+        cis_control="CIS Ubuntu Benchmark 3.2.1 - Ensure BPF is restricted to privileged users",
+        mitre_attack=[MitreTechnique.T1068],
+        cwe="CWE-693: Protection Mechanism Failure",
+        tags=["ebpf", "bpf", "kernel", "privilege-escalation"],
+        confidence_score=0.9,
+        source_stages=["kernel_hardening"],
+    ),
+    KnowledgeRule(
+        rule_id="KH-006",
+        title_patterns=["CPU vulnerable to"],
+        explanation="The CPU is affected by a speculative execution or other hardware vulnerability. "
+        "These vulnerabilities can allow attackers to leak sensitive data from kernel or "
+        "other process memory via side-channel attacks.",
+        security_impact="High to Medium - Depending on the specific vulnerability. "
+        "Spectre-v2 and Meltdown are high severity. Microarchitectural "
+        "side-channel attacks can leak encryption keys and sensitive data.",
+        remediation="Apply the latest kernel and CPU microcode updates. Ensure "
+        "mitigations=auto is set in the kernel command line.",
+        mitre_attack=[MitreTechnique.T1068],
+        cwe="CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
+        tags=["cpu", "mitigation", "spectre", "meltdown", "kernel"],
+        confidence_score=0.85,
+        source_stages=["kernel_hardening"],
+        source_categories=["vulnerability"],
+    ),
+    KnowledgeRule(
+        rule_id="KH-007",
+        title_patterns=["User namespaces are enabled"],
+        explanation="User namespaces allow unprivileged users to create namespaces with "
+        "full capabilities inside the namespace. This has been a source of multiple "
+        "kernel privilege escalation bugs.",
+        security_impact="Medium - While user namespaces are required for container runtimes, "
+        "they significantly increase kernel attack surface from unprivileged contexts.",
+        remediation="If containers are not needed, set user.max_user_namespaces=0. "
+        "If containers are required, keep the kernel updated.",
+        cis_control="CIS Ubuntu Benchmark 3.2.2 - Ensure user namespaces are restricted",
+        mitre_attack=[MitreTechnique.T1068],
+        cwe="CWE-693: Protection Mechanism Failure",
+        tags=["namespaces", "user-ns", "kernel", "container-security"],
+        confidence_score=0.7,
+        source_stages=["kernel_hardening"],
+    ),
+    KnowledgeRule(
+        rule_id="KH-008",
+        title_patterns=["Sensitive kernel module loaded"],
+        explanation="A potentially unnecessary kernel module is loaded, increasing kernel "
+        "attack surface. Modules for Bluetooth, FireWire, or other hardware that is "
+        "not in use should be blacklisted.",
+        security_impact="Low - Each loaded module increases the kernel's code footprint and "
+        "potential attack surface, though actual exploitability depends on the module.",
+        remediation="Blacklist the module: echo 'blacklist <module>' > /etc/modprobe.d/<module>-blacklist.conf",
+        cis_control="CIS Control 4: Secure Configuration of Enterprise Assets and Software",
+        mitre_attack=[MitreTechnique.T1562_001],
+        cwe="CWE-1104: Use of Unmaintained Third-Party Components",
+        tags=["kernel-module", "attack-surface", "hardening"],
+        confidence_score=0.5,
+        source_stages=["kernel_hardening"],
+        source_categories=["kernel_module"],
+    ),
+]
+
+# ------------------------------------------------------------------
 #  Writable path / file rules
 # ------------------------------------------------------------------
 
@@ -820,6 +987,322 @@ AUTH_RULES = [
 ]
 
 # ------------------------------------------------------------------
+#  Auth / Security rules (PS-02)
+# ------------------------------------------------------------------
+
+AUTH_SECURITY_RULES = [
+    KnowledgeRule(
+        rule_id="AUTHSEC-001",
+        title_patterns=["PAM password quality module not configured"],
+        explanation="The PAM password quality module (pam_pwquality.so or pam_cracklib.so) is not "
+        "configured. Without it, there are no password complexity requirements, allowing users "
+        "to set weak passwords that are easily guessed or brute-forced.",
+        security_impact="Medium - Weak passwords significantly increase the risk of credential "
+        "compromise via brute-force, guessing, or password spraying attacks.",
+        remediation="Configure pam_pwquality.so in /etc/pam.d/common-password with "
+        "retry=3 minlen=14 dcredit=-1 ucredit=-1 ocredit=-1 lcredit=-1.",
+        cis_control="CIS Ubuntu Benchmark 5.4.1.1 - Ensure password creation requirements are configured",
+        mitre_attack=[MitreTechnique.T1556_003],
+        cwe="CWE-521: Weak Password Requirements",
+        tags=["pam", "password", "authentication", "quality"],
+        confidence_score=0.85,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-002",
+        title_patterns=["PAM account lockout not configured"],
+        explanation="No PAM account lockout module (pam_faillock.so or pam_tally2.so) is configured. "
+        "Without lockout, attackers can make unlimited login attempts without being blocked.",
+        security_impact="Medium - Without account lockout, brute-force attacks can continue "
+        "uninterrupted until a password is guessed.",
+        remediation="Add pam_faillock.so configuration to /etc/pam.d/common-auth: "
+        "auth required pam_faillock.so preauth deny=5 unlock_time=900.",
+        cis_control="CIS Ubuntu Benchmark 5.4.1.2 - Ensure lockout for failed password attempts is configured",
+        mitre_attack=[MitreTechnique.T1110],
+        cwe="CWE-307: Improper Restriction of Excessive Authentication Attempts",
+        tags=["pam", "lockout", "brute-force", "authentication"],
+        confidence_score=0.85,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-003",
+        title_patterns=["PAM password history not configured"],
+        explanation="pam_pwhistory.so is not configured, so password reuse is not restricted. "
+        "Users can cycle back to previously used passwords, weakening credential security.",
+        security_impact="Low - Password reuse makes it easier for attackers who have obtained old "
+        "password hashes to reuse them if the password is changed then reverted.",
+        remediation="Add 'password requisite pam_pwhistory.so remember=5' to /etc/pam.d/common-password "
+        "to prevent reuse of the last 5 passwords.",
+        cis_control="CIS Ubuntu Benchmark 5.4.1.4 - Ensure password reuse is limited",
+        tags=["pam", "password", "history", "reuse"],
+        confidence_score=0.7,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-004",
+        title_patterns=["PAM password hashing algorithm is weak"],
+        explanation="The PAM password hashing algorithm is not SHA-512 or yescrypt. Weak hashing "
+        "algorithms like MD5 or DES can be cracked orders of magnitude faster than modern ones.",
+        security_impact="High - Weak password hashes can be cracked quickly, exposing all account "
+        "passwords to an attacker who gains access to /etc/shadow.",
+        remediation="Add sha512 or yescrypt to the pam_unix.so arguments in /etc/pam.d/common-password.",
+        cis_control="CIS Ubuntu Benchmark 5.4.1.3 - Ensure password hashing algorithm is up to date",
+        mitre_attack=[MitreTechnique.T1003_008],
+        cwe="CWE-328: Use of Weak Hash",
+        tags=["pam", "password", "hashing", "crypto"],
+        confidence_score=0.85,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-005",
+        title_patterns=["Empty password for user"],
+        explanation="A user account has an empty password, meaning the account can be accessed "
+        "without any authentication. This is a critical security vulnerability.",
+        security_impact="Critical - An empty password means anyone can log in as this user "
+        "without credentials. If the account has sudo or root access, this is full compromise.",
+        remediation="Set a password for the account: passwd <username>. Also check if the account "
+        "should be locked with 'passwd -l <username>'.",
+        cis_control="CIS Ubuntu Benchmark 6.2.1 - Ensure password fields are not empty",
+        mitre_attack=[MitreTechnique.T1078],
+        cwe="CWE-521: Weak Password Requirements",
+        tags=["password", "empty", "authentication", "critical"],
+        confidence_score=0.95,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-006",
+        title_patterns=["Weak password hash for user"],
+        explanation="A user account is using a weak password hashing algorithm (MD5, DES, or "
+        "older Blowfish). These algorithms are susceptible to fast offline cracking.",
+        security_impact="High - Weak hashes can be cracked quickly, compromising all accounts "
+        "that share passwords or if the user reuses passwords elsewhere.",
+        remediation="Force a password change to upgrade the hash algorithm: passwd <username>. "
+        "Ensure pam_unix.so uses sha512 or yescrypt.",
+        cis_control="CIS Ubuntu Benchmark 5.4.1.3 - Ensure password hashing algorithm is up to date",
+        mitre_attack=[MitreTechnique.T1003_008],
+        cwe="CWE-328: Use of Weak Hash",
+        tags=["password", "weak-hash", "cracking", "credential"],
+        confidence_score=0.85,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-007",
+        title_patterns=["Incorrect permissions on /etc/shadow"],
+        explanation="The shadow password file has incorrect permissions, potentially allowing "
+        "unauthorized users to read password hashes for offline cracking.",
+        security_impact="High - World-readable /etc/shadow exposes all password hashes to "
+        "any user on the system, enabling offline brute-force attacks.",
+        remediation="chmod 0 /etc/shadow or chmod 400 /etc/shadow.",
+        cis_control="CIS Ubuntu Benchmark 6.1.3 - Ensure permissions on /etc/shadow are configured",
+        cwe="CWE-732: Incorrect Permission Assignment for Critical Resource",
+        tags=["shadow", "permissions", "credential", "exposure"],
+        confidence_score=0.95,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-008",
+        title_patterns=["Incorrect permissions on /etc/passwd"],
+        explanation="The passwd file has incorrect permissions. While passwd does not contain "
+        "password hashes (those are in /etc/shadow), writable passwd allows user account manipulation.",
+        security_impact="Medium - Writable /etc/passwd allows any user to modify account "
+        "settings, including changing shells or creating new accounts.",
+        remediation="chmod 644 /etc/passwd",
+        cis_control="CIS Ubuntu Benchmark 6.1.1 - Ensure permissions on /etc/passwd are configured",
+        cwe="CWE-732: Incorrect Permission Assignment for Critical Resource",
+        tags=["passwd", "permissions", "account"],
+        confidence_score=0.8,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-009",
+        title_patterns=["Credential exposure:"],
+        explanation="Credentials such as API keys, passwords, tokens, or private keys were "
+        "found in files on the filesystem. Exposed credentials can be used for lateral movement, "
+        "privilege escalation, or accessing external services.",
+        security_impact="Critical to High - Exposed credentials enable unauthorized access to "
+        "systems and services. The impact depends on the credential type and scope of access.",
+        remediation="Remove credentials from files. Use a secrets manager (Vault, Bitwarden, "
+        "Kubernetes Secrets). Rotate any credentials that may have been exposed.",
+        cis_control="CIS Control 3: Data Protection",
+        mitre_attack=[MitreTechnique.T1552_001],
+        cwe="CWE-312: Cleartext Storage of Sensitive Information",
+        tags=["credential", "exposure", "secret", "key"],
+        confidence_score=0.85,
+        source_stages=["auth_security"],
+        source_categories=["misconfiguration"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-010",
+        title_patterns=["SSH agent forwarding detected"],
+        explanation="SSH agent forwarding is active, allowing the local SSH agent socket to "
+        "be accessed on remote hosts. A compromised remote host can use the forwarded agent "
+        "to authenticate as the user on other systems.",
+        security_impact="Medium - Forwarded SSH agent sockets can be used by attackers with "
+        "root access on intermediate hosts to authenticate as the forwarding user.",
+        remediation="Avoid using SSH agent forwarding (-A). Use ProxyJump instead, or add "
+        "ForwardAgent no to ~/.ssh/config.",
+        mitre_attack=[MitreTechnique.T1563_001],
+        cwe="CWE-200: Exposure of Sensitive Information",
+        tags=["ssh", "agent", "forwarding", "credential"],
+        confidence_score=0.7,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-011",
+        title_patterns=["PATH contains world-writable directories"],
+        explanation="The system PATH includes world-writable directories where any user can "
+        "place files. An attacker can place a malicious executable with the same name as a "
+        "common command, and it will be executed instead of the legitimate binary.",
+        security_impact="High - PATH hijacking allows privilege escalation when a privileged "
+        "user or process runs a command that resolves to the attacker's malicious binary.",
+        remediation="Remove writable directories from PATH. Ensure PATH does not include "
+        "'.' or relative paths. Set a secure PATH in /etc/profile and ~/.profile.",
+        cis_control="CIS Ubuntu Benchmark 6.2.8 - Ensure root PATH Integrity",
+        mitre_attack=[MitreTechnique.T1574_001],
+        cwe="CWE-426: Untrusted Search Path",
+        tags=["path", "hijacking", "privilege-escalation", "environment"],
+        confidence_score=0.85,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-012",
+        title_patterns=["World-writable scripts in system paths"],
+        explanation="World-writable executables exist in system paths (/etc, /usr, /opt, /root, /var). "
+        "Any user can modify these files and inject malicious code.",
+        security_impact="High - Writable system executables allow any user to inject code that "
+        "will be executed with the privileges of whoever runs the script.",
+        remediation="Restrict permissions: chmod 755 <path> && chown root:root <path>.",
+        cis_control="CIS Ubuntu Benchmark 6.1.9 - Ensure no world writable files exist",
+        mitre_attack=[MitreTechnique.T1574_001],
+        cwe="CWE-732: Incorrect Permission Assignment for Critical Resource",
+        tags=["writable", "script", "privilege-escalation", "permissions"],
+        confidence_score=0.85,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-013",
+        title_patterns=["SGID binaries detected"],
+        explanation="SGID binaries run with the group permissions of their group owner, "
+        "potentially granting elevated group-level privileges to any user executing them.",
+        security_impact="Medium - SGID binaries can lead to privilege escalation if the "
+        "group has access to sensitive resources or if combined with other weaknesses.",
+        remediation="Review SGID binaries and remove the SGID bit where not required: chmod g-s <path>.",
+        cis_control="CIS Ubuntu Benchmark 6.1.9 - Ensure no world writable files exist",
+        mitre_attack=[MitreTechnique.T1548_001],
+        cwe="CWE-732: Incorrect Permission Assignment for Critical Resource",
+        tags=["sgid", "privilege-escalation", "permissions"],
+        confidence_score=0.7,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-014",
+        title_patterns=["GTFOBins SUID binary"],
+        explanation="A SUID binary that is listed on GTFOBins was found. These binaries have "
+        "known techniques for escalating privileges to the level of the binary's owner.",
+        security_impact="High - GTFOBins-listed SUID binaries provide documented privilege "
+        "escalation techniques that can be executed by any user.",
+        remediation="Remove SUID bit if not required: chmod u-s <path>. "
+        "For required SUID binaries, monitor for CVEs and restrict access.",
+        references=["https://gtfobins.github.io/"],
+        cis_control="CIS Control 4: Secure Configuration",
+        mitre_attack=[MitreTechnique.T1548_001],
+        cwe="CWE-250: Execution with Unnecessary Privileges",
+        tags=["gtfobins", "suid", "privilege-escalation"],
+        confidence_score=0.85,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-015",
+        title_patterns=["GTFOBins binary with capabilities"],
+        explanation="A binary with Linux capabilities that is listed on GTFOBins was found. "
+        "The combination of capabilities and GTFOBins techniques may enable privilege escalation.",
+        security_impact="High - Capabilities like cap_setuid+ep combined with GTFOBins "
+        "techniques can provide a direct path to a privileged shell.",
+        remediation="Remove unnecessary capabilities: setcap -r <path>. "
+        "Review all capability assignments on the system.",
+        references=["https://gtfobins.github.io/"],
+        cis_control="CIS Control 4: Secure Configuration",
+        mitre_attack=[MitreTechnique.T1548_001],
+        cwe="CWE-250: Execution with Unnecessary Privileges",
+        tags=["gtfobins", "capabilities", "privilege-escalation"],
+        confidence_score=0.85,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-016",
+        title_patterns=["Writable polkit rule file"],
+        explanation="A polkit rule file is world-writable, allowing any user to modify "
+        "authorization rules. This can be used to grant unauthorized privileges.",
+        security_impact="High - Writable polkit rules allow privilege escalation by "
+        "modifying authorization decisions to grant admin access.",
+        remediation="chmod 644 <path> && chown root:root <path>.",
+        cis_control="CIS Ubuntu Benchmark 5.7.1 - Ensure PolicyKit is installed and configured",
+        mitre_attack=[MitreTechnique.T1484],
+        cwe="CWE-732: Incorrect Permission Assignment for Critical Resource",
+        tags=["polkit", "writable", "authorization", "privilege-escalation"],
+        confidence_score=0.9,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-017",
+        title_patterns=["Dangerous polkit action"],
+        explanation="A polkit action with permissive authorization was found. Sensitive actions "
+        "should require administrator authentication, not be accessible to all users.",
+        security_impact="Medium - Permissive polkit rules may allow unprivileged users to "
+        "perform sensitive operations like suspending the system or managing services.",
+        remediation="Review polkit authorization rules. Use 'auth_admin' instead of 'yes' "
+        "for sensitive actions in polkit rule files.",
+        cis_control="CIS Ubuntu Benchmark 5.7.2 - Ensure PolicyKit rules are secure",
+        mitre_attack=[MitreTechnique.T1484],
+        cwe="CWE-284: Improper Access Control",
+        tags=["polkit", "authorization", "misconfiguration"],
+        confidence_score=0.7,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-018",
+        title_patterns=["LD_PRELOAD environment variable is set"],
+        explanation="LD_PRELOAD is set globally, causing a shared library to be loaded into "
+        "all processes. This can be exploited for privilege escalation when SUID binaries "
+        "are executed, as certain configurations may honor LD_PRELOAD.",
+        security_impact="Medium - LD_PRELOAD can be used for privilege escalation via "
+        "library injection, though modern SUID binaries typically ignore it.",
+        remediation="Unset LD_PRELOAD in privileged contexts. Avoid using LD_PRELOAD globally.",
+        mitre_attack=[MitreTechnique.T1574_001],
+        cwe="CWE-114: Process Control",
+        tags=["ld_preload", "library-injection", "privilege-escalation"],
+        confidence_score=0.7,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-019",
+        title_patterns=["LD_LIBRARY_PATH environment variable is set"],
+        explanation="LD_LIBRARY_PATH is set, which can be used to inject malicious shared "
+        "libraries into processes. This is a known technique for privilege escalation.",
+        security_impact="Medium - LD_LIBRARY_PATH can be abused to load malicious libraries, "
+        "though modern systems have protections against this for SUID binaries.",
+        remediation="Unset LD_LIBRARY_PATH in privileged contexts. Remove from global shell configs.",
+        mitre_attack=[MitreTechnique.T1574_001],
+        cwe="CWE-114: Process Control",
+        tags=["ld_library_path", "library-injection", "privilege-escalation"],
+        confidence_score=0.7,
+        source_stages=["auth_security"],
+    ),
+    KnowledgeRule(
+        rule_id="AUTHSEC-020",
+        title_patterns=["Incorrect permissions on /etc/passwd"],
+        explanation="See AUTHSEC-008.",
+        security_impact="Medium - See AUTHSEC-008.",
+        remediation="See AUTHSEC-008.",
+        cis_control="CIS Ubuntu Benchmark 6.1.1 - Ensure permissions on /etc/passwd are configured",
+        cwe="CWE-732: Incorrect Permission Assignment for Critical Resource",
+        tags=["passwd", "permissions"],
+        confidence_score=0.8,
+        source_stages=["auth_security"],
+    ),
+]
+
+# ------------------------------------------------------------------
 #  Process rules
 # ------------------------------------------------------------------
 
@@ -887,6 +1370,170 @@ PACKAGE_RULES = [
         cis_control="CIS Control 2: Inventory and Control of Software Assets",
         tags=["package", "apt", "repository", "misconfiguration"],
         confidence_score=0.75,
+    ),
+    KnowledgeRule(
+        rule_id="PKG-003",
+        title_patterns=["Insecure HTTP repository:"],
+        explanation="A repository is configured using insecure HTTP instead of HTTPS.",
+        security_impact="Medium - Exposes package downloads and metadata updates to "
+        "man-in-the-middle (MITM) tampering and sniffing.",
+        remediation="Update repository URLs in sources configuration files to use https://.",
+        cis_control="CIS Control 2: Inventory and Control of Software Assets",
+        tags=["package", "repository", "encryption"],
+        confidence_score=0.85,
+        source_stages=["packages_security"],
+    ),
+    KnowledgeRule(
+        rule_id="PKG-004",
+        title_patterns=["Unsigned package repository override:"],
+        explanation="A repository has trusted=yes or allow-insecure=yes override configured.",
+        security_impact="High - Bypasses GPG authentication of packages, allowing attackers "
+        "who can spoof network traffic to inject malicious packages.",
+        remediation="Remove trusted=yes or allow-insecure=yes overrides. Install correct GPG keys.",
+        cis_control="CIS Control 2: Inventory and Control of Software Assets",
+        tags=["package", "repository", "integrity"],
+        confidence_score=0.9,
+        source_stages=["packages_security"],
+    ),
+    KnowledgeRule(
+        rule_id="PKG-005",
+        title_patterns=["Deprecated GPG keyring file used:"],
+        explanation="The global /etc/apt/trusted.gpg keyring contains keys instead of individual "
+        "files under trusted.gpg.d or /usr/share/keyrings.",
+        security_impact="Low - A compromise of any key in the global keyring allows that key to "
+        "sign packages for any repository on the system.",
+        remediation="Move repository keys into separate files under /etc/apt/trusted.gpg.d/ or /usr/share/keyrings/.",
+        cis_control="CIS Control 2: Inventory and Control of Software Assets",
+        tags=["package", "gpg", "keyring"],
+        confidence_score=0.9,
+        source_stages=["packages_security"],
+    ),
+    KnowledgeRule(
+        rule_id="PKG-006",
+        title_patterns=["Expired repository GPG keys"],
+        explanation="One or more repository signing GPG keys have expired.",
+        security_impact="Medium - Expired keys block installing new packages or security updates.",
+        remediation="Retrieve the updated GPG signing key from the repository provider.",
+        cis_control="CIS Control 2: Inventory and Control of Software Assets",
+        tags=["package", "gpg", "keys"],
+        confidence_score=0.8,
+        source_stages=["packages_security"],
+    ),
+    KnowledgeRule(
+        rule_id="PKG-007",
+        title_patterns=["Weak GPG signing keys"],
+        explanation="Repository signing keys use weak algorithms, e.g. 1024-bit RSA or DSA/SHA1.",
+        security_impact="Medium - Weak key sizes are susceptible to cryptographic collision attacks.",
+        remediation="Request the repository provider to migrate to modern signing keys (RSA >= 2048 or Ed25519).",
+        cis_control="CIS Control 2: Inventory and Control of Software Assets",
+        tags=["package", "gpg", "weak"],
+        confidence_score=0.75,
+        source_stages=["packages_security"],
+    ),
+    KnowledgeRule(
+        rule_id="PKG-008",
+        title_patterns=["Duplicate repository:"],
+        explanation="The same repository is defined multiple times in sources lists.",
+        security_impact="Low - Overhead during package updates and list updates.",
+        remediation="Clean up duplicate entries from /etc/apt/sources.list and files in sources.list.d.",
+        cis_control="CIS Control 2: Inventory and Control of Software Assets",
+        tags=["package", "repository", "misconfiguration"],
+        confidence_score=0.75,
+        source_stages=["packages_security"],
+    ),
+    KnowledgeRule(
+        rule_id="PKG-009",
+        title_patterns=["Modified package files detected"],
+        explanation="Hash verification failed for installed package files.",
+        security_impact="High - Indicates installed software files have been modified, possibly "
+        "from unauthorized tampering or trojan injection.",
+        remediation="Reinstall affected packages using 'apt-get install --reinstall' to restore integrity.",
+        cis_control="CIS Control 2: Inventory and Control of Software Assets",
+        tags=["package", "integrity", "modified"],
+        confidence_score=0.8,
+        source_stages=["packages_security"],
+    ),
+    KnowledgeRule(
+        rule_id="PKG-010",
+        title_patterns=["Unsigned RPM packages detected"],
+        explanation="One or more installed RPM packages lack GPG signatures.",
+        security_impact="High - Unsigned packages cannot be verified for authenticity or integrity, "
+        "allowing untrusted code execution.",
+        remediation="Uninstall unsigned packages or replace them with signed packages from trusted repositories.",
+        cis_control="CIS Control 2: Inventory and Control of Software Assets",
+        tags=["package", "rpm", "integrity"],
+        confidence_score=0.85,
+        source_stages=["packages_security"],
+    ),
+    KnowledgeRule(
+        rule_id="PKG-011",
+        title_patterns=["Orphaned packages detected"],
+        explanation="Installed packages that are not present in any configured repository.",
+        security_impact="Low - Orphaned packages will not receive any future updates or security patches.",
+        remediation="Review and purge orphaned packages if they are no longer required.",
+        cis_control="CIS Control 2: Inventory and Control of Software Assets",
+        tags=["package", "orphaned"],
+        confidence_score=0.75,
+        source_stages=["packages_security"],
+    ),
+    KnowledgeRule(
+        rule_id="PKG-012",
+        title_patterns=["Broken or partially installed packages"],
+        explanation="Some packages are in broken, half-configured, or uninstalled state.",
+        security_impact="Medium - Leaves package manager in unstable state and might block "
+        "critical updates.",
+        remediation="Fix package manager using 'apt-get install -f' or 'dpkg --configure -a'.",
+        cis_control="CIS Control 2: Inventory and Control of Software Assets",
+        tags=["package", "broken"],
+        confidence_score=0.9,
+        source_stages=["packages_security"],
+    ),
+    KnowledgeRule(
+        rule_id="PKG-013",
+        title_patterns=["Potential typosquatting package:"],
+        explanation="An installed package name is close to a popular package name.",
+        security_impact="High - Typosquatted packages are a common vector for supply chain "
+        "compromise, often executing malicious payloads upon installation.",
+        remediation="Verify if the package is legitimate. Uninstall if it is typosquatted.",
+        cis_control="CIS Control 2: Inventory and Control of Software Assets",
+        tags=["package", "supply_chain", "typosquatting"],
+        confidence_score=0.8,
+        source_stages=["packages_security"],
+    ),
+    KnowledgeRule(
+        rule_id="PKG-014",
+        title_patterns=["Suspicious repository TLD/domain"],
+        explanation="A repository is hosted on a suspicious TLD or dynamic DNS domain.",
+        security_impact="High - Repositories hosted on untrusted infrastructure pose severe "
+        "supply chain risk and can distribute malware.",
+        remediation="Remove suspicious repositories from sources files.",
+        cis_control="CIS Control 2: Inventory and Control of Software Assets",
+        tags=["package", "repository", "suspicious"],
+        confidence_score=0.85,
+        source_stages=["packages_security"],
+    ),
+    KnowledgeRule(
+        rule_id="PKG-015",
+        title_patterns=["Manually installed binaries in system path"],
+        explanation="Binaries in system PATH are not registered in the package manager.",
+        security_impact="Low - Manually installed binaries do not receive automatic security updates.",
+        remediation="Upgrade manually or replace them with packages tracked by the package manager.",
+        cis_control="CIS Control 2: Inventory and Control of Software Assets",
+        tags=["package", "untracked", "binary"],
+        confidence_score=0.9,
+        source_stages=["packages_security"],
+    ),
+    KnowledgeRule(
+        rule_id="PKG-016",
+        title_patterns=["Untrusted shell installer command execution"],
+        explanation="Shell history contains execution of piped internet scripts.",
+        security_impact="Medium - Blindly running scripts from the internet bypasses integrity "
+        "controls and can execute arbitrary payloads.",
+        remediation="Inspect scripts locally before execution; prefer verified package sources.",
+        cis_control="CIS Control 2: Inventory and Control of Software Assets",
+        tags=["package", "supply_chain", "installer"],
+        confidence_score=0.85,
+        source_stages=["packages_security"],
     ),
 ]
 
@@ -985,11 +1632,907 @@ FILESYSTEM_RULES = [
         tags=["sgid", "privilege-escalation", "permissions"],
         confidence_score=0.75,
     ),
+    KnowledgeRule(
+        rule_id="FS-002",
+        title_patterns=["/etc/passwd permissions are too open"],
+        explanation="The system passwd file has loose write permissions.",
+        security_impact="High - Allows unprivileged users to alter accounts or user shells.",
+        remediation="Run 'chmod 644 /etc/passwd'.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["permissions", "passwd"],
+        confidence_score=0.95,
+        source_stages=["storage_security"],
+    ),
+    KnowledgeRule(
+        rule_id="FS-003",
+        title_patterns=["/etc/shadow permissions are too open"],
+        explanation="The shadow password hashes file has loose read/write permissions.",
+        security_impact="Critical - Allows unprivileged users to read or write sensitive password hashes.",
+        remediation="Run 'chmod 600 /etc/shadow'.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["permissions", "shadow"],
+        confidence_score=0.95,
+        source_stages=["storage_security"],
+    ),
+    KnowledgeRule(
+        rule_id="FS-004",
+        title_patterns=["/etc/sudoers permissions are too open"],
+        explanation="The sudoers configuration file has loose permissions.",
+        security_impact="High - Unprivileged users could modify system privilege rules.",
+        remediation="Run 'chmod 440 /etc/sudoers'.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["permissions", "sudoers"],
+        confidence_score=0.9,
+        source_stages=["storage_security"],
+    ),
+    KnowledgeRule(
+        rule_id="FS-005",
+        title_patterns=["SUID/SGID files detected"],
+        explanation="SUID/SGID executables exist under system folders.",
+        security_impact="Info - Executables run with target user/group privileges. Review for vulnerabilities.",
+        remediation="Regularly audit SUID/SGID binaries.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["permissions", "suid", "sgid"],
+        confidence_score=0.9,
+        source_stages=["storage_security"],
+    ),
+    KnowledgeRule(
+        rule_id="FS-006",
+        title_patterns=["Insecure mount options on /tmp:"],
+        explanation="Restrictive mount parameters are missing from /tmp.",
+        security_impact="Medium - Bypasses standard restrictions on binary execution or device files in temporary folder.",
+        remediation="Update /etc/fstab to mount /tmp with defaults,noexec,nodev,nosuid.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["mount", "tmp"],
+        confidence_score=0.9,
+        source_stages=["storage_security"],
+    ),
+    KnowledgeRule(
+        rule_id="FS-007",
+        title_patterns=["Insecure mount options on /dev/shm:"],
+        explanation="Restrictive mount parameters are missing from /dev/shm.",
+        security_impact="Medium - Bypasses execution control on shared memory region.",
+        remediation="Update /etc/fstab to mount /dev/shm with defaults,noexec,nodev,nosuid.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["mount", "dev-shm"],
+        confidence_score=0.9,
+        source_stages=["storage_security"],
+    ),
+    KnowledgeRule(
+        rule_id="FS-008",
+        title_patterns=["NFS exports configured with no_root_squash"],
+        explanation="NFS shares permit remote root mapping.",
+        security_impact="High - Root users on NFS clients get full administrative permissions on shared storage.",
+        remediation="Remove no_root_squash option from /etc/exports.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["nfs", "network-filesystem"],
+        confidence_score=0.95,
+        source_stages=["storage_security"],
+    ),
+    KnowledgeRule(
+        rule_id="FS-009",
+        title_patterns=["Samba public/guest share access enabled"],
+        explanation="Public Samba file shares allow unauthenticated guest connections.",
+        security_impact="Medium - Anyone on local network can read/write shared directories.",
+        remediation="Remove guest ok/public options from smb.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["samba", "network-filesystem"],
+        confidence_score=0.9,
+        source_stages=["storage_security"],
+    ),
+    KnowledgeRule(
+        rule_id="FS-010",
+        title_patterns=["System lacks full-disk encryption (LUKS)"],
+        explanation="No active LUKS/dm-crypt block device is configured.",
+        security_impact="Medium - Physical host access or stolen drive exposes all system and private files.",
+        remediation="Encrypt root and home block devices using LUKS.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["encryption", "disk-encryption"],
+        confidence_score=0.9,
+        source_stages=["storage_security"],
+    ),
+    KnowledgeRule(
+        rule_id="FS-011",
+        title_patterns=["Unencrypted swap space configured"],
+        explanation="The active swap space is unencrypted.",
+        security_impact="High - Secrets and credentials residing in kernel memory can be written to disk in plain text.",
+        remediation="Configure dm-crypt swap in /etc/crypttab.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["encryption", "swap"],
+        confidence_score=0.9,
+        source_stages=["storage_security"],
+    ),
+    KnowledgeRule(
+        rule_id="FS-012",
+        title_patterns=["File Integrity Monitoring (FIM) not configured"],
+        explanation="No FIM utility (AIDE/Tripwire) is present.",
+        security_impact="Medium - System lacks capability to detect unauthorized binary changes or rootkit intrusion.",
+        remediation="Install AIDE or similar tool.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["integrity", "fim"],
+        confidence_score=0.9,
+        source_stages=["storage_security"],
+    ),
+    KnowledgeRule(
+        rule_id="FS-013",
+        title_patterns=["Immutable system configuration files detected"],
+        explanation="Files have immutable attributes set.",
+        security_impact="Info - Protects files from modification by root, but can cause package manager updates to fail.",
+        remediation="Review immutable file attributes via lsattr.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["integrity", "attributes"],
+        confidence_score=0.85,
+        source_stages=["storage_security"],
+    ),
 ]
 
 # ------------------------------------------------------------------
-#  Combine all rules
+#  Network Security rules
 # ------------------------------------------------------------------
+
+NETWORK_SECURITY_RULES = [
+    KnowledgeRule(
+        rule_id="NET-001",
+        title_patterns=["Firewall is disabled or has no rules"],
+        explanation="No active firewall (UFW, Firewalld, iptables, or nftables) is running on the host.",
+        security_impact="High - All listening services are directly exposed to the network, increasing attack surface.",
+        remediation="Enable UFW or Firewalld and configure default-deny incoming policies.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["firewall", "network", "misconfiguration"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-002",
+        title_patterns=["Sysctl net.ipv4.ip_forward is misconfigured"],
+        explanation="IP forwarding is enabled on IPv4.",
+        security_impact="Medium - Allows the host to forward network packets, potentially routing traffic between security zones.",
+        remediation="Set net.ipv4.ip_forward=0 in /etc/sysctl.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["sysctl", "routing", "ip-forward"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-003",
+        title_patterns=["Sysctl net.ipv6.conf.all.forwarding is misconfigured"],
+        explanation="IPv6 forwarding is enabled on all interfaces.",
+        security_impact="Medium - Allows the host to forward IPv6 packets, routing traffic between zones.",
+        remediation="Set net.ipv6.conf.all.forwarding=0 in /etc/sysctl.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["sysctl", "routing", "ip-forward"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-004",
+        title_patterns=["Sysctl net.ipv4.conf.all.accept_source_route is misconfigured"],
+        explanation="Source routing is accepted on IPv4.",
+        security_impact="Medium - Allows attackers to route packets through specific routes, bypassing security controls.",
+        remediation="Set net.ipv4.conf.all.accept_source_route=0 in /etc/sysctl.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["sysctl", "routing", "source-routing"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-005",
+        title_patterns=["Sysctl net.ipv6.conf.all.accept_source_route is misconfigured"],
+        explanation="IPv6 source routing is accepted on all interfaces.",
+        security_impact="Medium - Allows attackers to route IPv6 packets through specific routes.",
+        remediation="Set net.ipv6.conf.all.accept_source_route=0 in /etc/sysctl.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["sysctl", "routing", "source-routing"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-006",
+        title_patterns=["Sysctl net.ipv4.conf.all.accept_redirects is misconfigured"],
+        explanation="Accepting ICMP redirects is enabled.",
+        security_impact="Medium - Attacker can send ICMP redirects to modify system routing table, leading to MITM.",
+        remediation="Set net.ipv4.conf.all.accept_redirects=0 in /etc/sysctl.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["sysctl", "routing", "icmp-redirects"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-007",
+        title_patterns=["Sysctl net.ipv6.conf.all.accept_redirects is misconfigured"],
+        explanation="IPv6 ICMP redirects are accepted.",
+        security_impact="Medium - Attacker can modify IPv6 routing table via redirects.",
+        remediation="Set net.ipv6.conf.all.accept_redirects=0 in /etc/sysctl.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["sysctl", "routing", "icmp-redirects"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-008",
+        title_patterns=["Sysctl net.ipv4.conf.all.log_martians is misconfigured"],
+        explanation="Logging of Martian packets is disabled.",
+        security_impact="Low - Prevents logging of packets with impossible source addresses, hindering auditing.",
+        remediation="Set net.ipv4.conf.all.log_martians=1 in /etc/sysctl.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["sysctl", "routing", "logging"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-009",
+        title_patterns=["Sysctl net.ipv4.tcp_syncookies is misconfigured"],
+        explanation="TCP SYN cookies are disabled.",
+        security_impact="Medium - Host is vulnerable to TCP SYN flood DoS attacks.",
+        remediation="Set net.ipv4.tcp_syncookies=1 in /etc/sysctl.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["sysctl", "tcp-hardening", "syn-cookies"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-010",
+        title_patterns=["Sysctl net.ipv4.conf.all.rp_filter is misconfigured"],
+        explanation="Reverse Path Filtering is not in strict mode.",
+        security_impact="Medium - Vulnerability to IP address spoofing attacks.",
+        remediation="Set net.ipv4.conf.all.rp_filter=1 in /etc/sysctl.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["sysctl", "tcp-hardening", "rp-filter"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-011",
+        title_patterns=["Sysctl net.ipv4.conf.default.rp_filter is misconfigured"],
+        explanation="Default Reverse Path Filtering is not in strict mode.",
+        security_impact="Medium - Spoofed packets can bypass validation on default interfaces.",
+        remediation="Set net.ipv4.conf.default.rp_filter=1 in /etc/sysctl.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["sysctl", "tcp-hardening", "rp-filter"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-012",
+        title_patterns=["Sysctl net.ipv4.conf.all.send_redirects is misconfigured"],
+        explanation="Sending ICMP redirects is enabled.",
+        security_impact="Medium - Allows host to send redirects, potentially used for traffic redirection.",
+        remediation="Set net.ipv4.conf.all.send_redirects=0 in /etc/sysctl.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["sysctl", "routing", "icmp-redirects"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-013",
+        title_patterns=["Sysctl net.ipv4.conf.default.send_redirects is misconfigured"],
+        explanation="Default sending of ICMP redirects is enabled.",
+        security_impact="Medium - Allows redirecting client traffic.",
+        remediation="Set net.ipv4.conf.default.send_redirects=0 in /etc/sysctl.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["sysctl", "routing", "icmp-redirects"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-014",
+        title_patterns=["No DNS nameservers configured"],
+        explanation="/etc/resolv.conf contains no valid nameservers.",
+        security_impact="Low - Inability to resolve domains, blocking updates and resolution.",
+        remediation="Add nameserver directives to resolv.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["dns", "resolver", "misconfiguration"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-015",
+        title_patterns=["Insecure public DNS resolvers configured"],
+        explanation="Unencrypted public resolvers are used.",
+        security_impact="Low - DNS queries are sent in plaintext and can be spoofed or intercepted.",
+        remediation="Use systemd-resolved with DoT or local authenticated DNS stub.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["dns", "resolver", "encryption"],
+        confidence_score=0.85,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-016",
+        title_patterns=["DNSSEC validation or EDNS0 options not enforced"],
+        explanation="DNSSEC EDNS0 option is missing in resolv.conf.",
+        security_impact="Low - No cryptographic signature verification of DNS answers.",
+        remediation="Enable edns0 option in resolver configuration.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["dns", "resolver", "dnssec"],
+        confidence_score=0.8,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-017",
+        title_patterns=["Exposed database service:"],
+        explanation="A database port is bound to wildcard / all interfaces.",
+        security_impact="High - Database is accessible to external network, risking authentication bypass or exploit.",
+        remediation="Bind database to localhost (127.0.0.1) or restrict network via firewall.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["database", "wildcard", "exposure"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-018",
+        title_patterns=["Exposed remote service:"],
+        explanation="Remote access service (SSH, Telnet, SMB, RDP, etc.) is publicly exposed.",
+        security_impact="Critical/High - External attackers can perform brute-force attacks or exploit services.",
+        remediation="Disable plaintext services (Telnet/FTP). Bind SSH/RDP to private VPN addresses.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["services", "exposure", "remote-access"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-019",
+        title_patterns=["Privileged port listening:"],
+        explanation="A process is running and binding to a port under 1024.",
+        security_impact="Info - Privileged ports require high permissions (root) to bind.",
+        remediation="Review if the process must run as root or if capabilities can be used.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["services", "privileged-port"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-020",
+        title_patterns=["Active Web service:"],
+        explanation="A web server process (Nginx/Apache/Caddy) is active.",
+        security_impact="Info - Web service active. Ensure TLS is configured and secure headers are present.",
+        remediation="Keep web server updated and enable HTTPS.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["services", "web"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+    KnowledgeRule(
+        rule_id="NET-021",
+        title_patterns=["Active Mail service:"],
+        explanation="Mail transfer agent service (Postfix/Exim/SMTP) is active.",
+        security_impact="Info - Mail service active. Ensure relaying is restricted to prevent spam abuse.",
+        remediation="Restrict mail relaying in server config.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["services", "mail"],
+        confidence_score=0.9,
+        source_stages=["network_security"],
+    ),
+]
+
+# ------------------------------------------------------------------
+#  Boot Security rules
+# ------------------------------------------------------------------
+
+BOOT_SECURITY_RULES = [
+    KnowledgeRule(
+        rule_id="BOOT-001",
+        title_patterns=["GRUB configuration file not found"],
+        explanation="GRUB configuration file could not be resolved in default locations.",
+        security_impact="Low - GRUB settings cannot be analyzed.",
+        remediation="Verify if a non-standard bootloader is active or if GRUB config has a custom path.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["bootloader", "grub", "misconfiguration"],
+        confidence_score=0.8,
+        source_stages=["boot_security"],
+    ),
+    KnowledgeRule(
+        rule_id="BOOT-002",
+        title_patterns=["GRUB configuration file permissions are too open"],
+        explanation="GRUB config file has loose permissions, allowing unprivileged readers to inspect boot configs.",
+        security_impact="Medium - Private kernel settings or password hashes could be leaked to local users.",
+        remediation="Run 'chmod 600 /boot/grub/grub.cfg'.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["bootloader", "grub", "permissions"],
+        confidence_score=0.9,
+        source_stages=["boot_security"],
+    ),
+    KnowledgeRule(
+        rule_id="BOOT-003",
+        title_patterns=["GRUB configuration file is not owned by root"],
+        explanation="GRUB configuration is owned by a non-root account.",
+        security_impact="Medium - Allows non-root account to modify system boot options.",
+        remediation="Run 'chown root:root /boot/grub/grub.cfg'.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["bootloader", "grub", "permissions"],
+        confidence_score=0.9,
+        source_stages=["boot_security"],
+    ),
+    KnowledgeRule(
+        rule_id="BOOT-004",
+        title_patterns=["GRUB bootloader is not password protected"],
+        explanation="No password restriction is configured in GRUB boot menu.",
+        security_impact="High - Anyone with console/physical access can edit kernel params or boot into root shell.",
+        remediation="Generate GRUB password using grub-mkpasswd-pbkdf2 and reference it in GRUB configs.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["bootloader", "grub", "password"],
+        confidence_score=0.9,
+        source_stages=["boot_security"],
+    ),
+    KnowledgeRule(
+        rule_id="BOOT-005",
+        title_patterns=["All GRUB boot entries are unrestricted"],
+        explanation="All GRUB menu items have '--unrestricted' flag, permitting anyone to boot recovery modes.",
+        security_impact="Medium - Bypasses GRUB password authentication for recovery/emergency shells.",
+        remediation="Remove '--unrestricted' from rescue or recovery entries.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["bootloader", "grub", "password"],
+        confidence_score=0.9,
+        source_stages=["boot_security"],
+    ),
+    KnowledgeRule(
+        rule_id="BOOT-006",
+        title_patterns=["System booted in Legacy BIOS mode (no Secure Boot)"],
+        explanation="Firmware does not use UEFI mode, preventing the usage of Secure Boot features.",
+        security_impact="Medium - No firmware-level kernel/driver cryptographic signing verification is active.",
+        remediation="Configure system UEFI mode in BIOS settings and reinstall EFI bootloader.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["uefi", "bios", "secure-boot"],
+        confidence_score=0.9,
+        source_stages=["boot_security"],
+    ),
+    KnowledgeRule(
+        rule_id="BOOT-007",
+        title_patterns=["UEFI Secure Boot is disabled"],
+        explanation="Secure Boot state is disabled in UEFI firmware.",
+        security_impact="High - Unsigned bootkits, rootkits, or malicious drivers can be loaded during startup.",
+        remediation="Enable UEFI Secure Boot in system BIOS/UEFI configuration menu.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["uefi", "secure-boot", "vulnerability"],
+        confidence_score=0.9,
+        source_stages=["boot_security"],
+    ),
+    KnowledgeRule(
+        rule_id="BOOT-008",
+        title_patterns=["Vulnerable kernel boot parameter:"],
+        explanation="Kernel parameter bypasses normal user authentication.",
+        security_impact="Critical - Instantiates passwordless root shell directly at boot.",
+        remediation="Remove custom 'init=' or 'rescue' arguments from /etc/default/grub config.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["kernel", "bootloader", "vulnerability"],
+        confidence_score=0.95,
+        source_stages=["boot_security"],
+    ),
+    KnowledgeRule(
+        rule_id="BOOT-009",
+        title_patterns=["Kernel speculative execution mitigations are disabled"],
+        explanation="Speculative execution side-channel mitigations are disabled.",
+        security_impact="High - Exposes the system to microarchitectural memory leakage exploits (Spectre/Meltdown).",
+        remediation="Remove 'mitigations=off' boot argument.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["kernel", "mitigations", "vulnerability"],
+        confidence_score=0.9,
+        source_stages=["boot_security"],
+    ),
+    KnowledgeRule(
+        rule_id="BOOT-010",
+        title_patterns=["SELinux disabled in kernel boot parameters"],
+        explanation="SELinux is deactivated at boot time.",
+        security_impact="High - Disables all mandatory access controls, expanding compromise scope.",
+        remediation="Enable SELinux in kernel cmdline settings.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["kernel", "selinux", "mac"],
+        confidence_score=0.9,
+        source_stages=["boot_security"],
+    ),
+    KnowledgeRule(
+        rule_id="BOOT-011",
+        title_patterns=["AppArmor disabled in kernel boot parameters"],
+        explanation="AppArmor is deactivated at boot time.",
+        security_impact="High - Disables AppArmor confinement rules.",
+        remediation="Enable AppArmor in kernel cmdline settings.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["kernel", "apparmor", "mac"],
+        confidence_score=0.9,
+        source_stages=["boot_security"],
+    ),
+    KnowledgeRule(
+        rule_id="BOOT-012",
+        title_patterns=["Root shell spawned on systemd emergency/rescue mode without password"],
+        explanation="Emergency shells are configured to bypass authentication.",
+        security_impact="Critical - Local console connection can access root prompt directly without password.",
+        remediation="Configure sulogin in emergency and rescue systemd files.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["systemd", "emergency", "vulnerability"],
+        confidence_score=0.9,
+        source_stages=["boot_security"],
+    ),
+    KnowledgeRule(
+        rule_id="BOOT-013",
+        title_patterns=["Boot files not owned by root"],
+        explanation="Files under /boot are owned by non-root users.",
+        security_impact="High - Allows non-root accounts to modify active boot images or configs.",
+        remediation="Run 'chown -R root:root /boot'.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["filesystem", "boot", "permissions"],
+        confidence_score=0.9,
+        source_stages=["boot_security"],
+    ),
+    KnowledgeRule(
+        rule_id="BOOT-014",
+        title_patterns=["World-writable files detected in /boot"],
+        explanation="Files in /boot allow write access to anyone.",
+        security_impact="Critical - Any unprivileged user can replace critical kernel or boot files.",
+        remediation="Revoke write privileges for others: 'chmod o-w'.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["filesystem", "boot", "vulnerability"],
+        confidence_score=0.95,
+        source_stages=["boot_security"],
+    ),
+    KnowledgeRule(
+        rule_id="BOOT-015",
+        title_patterns=["Initramfs image permissions are too permissive"],
+        explanation="Initramfs files have loose permissions (> 600).",
+        security_impact="Medium - Unprivileged users can read/extract secrets contained in the initramfs.",
+        remediation="Change permissions to 600: 'chmod 600 /boot/initrd*'.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["filesystem", "initramfs", "permissions"],
+        confidence_score=0.9,
+        source_stages=["boot_security"],
+    ),
+]
+
+# ------------------------------------------------------------------
+#  GUI Security rules
+# ------------------------------------------------------------------
+
+GUI_SECURITY_RULES = [
+    KnowledgeRule(
+        rule_id="GUI-001",
+        title_patterns=["GDM automatic login enabled in"],
+        explanation="The GDM display manager automatically logs in a configured user session.",
+        security_impact="High - Anyone with physical access can gain system access under that user without authentication.",
+        remediation="Set AutomaticLoginEnable=false in GDM custom.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["gui", "gdm", "autologin"],
+        confidence_score=0.9,
+        source_stages=["gui_security"],
+    ),
+    KnowledgeRule(
+        rule_id="GUI-002",
+        title_patterns=["LightDM automatic login enabled in"],
+        explanation="LightDM is configured to log in a user session automatically without credentials.",
+        security_impact="High - Bypasses credential requirements for local console access.",
+        remediation="Remove autologin-user directives from /etc/lightdm/lightdm.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["gui", "lightdm", "autologin"],
+        confidence_score=0.9,
+        source_stages=["gui_security"],
+    ),
+    KnowledgeRule(
+        rule_id="GUI-003",
+        title_patterns=["LightDM guest session enabled in"],
+        explanation="Unauthenticated guest sessions are permitted by LightDM.",
+        security_impact="Medium - Untrusted users can start temporary graphical sessions on local hardware.",
+        remediation="Set allow-guest=false in lightdm.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["gui", "lightdm", "guest"],
+        confidence_score=0.9,
+        source_stages=["gui_security"],
+    ),
+    KnowledgeRule(
+        rule_id="GUI-004",
+        title_patterns=["SDDM automatic login configured in"],
+        explanation="SDDM display manager automatically initiates a user login session.",
+        security_impact="High - Local access bypasses authentication.",
+        remediation="Remove the User= configuration from [Autologin] section in sddm.conf.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["gui", "sddm", "autologin"],
+        confidence_score=0.9,
+        source_stages=["gui_security"],
+    ),
+    KnowledgeRule(
+        rule_id="GUI-005",
+        title_patterns=["Legacy X11 windowing system active"],
+        explanation="The host graphical session runs X11 protocol instead of Wayland.",
+        security_impact="Medium - X11 lacks graphical security boundaries, allowing local applications to keylog or capture clipboards of other programs.",
+        remediation="Configure the display manager or user session to boot using Wayland.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["gui", "x11", "window-server"],
+        confidence_score=0.85,
+        source_stages=["gui_security"],
+    ),
+    KnowledgeRule(
+        rule_id="GUI-006",
+        title_patterns=["Active VNC server session detected"],
+        explanation="VNC server is active on the system.",
+        security_impact="Medium - Plaintext graphical screen and input transmission over networks.",
+        remediation="Disable VNC or enforce SSH tunneling for VNC traffic.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["remote-desktop", "vnc", "vulnerability"],
+        confidence_score=0.9,
+        source_stages=["gui_security"],
+    ),
+    KnowledgeRule(
+        rule_id="GUI-007",
+        title_patterns=["Insecure security layer configured in xrdp"],
+        explanation="xrdp is configured to use legacy RDP security instead of TLS.",
+        security_impact="High - Vulnerable to active network eavesdropping and MITM manipulation.",
+        remediation="Configure security_layer=tls in /etc/xrdp/xrdp.ini.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["remote-desktop", "rdp", "xrdp"],
+        confidence_score=0.9,
+        source_stages=["gui_security"],
+    ),
+    KnowledgeRule(
+        rule_id="GUI-008",
+        title_patterns=["Weak encryption level configured in xrdp"],
+        explanation="xrdp crypt_level is configured to low or none.",
+        security_impact="High - Inadequate confidentiality of RDP sessions.",
+        remediation="Configure crypt_level=high in /etc/xrdp/xrdp.ini.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["remote-desktop", "rdp", "xrdp"],
+        confidence_score=0.9,
+        source_stages=["gui_security"],
+    ),
+    KnowledgeRule(
+        rule_id="GUI-009",
+        title_patterns=["Firefox security bypasses are allowed in policy"],
+        explanation="Managed Firefox policy permits users to disable standard browser security controls.",
+        security_impact="Medium - Expands host vulnerability to malicious downloads or site certificate spoofing.",
+        remediation="Configure DisableSecurityBypasses=true in managed policies.json.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["browser", "firefox", "policies"],
+        confidence_score=0.9,
+        source_stages=["gui_security"],
+    ),
+    KnowledgeRule(
+        rule_id="GUI-010",
+        title_patterns=["pkexec binary is not owned by root"],
+        explanation="The pkexec utility is owned by a non-root user.",
+        security_impact="Critical - Completely breaks privilege verification boundaries for local GUI tasks.",
+        remediation="Run 'chown root /usr/bin/pkexec'.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["polkit", "privilege-escalation", "vulnerability"],
+        confidence_score=0.95,
+        source_stages=["gui_security"],
+    ),
+    KnowledgeRule(
+        rule_id="GUI-011",
+        title_patterns=["Polkit rule allows passwordless privilege escalation in"],
+        explanation="A Polkit rule overrides permission checking to grant YES without password authorization.",
+        security_impact="High - Local unauthenticated users can perform restricted administrative operations.",
+        remediation="Modify rule in rules.d to require authentication validation.",
+        cis_control="CIS Control 4: Secure Configuration",
+        tags=["polkit", "privilege-escalation", "misconfiguration"],
+        confidence_score=0.9,
+        source_stages=["gui_security"],
+    ),
+]
+
+# ------------------------------------------------------------------
+#  Monitoring Security rules
+# ------------------------------------------------------------------
+
+MONITORING_RULES = [
+    KnowledgeRule(
+        rule_id="MON-001",
+        title_patterns=["auditd auditing daemon is not running"],
+        explanation="The system audit daemon auditd is inactive.",
+        security_impact="High - Prevents kernel auditing of system calls, process spawning, or files changes.",
+        remediation="Enable and start auditd: 'systemctl enable --now auditd'.",
+        cis_control="CIS Control 8: Audit Log Management",
+        tags=["auditing", "auditd", "daemon"],
+        confidence_score=0.9,
+        source_stages=["monitoring_security"],
+    ),
+    KnowledgeRule(
+        rule_id="MON-002",
+        title_patterns=["Audit rules do not track process execution (execve)"],
+        explanation="The audit rules configured on the host do not monitor the execve system call.",
+        security_impact="Medium - Commands run by users or attackers cannot be tracked in audit logs.",
+        remediation="Configure audit rules to log execve calls in /etc/audit/rules.d/audit.rules.",
+        cis_control="CIS Control 8: Audit Log Management",
+        tags=["auditing", "auditd", "rules"],
+        confidence_score=0.85,
+        source_stages=["monitoring_security"],
+    ),
+    KnowledgeRule(
+        rule_id="MON-003",
+        title_patterns=["Systemd journald storage is not persistent"],
+        explanation="journald storage is volatile or auto rather than persistent.",
+        security_impact="Medium - Graphical and service logs are lost upon reboot, disrupting incident response forensics.",
+        remediation="Configure Storage=persistent in /etc/systemd/journald.conf.",
+        cis_control="CIS Control 8: Audit Log Management",
+        tags=["logging", "journald"],
+        confidence_score=0.9,
+        source_stages=["monitoring_security"],
+    ),
+    KnowledgeRule(
+        rule_id="MON-004",
+        title_patterns=["Syslog remote log forwarding is not configured"],
+        explanation="Syslog does not forward log messages to a centralized SIEM or remote server.",
+        security_impact="Medium - Attackers gaining administrative access can wipe local logs to hide indicators of compromise.",
+        remediation="Add forwarding target (e.g. *.* @@siem-server:514) in /etc/rsyslog.conf.",
+        cis_control="CIS Control 8: Audit Log Management",
+        tags=["logging", "syslog", "forwarding"],
+        confidence_score=0.9,
+        source_stages=["monitoring_security"],
+    ),
+    KnowledgeRule(
+        rule_id="MON-005",
+        title_patterns=["Logrotate compression is disabled"],
+        explanation="Global log rotation archives are not compressed.",
+        security_impact="Low - Uncompressed logs increase disk consumption, exposing the host to denial of service from disk exhaustion.",
+        remediation="Enable 'compress' in /etc/logrotate.conf.",
+        cis_control="CIS Control 8: Audit Log Management",
+        tags=["logging", "logrotate"],
+        confidence_score=0.9,
+        source_stages=["monitoring_security"],
+    ),
+    KnowledgeRule(
+        rule_id="MON-006",
+        title_patterns=["System time synchronization is inactive"],
+        explanation="No active NTP/Chrony or systemd time synchronization is active.",
+        security_impact="Medium - Clock drift breaks cryptographical tokens and renders event correlation across logs impossible.",
+        remediation="Start and enable timesyncd or Chrony: 'systemctl enable --now systemd-timesyncd'.",
+        cis_control="CIS Control 8: Audit Log Management",
+        tags=["time", "ntp", "chrony"],
+        confidence_score=0.9,
+        source_stages=["monitoring_security"],
+    ),
+    KnowledgeRule(
+        rule_id="MON-007",
+        title_patterns=["fail2ban brute-force protection is not running"],
+        explanation="The fail2ban utility is disabled or inactive.",
+        security_impact="Medium - Bypasses automated blocking/jail protections on repeated authentication failure events.",
+        remediation="Start fail2ban service: 'systemctl enable --now fail2ban'.",
+        cis_control="CIS Control 8: Audit Log Management",
+        tags=["monitoring", "fail2ban"],
+        confidence_score=0.9,
+        source_stages=["monitoring_security"],
+    ),
+    KnowledgeRule(
+        rule_id="MON-008",
+        title_patterns=["No active Host Intrusion Detection System (HIDS) resolved"],
+        explanation="No active OSSEC, Wazuh or Tripwire agents found running.",
+        security_impact="Medium - Compromise indicators, host-based files modification, or anomalous activity are not reported centrally.",
+        remediation="Install and enroll host to a HIDS agent.",
+        cis_control="CIS Control 8: Audit Log Management",
+        tags=["monitoring", "hids", "wazuh"],
+        confidence_score=0.85,
+        source_stages=["monitoring_security"],
+    ),
+]
+
+# ------------------------------------------------------------------
+#  Cryptographic rules
+# ------------------------------------------------------------------
+
+CRYPTO_RULES = [
+    KnowledgeRule(
+        rule_id="CRYPT-001",
+        title_patterns=["SSL/TLS private keys have insecure permissions"],
+        explanation="SSL/TLS private key files under /etc/ssl/private have loose file permissions.",
+        security_impact="High - Local unprivileged users can read private key parameters to decrypt TLS sessions or impersonate the host.",
+        remediation="Run 'chmod 600 /etc/ssl/private/*' or set ownership to root.",
+        cis_control="CIS Control 3: Data Protection",
+        tags=["crypto", "tls", "permissions"],
+        confidence_score=0.95,
+        source_stages=["crypto_security"],
+    ),
+    KnowledgeRule(
+        rule_id="CRYPT-002",
+        title_patterns=["OpenSSL configured with legacy TLS/SSL protocol support"],
+        explanation="System OpenSSL configuration permits deprecated TLS 1.0/1.1 or SSLv3 protocols.",
+        security_impact="Medium - Exposes client/server sessions to cryptographic downgrade attacks (e.g. POODLE).",
+        remediation="Configure 'MinProtocol = TLSv1.2' in /etc/ssl/openssl.cnf.",
+        cis_control="CIS Control 3: Data Protection",
+        tags=["crypto", "tls", "openssl"],
+        confidence_score=0.9,
+        source_stages=["crypto_security"],
+    ),
+    KnowledgeRule(
+        rule_id="CRYPT-003",
+        title_patterns=["Insecure SSH Ciphers enabled"],
+        explanation="The SSH daemon supports insecure/legacy ciphers (CBC, 3DES, or RC4).",
+        security_impact="High - Enables active network session hijacking or man-in-the-middle decryption.",
+        remediation="Restrict Ciphers in sshd_config to AEAD/CTR ciphers.",
+        cis_control="CIS Control 3: Data Protection",
+        tags=["crypto", "ssh", "ciphers"],
+        confidence_score=0.95,
+        source_stages=["crypto_security"],
+    ),
+    KnowledgeRule(
+        rule_id="CRYPT-004",
+        title_patterns=["Insecure SSH MAC algorithms enabled"],
+        explanation="The SSH daemon supports insecure hash message authentication codes (MD5 or SHA-1).",
+        security_impact="Medium - Cryptographical integrity check hashing is weak and susceptible to collisions.",
+        remediation="Configure secure MACs (hmac-sha2-256/512) in sshd_config.",
+        cis_control="CIS Control 3: Data Protection",
+        tags=["crypto", "ssh", "macs"],
+        confidence_score=0.95,
+        source_stages=["crypto_security"],
+    ),
+    KnowledgeRule(
+        rule_id="CRYPT-005",
+        title_patterns=["Kernel FIPS mode is disabled"],
+        explanation="System kernel cryptographic modules do not enforce FIPS-140 compliance.",
+        security_impact="Info - The host does not mandate FIPS validation constraints on algorithms.",
+        remediation="Enable FIPS mode in kernel boot parameters.",
+        cis_control="CIS Control 3: Data Protection",
+        tags=["crypto", "kernel", "fips"],
+        confidence_score=0.85,
+        source_stages=["crypto_security"],
+    ),
+    KnowledgeRule(
+        rule_id="CRYPT-006",
+        title_patterns=["Low available kernel entropy:"],
+        explanation="The available system random entropy pool count is critically low (< 1000).",
+        security_impact="Medium - Cryptographic operations (key exchange, secret generation) can block or generate predictable keys.",
+        remediation="Install haveged or enable hypervisor entropy forwarding.",
+        cis_control="CIS Control 3: Data Protection",
+        tags=["crypto", "entropy"],
+        confidence_score=0.9,
+        source_stages=["crypto_security"],
+    ),
+]
+
+# ------------------------------------------------------------------
+#  Container security rules
+# ------------------------------------------------------------------
+
+CONTAINER_RULES = [
+    KnowledgeRule(
+        rule_id="CONT-001",
+        title_patterns=["Docker user namespace remapping is disabled"],
+        explanation="Docker user namespace remapping is disabled in the daemon configuration.",
+        security_impact="High - Running containers as root mapping directly to the host's root account, leaving the host vulnerable to privilege escalation via container escape.",
+        remediation="Configure 'userns-remap' in /etc/docker/daemon.json.",
+        cis_control="CIS Control 18: Penetration Testing",
+        tags=["container", "docker", "namespaces"],
+        confidence_score=0.9,
+        source_stages=["container_security"],
+    ),
+    KnowledgeRule(
+        rule_id="CONT-002",
+        title_patterns=["Kubelet anonymous authentication is enabled"],
+        explanation="Kubelet anonymous authentication is enabled in the configuration options.",
+        security_impact="High - Unauthenticated network clients can inspect node info or pod configurations via Kubelet APIs.",
+        remediation="Set 'anonymous: { enabled: false }' in Kubelet's config.yaml.",
+        cis_control="CIS Control 18: Penetration Testing",
+        tags=["container", "kubernetes", "kubelet"],
+        confidence_score=0.9,
+        source_stages=["container_security"],
+    ),
+    KnowledgeRule(
+        rule_id="CONT-003",
+        title_patterns=["No active Linux Security Module (LSM) resolved"],
+        explanation="Neither AppArmor nor SELinux is active on this host.",
+        security_impact="High - Containers have no Linux Security Module profiles protecting the kernel boundaries, enabling easy escapes.",
+        remediation="Enable AppArmor or SELinux in system bootloader configurations.",
+        cis_control="CIS Control 18: Penetration Testing",
+        tags=["container", "lsm", "apparmor", "selinux"],
+        confidence_score=0.9,
+        source_stages=["container_security"],
+    ),
+    KnowledgeRule(
+        rule_id="CONT-004",
+        title_patterns=["Kernel lacks seccomp system call filtering support"],
+        explanation="Seccomp filtering is not active or supported in this kernel config.",
+        security_impact="Medium - Container runtimes cannot filter kernel system calls, allowing runtimes to execute dangerous system APIs.",
+        remediation="Recompile kernel with CONFIG_SECCOMP enabled.",
+        cis_control="CIS Control 18: Penetration Testing",
+        tags=["container", "seccomp"],
+        confidence_score=0.85,
+        source_stages=["container_security"],
+    ),
+    KnowledgeRule(
+        rule_id="CONT-005",
+        title_patterns=["Virtualization hypervisor modules active:"],
+        explanation="Virtualization host kernel drivers (KVM/VirtualBox) are active on the host.",
+        security_impact="Info - Active hypervisors require security isolation and regular security patch cycles.",
+        remediation="Audit active virtual machines and remove unused virtualization modules.",
+        cis_control="CIS Control 18: Penetration Testing",
+        tags=["virtualization", "hypervisor"],
+        confidence_score=0.9,
+        source_stages=["container_security"],
+    ),
+]
 
 ALL_RULES: list[KnowledgeRule] = (
     PRIVILEGE_ESCALATION_RULES
@@ -997,15 +2540,23 @@ ALL_RULES: list[KnowledgeRule] = (
     + SSH_RULES
     + DOCKER_RULES
     + KERNEL_RULES
+    + KERNEL_HARDENING_RULES
     + WRITABLE_RULES
     + SECRETS_RULES
     + AUTH_RULES
+    + AUTH_SECURITY_RULES
     + PROCESS_RULES
     + PACKAGE_RULES
     + SERVICE_RULES
     + CRON_RULES
     + SUSPICIOUS_BINARY_RULES
     + FILESYSTEM_RULES
+    + NETWORK_SECURITY_RULES
+    + BOOT_SECURITY_RULES
+    + GUI_SECURITY_RULES
+    + MONITORING_RULES
+    + CRYPTO_RULES
+    + CONTAINER_RULES
 )
 
 

@@ -198,6 +198,14 @@ class TestAllRules(unittest.TestCase):
             "CRON-",
             "BIN-",
             "FS-",
+            "AUTHSEC-",
+            "KH-",
+            "NET-",
+            "BOOT-",
+            "GUI-",
+            "MON-",
+            "CRYPT-",
+            "CONT-",
         }
         for rule in ALL_RULES:
             with self.subTest(rule_id=rule.rule_id):

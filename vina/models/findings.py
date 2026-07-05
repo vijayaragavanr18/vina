@@ -53,6 +53,8 @@ class FindingCategory(StrEnum):
     HISTORICAL_URL = "historical_url"
     VULNERABILITY = "vulnerability"
     MISCONFIGURATION = "misconfiguration"
+    SECURITY_CONTROL = "security_control"
+    KERNEL_MODULE = "kernel_module"
     INFORMATION = "information"
     PARAMETER = "parameter"
     OTHER = "other"

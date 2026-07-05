@@ -298,6 +298,16 @@ class OsPipelineRefactorTests(unittest.TestCase):
             "capabilities",
             "sudo",
             "privilege_escalation",
+            "auth_security",
+            "kernel_hardening",
+            "packages_security",
+            "network_security",
+            "boot_security",
+            "gui_security",
+            "storage_security",
+            "monitoring_security",
+            "crypto_security",
+            "container_security",
         }
         self.assertEqual(set(_STAGE_DEPS.keys()), expected_stages)
 

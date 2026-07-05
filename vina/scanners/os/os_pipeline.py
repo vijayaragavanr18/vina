@@ -34,20 +34,30 @@ from ...plugins.hooks import HookPoint
 from ...plugins.registry import get_registry
 from ...reports import generate_reports
 from ..recon import ReconModule, ReconResult
+from .auth_security import AuthSecurityModule, AuthSecurityResult
+from .boot_security import BootSecurityModule, BootSecurityResult
 from .capabilities import CapabilitiesModule, CapabilitiesResult
+from .container_security import ContainerSecurityModule, ContainerSecurityResult
 from .cron import CronModule, CronResult
+from .crypto_security import CryptoSecurityModule, CryptoSecurityResult
 from .docker import DockerModule, DockerResult
 from .environment import EnvironmentModule, EnvironmentResult
 from .filesystem import FilesystemModule, FilesystemResult
+from .gui_security import GuiSecurityModule, GuiSecurityResult
 from .kernel import KernelModule, KernelResult
+from .kernel_hardening import KernelHardeningModule, KernelHardeningResult
 from .logs import LogsModule, LogsResult
+from .monitoring_security import MonitoringSecurityModule, MonitoringSecurityResult
 from .network import NetworkModule, NetworkResult
+from .network_security import NetworkSecurityModule, NetworkSecurityResult
 from .packages import PackagesModule, PackagesResult
+from .packages_security import PackagesSecurityModule, PackagesSecurityResult
 from .privilege_escalation import PrivilegeEscalationModule, PrivilegeEscalationResult
 from .processes import ProcessesModule, ProcessesResult
 from .secrets import SecretsModule, SecretsResult
 from .services import ServicesModule, ServicesResult
 from .ssh import SshModule, SshResult
+from .storage_security import StorageSecurityModule, StorageSecurityResult
 from .sudo import SudoModule, SudoResult
 from .system_info import SystemInfoModule, SystemInfoResult
 from .systemd import SystemdModule, SystemdResult
@@ -56,6 +66,7 @@ from .users import UsersModule, UsersResult
 # Tools checked before the OS pipeline runs.
 _OS_TOOLS: list[str] = [
     "getcap",
+    "capsh",
     "ss",
     "ip",
     "systemctl",
@@ -74,6 +85,10 @@ _OS_TOOLS: list[str] = [
     "env",
     "lastb",
     "last",
+    "who",
+    "w",
+    "echo",
+    "id",
 ]
 
 # Dependency graph. All stages depend on host_recon for target context
@@ -83,8 +98,10 @@ _STAGE_DEPS: dict[str, list[str]] = {
     "system_info": ["host_recon"],
     "ssh": ["host_recon"],
     "kernel": ["host_recon"],
+    "kernel_hardening": ["host_recon"],
     "environment": ["host_recon"],
     "packages": ["host_recon"],
+    "packages_security": ["host_recon"],
     "services": ["host_recon"],
     "users": ["host_recon"],
     "filesystem": ["host_recon"],
@@ -98,6 +115,14 @@ _STAGE_DEPS: dict[str, list[str]] = {
     "capabilities": ["host_recon"],
     "sudo": ["host_recon"],
     "privilege_escalation": ["host_recon"],
+    "auth_security": ["host_recon"],
+    "network_security": ["host_recon"],
+    "boot_security": ["host_recon"],
+    "gui_security": ["host_recon"],
+    "storage_security": ["host_recon"],
+    "monitoring_security": ["host_recon"],
+    "crypto_security": ["host_recon"],
+    "container_security": ["host_recon"],
 }
 
 
@@ -251,6 +276,12 @@ class OSPipeline:
             _results["kernel"] = res
             return self._record("kernel", res, len(res.loaded_modules))
 
+        async def _stage_kernel_hardening() -> StageResult:
+            mod = KernelHardeningModule(self.config, self.context)
+            res: KernelHardeningResult = await mod.run(target_input)
+            _results["kernel_hardening"] = res
+            return self._record("kernel_hardening", res, len(res.findings))
+
         async def _stage_environment() -> StageResult:
             mod = EnvironmentModule(self.config, self.context)
             res: EnvironmentResult = await mod.run(target_input)
@@ -281,12 +312,67 @@ class OSPipeline:
             _results["secrets"] = res
             return self._record("secrets", res, res.total_count)
 
+        async def _stage_auth_security() -> StageResult:
+            mod = AuthSecurityModule(self.config, self.context)
+            res: AuthSecurityResult = await mod.run(target_input)
+            _results["auth_security"] = res
+            return self._record("auth_security", res, len(res.findings))
+
+        async def _stage_packages_security() -> StageResult:
+            mod = PackagesSecurityModule(self.config, self.context)
+            res: PackagesSecurityResult = await mod.run(target_input)
+            _results["packages_security"] = res
+            return self._record("packages_security", res, len(res.findings))
+
+        async def _stage_network_security() -> StageResult:
+            mod = NetworkSecurityModule(self.config, self.context)
+            res: NetworkSecurityResult = await mod.run(target_input)
+            _results["network_security"] = res
+            return self._record("network_security", res, len(res.findings))
+
+        async def _stage_boot_security() -> StageResult:
+            mod = BootSecurityModule(self.config, self.context)
+            res: BootSecurityResult = await mod.run(target_input)
+            _results["boot_security"] = res
+            return self._record("boot_security", res, len(res.findings))
+
+        async def _stage_gui_security() -> StageResult:
+            mod = GuiSecurityModule(self.config, self.context)
+            res: GuiSecurityResult = await mod.run(target_input)
+            _results["gui_security"] = res
+            return self._record("gui_security", res, len(res.findings))
+
+        async def _stage_storage_security() -> StageResult:
+            mod = StorageSecurityModule(self.config, self.context)
+            res: StorageSecurityResult = await mod.run(target_input)
+            _results["storage_security"] = res
+            return self._record("storage_security", res, len(res.findings))
+
+        async def _stage_monitoring_security() -> StageResult:
+            mod = MonitoringSecurityModule(self.config, self.context)
+            res: MonitoringSecurityResult = await mod.run(target_input)
+            _results["monitoring_security"] = res
+            return self._record("monitoring_security", res, len(res.findings))
+
+        async def _stage_crypto_security() -> StageResult:
+            mod = CryptoSecurityModule(self.config, self.context)
+            res: CryptoSecurityResult = await mod.run(target_input)
+            _results["crypto_security"] = res
+            return self._record("crypto_security", res, len(res.findings))
+
+        async def _stage_container_security() -> StageResult:
+            mod = ContainerSecurityModule(self.config, self.context)
+            res: ContainerSecurityResult = await mod.run(target_input)
+            _results["container_security"] = res
+            return self._record("container_security", res, len(res.findings))
+
         # Build stage definitions ------------------------------------------
         stages = [
             StageDef("host_recon", _STAGE_DEPS["host_recon"], _stage_host_recon, RetryConfig()),
             StageDef("system_info", _STAGE_DEPS["system_info"], _stage_system_info, RetryConfig()),
             StageDef("ssh", _STAGE_DEPS["ssh"], _stage_ssh, RetryConfig()),
             StageDef("kernel", _STAGE_DEPS["kernel"], _stage_kernel, RetryConfig()),
+            StageDef("kernel_hardening", _STAGE_DEPS["kernel_hardening"], _stage_kernel_hardening, RetryConfig()),
             StageDef("environment", _STAGE_DEPS["environment"], _stage_environment, RetryConfig()),
             StageDef("packages", _STAGE_DEPS["packages"], _stage_packages, RetryConfig()),
             StageDef("services", _STAGE_DEPS["services"], _stage_services, RetryConfig()),
@@ -304,6 +390,15 @@ class OSPipeline:
             StageDef(
                 "privilege_escalation", _STAGE_DEPS["privilege_escalation"], _stage_privilege_escalation, RetryConfig()
             ),
+            StageDef("auth_security", _STAGE_DEPS["auth_security"], _stage_auth_security, RetryConfig()),
+            StageDef("packages_security", _STAGE_DEPS["packages_security"], _stage_packages_security, RetryConfig()),
+            StageDef("network_security", _STAGE_DEPS["network_security"], _stage_network_security, RetryConfig()),
+            StageDef("boot_security", _STAGE_DEPS["boot_security"], _stage_boot_security, RetryConfig()),
+            StageDef("gui_security", _STAGE_DEPS["gui_security"], _stage_gui_security, RetryConfig()),
+            StageDef("storage_security", _STAGE_DEPS["storage_security"], _stage_storage_security, RetryConfig()),
+            StageDef("monitoring_security", _STAGE_DEPS["monitoring_security"], _stage_monitoring_security, RetryConfig()),
+            StageDef("crypto_security", _STAGE_DEPS["crypto_security"], _stage_crypto_security, RetryConfig()),
+            StageDef("container_security", _STAGE_DEPS["container_security"], _stage_container_security, RetryConfig()),
         ]
 
         scheduler = PipelineScheduler(max_parallel=self._MAX_PARALLEL)
@@ -316,6 +411,7 @@ class OSPipeline:
             "system_info",
             "ssh",
             "kernel",
+            "kernel_hardening",
             "environment",
             "packages",
             "services",
@@ -331,6 +427,15 @@ class OSPipeline:
             "capabilities",
             "sudo",
             "privilege_escalation",
+            "auth_security",
+            "packages_security",
+            "network_security",
+            "boot_security",
+            "gui_security",
+            "storage_security",
+            "monitoring_security",
+            "crypto_security",
+            "container_security",
         ]
         for key in result_keys:
             res = _results.get(key)
