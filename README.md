@@ -111,7 +111,7 @@ python -m pytest tests/
 
 ```bash
 # From source (recommended during alpha)
-git clone https://github.com/anomalyco/vina.git
+git clone https://github.com/vijayaragavanr18/vina.git
 cd vina
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
