@@ -64,11 +64,7 @@ class NmapModule:
         self.config = config
         self.context = context
 
-    async def run(
-        self,
-        open_ports: list[str],
-        target: TargetInput,
-    ) -> NmapResult:
+    async def run(self, open_ports: list[str], target: TargetInput) -> NmapResult:
         """Execute Nmap against open ports and return detected services.
 
         Parameters
@@ -95,9 +91,7 @@ class NmapModule:
         else:
             args = self._build_nmap_args(host_ports)
             command_result = await self.context.runner.run(
-                executable,
-                args,
-                timeout_seconds=self.context.timeout_seconds,
+                executable, args, timeout_seconds=self.context.timeout_seconds
             )
             hosts, services = self._parse_xml_output(command_result.stdout, warnings)
 
@@ -151,9 +145,7 @@ class NmapModule:
         return host_ports
 
     @staticmethod
-    def _build_nmap_args(
-        host_ports: dict[str, set[tuple[int, str]]],
-    ) -> list[str]:
+    def _build_nmap_args(host_ports: dict[str, set[tuple[int, str]]]) -> list[str]:
         """Build nmap arguments from parsed host-port mapping."""
         all_ports: set[int] = set()
         hostnames = list(host_ports.keys())
@@ -163,11 +155,7 @@ class NmapModule:
         port_str = ",".join(str(p) for p in sorted(all_ports))
         return ["-Pn", "-sV", "-oX", "-", "-p", port_str, *hostnames]
 
-    def _parse_xml_output(
-        self,
-        xml_text: str,
-        warnings: list[str],
-    ) -> tuple[list[NmapHost], list[NmapService]]:
+    def _parse_xml_output(self, xml_text: str, warnings: list[str]) -> tuple[list[NmapHost], list[NmapService]]:
         """Parse Nmap XML output into typed records."""
         hosts: list[NmapHost] = []
         services: list[NmapService] = []
@@ -225,11 +213,7 @@ class NmapModule:
         return None
 
     @staticmethod
-    def _parse_port(
-        hostname: str,
-        ip: str | None,
-        port_elem: ET.Element,
-    ) -> NmapService | None:
+    def _parse_port(hostname: str, ip: str | None, port_elem: ET.Element) -> NmapService | None:
         """Parse a single port element into an NmapService."""
         protocol = port_elem.get("protocol", "tcp")
         port_str = port_elem.get("portid")
@@ -269,9 +253,7 @@ class NmapModule:
         )
 
     @staticmethod
-    def _deduplicate(
-        services: list[NmapService],
-    ) -> list[NmapService]:
+    def _deduplicate(services: list[NmapService]) -> list[NmapService]:
         """Deduplicate services by (hostname, port, protocol)."""
         seen: set[tuple[str, int, str]] = set()
         deduped: list[NmapService] = []

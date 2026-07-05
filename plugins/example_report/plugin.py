@@ -23,10 +23,7 @@ class ExampleReportPlugin(Plugin):
         return [ExampleReportSection()]
 
     def register_hooks(self):
-        return {
-            HookPoint.BEFORE_REPORT: [self._before_report],
-            HookPoint.AFTER_REPORT: [self._after_report],
-        }
+        return {HookPoint.BEFORE_REPORT: [self._before_report], HookPoint.AFTER_REPORT: [self._after_report]}
 
     @staticmethod
     def _before_report(event) -> None:

@@ -298,10 +298,7 @@ class FeedCache:
         with self._lock:
             conn = sqlite3.connect(str(self._db_path), timeout=10)
             try:
-                conn.execute(
-                    "INSERT OR REPLACE INTO feed_metadata (key, value) VALUES (?, ?)",
-                    (key, value),
-                )
+                conn.execute("INSERT OR REPLACE INTO feed_metadata (key, value) VALUES (?, ?)", (key, value))
                 conn.commit()
             finally:
                 conn.close()
@@ -370,10 +367,7 @@ class FeedCache:
         with self._lock:
             conn = sqlite3.connect(str(self._db_path), timeout=10)
             try:
-                cur = conn.execute(
-                    "SELECT cve, data FROM feed_entries WHERE source=?",
-                    (source,),
-                )
+                cur = conn.execute("SELECT cve, data FROM feed_entries WHERE source=?", (source,))
                 results = []
                 for cve, data_str in cur:
                     entry = json.loads(data_str)
@@ -405,10 +399,7 @@ class FeedCache:
         with self._lock:
             conn = sqlite3.connect(str(self._db_path), timeout=10)
             try:
-                cur = conn.execute(
-                    "SELECT checksum FROM feed_entries WHERE cve=? AND source=?",
-                    (cve, source),
-                )
+                cur = conn.execute("SELECT checksum FROM feed_entries WHERE cve=? AND source=?", (cve, source))
                 existing = cur.fetchone()
                 is_new = existing is None
                 conn.execute(
@@ -710,14 +701,7 @@ def _parse_epss_csv(data: bytes) -> list[FeedEntry]:
         except (ValueError, IndexError):
             epss = 0.0
         entries.append(
-            FeedEntry(
-                cve=cve_id,
-                epss=epss,
-                severity="info",
-                source="epss",
-                confidence=0.9,
-                raw={"epss": epss},
-            )
+            FeedEntry(cve=cve_id, epss=epss, severity="info", source="epss", confidence=0.9, raw={"epss": epss})
         )
     return entries
 
@@ -925,9 +909,7 @@ class FeedUpdater:
                     _timeout=self._source.timeout,
                 )
                 body, new_etag, new_last_modified, status = _fetch_url(
-                    request,
-                    timeout=self._source.timeout,
-                    max_bytes=self._source.max_response_bytes,
+                    request, timeout=self._source.timeout, max_bytes=self._source.max_response_bytes
                 )
 
                 if status == 304:
@@ -999,24 +981,13 @@ class FeedUpdater:
 
             except (HTTPError, URLError, ConnectionError, OSError, ValueError) as exc:
                 last_error = exc
-                self._logger.warning(
-                    "Attempt %d/%d for '%s' failed: %s",
-                    attempt,
-                    MAX_RETRIES,
-                    self._source.name,
-                    exc,
-                )
+                self._logger.warning("Attempt %d/%d for '%s' failed: %s", attempt, MAX_RETRIES, self._source.name, exc)
                 continue
 
         # All retries exhausted
         result.status = UpdateStatus.FAILED
         result.error = str(last_error) if last_error else "max retries exceeded"
-        self._logger.error(
-            "Feed '%s' failed after %d attempts: %s",
-            self._source.name,
-            MAX_RETRIES,
-            result.error,
-        )
+        self._logger.error("Feed '%s' failed after %d attempts: %s", self._source.name, MAX_RETRIES, result.error)
         return result
 
 
@@ -1088,34 +1059,12 @@ class FeedScheduler:
 # ---------------------------------------------------------------------------
 
 _DEFAULT_SOURCES: list[FeedSource] = [
+    FeedSource(name="nvd", feed_type=FeedType.NVD, url=NVD_FEED_URL, cache_ttl_hours=6, rate_limit_sleep=6.0),
     FeedSource(
-        name="nvd",
-        feed_type=FeedType.NVD,
-        url=NVD_FEED_URL,
-        cache_ttl_hours=6,
-        rate_limit_sleep=6.0,
+        name="cisa_kev", feed_type=FeedType.CISA_KEV, url=CISA_KEV_URL, cache_ttl_hours=12, rate_limit_sleep=1.0
     ),
-    FeedSource(
-        name="cisa_kev",
-        feed_type=FeedType.CISA_KEV,
-        url=CISA_KEV_URL,
-        cache_ttl_hours=12,
-        rate_limit_sleep=1.0,
-    ),
-    FeedSource(
-        name="epss",
-        feed_type=FeedType.EPSS,
-        url=EPSS_URL,
-        cache_ttl_hours=24,
-        rate_limit_sleep=1.0,
-    ),
-    FeedSource(
-        name="osv",
-        feed_type=FeedType.OSV,
-        url=OSV_URL,
-        cache_ttl_hours=6,
-        rate_limit_sleep=1.0,
-    ),
+    FeedSource(name="epss", feed_type=FeedType.EPSS, url=EPSS_URL, cache_ttl_hours=24, rate_limit_sleep=1.0),
+    FeedSource(name="osv", feed_type=FeedType.OSV, url=OSV_URL, cache_ttl_hours=6, rate_limit_sleep=1.0),
     FeedSource(
         name="github_advisory",
         feed_type=FeedType.GITHUB_ADVISORY,

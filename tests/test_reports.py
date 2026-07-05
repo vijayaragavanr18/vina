@@ -39,18 +39,10 @@ def _finding(
 
 
 def _stage(
-    name: str = "subfinder",
-    status: StageState = StageState.SUCCESS,
-    record_count: int = 5,
-    duration: float = 1.0,
+    name: str = "subfinder", status: StageState = StageState.SUCCESS, record_count: int = 5, duration: float = 1.0
 ) -> StageResult:
     return StageResult(
-        name=name,
-        status=status,
-        command=f"tool-{name}",
-        exit_code=0,
-        duration=duration,
-        record_count=record_count,
+        name=name, status=status, command=f"tool-{name}", exit_code=0, duration=duration, record_count=record_count
     )
 
 
@@ -58,11 +50,7 @@ class MarkdownReportTests(unittest.TestCase):
     def test_empty_report(self) -> None:
         agg = FindingAggregator()
         md = render_markdown(
-            target="example.com",
-            findings=[],
-            stage_results=[],
-            stats=agg.statistics(),
-            aggregator=agg,
+            target="example.com", findings=[], stage_results=[], stats=agg.statistics(), aggregator=agg
         )
         self.assertIn("VINA Security Report", md)
         self.assertIn("example.com", md)
@@ -77,11 +65,7 @@ class MarkdownReportTests(unittest.TestCase):
         agg.add_findings(findings)
         stages = [_stage("subfinder", record_count=10)]
         md = render_markdown(
-            target="example.com",
-            findings=findings,
-            stage_results=stages,
-            stats=agg.statistics(),
-            aggregator=agg,
+            target="example.com", findings=findings, stage_results=stages, stats=agg.statistics(), aggregator=agg
         )
         self.assertIn("Critical Vuln", md)
         self.assertIn("Info Finding", md)
@@ -94,11 +78,7 @@ class MarkdownReportTests(unittest.TestCase):
         agg.add_finding(_finding(title="Critical", severity="critical"))
         agg.add_finding(_finding(title="Info", severity="info"))
         md = render_markdown(
-            target="t.com",
-            findings=agg.findings,
-            stage_results=[_stage()],
-            stats=agg.statistics(),
-            aggregator=agg,
+            target="t.com", findings=agg.findings, stage_results=[_stage()], stats=agg.statistics(), aggregator=agg
         )
         self.assertIn("Critical (1)", md)
         self.assertIn("Info (1)", md)
@@ -107,11 +87,7 @@ class MarkdownReportTests(unittest.TestCase):
         agg = FindingAggregator()
         agg.add_finding(_finding(title="Test", severity="info"))
         md = render_markdown(
-            target="t.com",
-            findings=agg.findings,
-            stage_results=[_stage()],
-            stats=agg.statistics(),
-            aggregator=agg,
+            target="t.com", findings=agg.findings, stage_results=[_stage()], stats=agg.statistics(), aggregator=agg
         )
         self.assertIn("No specific recommendations", md)
 
@@ -119,13 +95,7 @@ class MarkdownReportTests(unittest.TestCase):
 class HtmlReportTests(unittest.TestCase):
     def test_empty_report(self) -> None:
         agg = FindingAggregator()
-        html = render_html(
-            target="example.com",
-            findings=[],
-            stage_results=[],
-            stats=agg.statistics(),
-            aggregator=agg,
-        )
+        html = render_html(target="example.com", findings=[], stage_results=[], stats=agg.statistics(), aggregator=agg)
         self.assertIn("VINA Security Report", html)
         self.assertIn("example.com", html)
         self.assertIn("No findings", html)
@@ -151,11 +121,7 @@ class HtmlReportTests(unittest.TestCase):
         agg.add_finding(_finding(title="Critical", severity="critical"))
         agg.add_finding(_finding(title="Info", severity="info"))
         html = render_html(
-            target="t.com",
-            findings=agg.findings,
-            stage_results=[_stage()],
-            stats=agg.statistics(),
-            aggregator=agg,
+            target="t.com", findings=agg.findings, stage_results=[_stage()], stats=agg.statistics(), aggregator=agg
         )
         # Should include severity badge colors
         self.assertIn("#e11d48", html)  # critical red
@@ -163,42 +129,21 @@ class HtmlReportTests(unittest.TestCase):
 
     def test_search_filter_box(self) -> None:
         agg = FindingAggregator()
-        html = render_html(
-            target="t.com",
-            findings=[],
-            stage_results=[],
-            stats=agg.statistics(),
-            aggregator=agg,
-        )
+        html = render_html(target="t.com", findings=[], stage_results=[], stats=agg.statistics(), aggregator=agg)
         self.assertIn("searchBox", html)
         self.assertIn("sevFilter", html)
         self.assertIn("catFilter", html)
 
     def test_responsive_meta(self) -> None:
         agg = FindingAggregator()
-        html = render_html(
-            target="t.com",
-            findings=[],
-            stage_results=[],
-            stats=agg.statistics(),
-            aggregator=agg,
-        )
+        html = render_html(target="t.com", findings=[], stage_results=[], stats=agg.statistics(), aggregator=agg)
         self.assertIn("viewport", html)
         self.assertIn("@media", html)
 
     def test_stage_table(self) -> None:
         agg = FindingAggregator()
-        stages = [
-            _stage("subfinder", StageState.SUCCESS, 10, 1.5),
-            _stage("httpx", StageState.FAILED, 0, 0.5),
-        ]
-        html = render_html(
-            target="t.com",
-            findings=[],
-            stage_results=stages,
-            stats=agg.statistics(),
-            aggregator=agg,
-        )
+        stages = [_stage("subfinder", StageState.SUCCESS, 10, 1.5), _stage("httpx", StageState.FAILED, 0, 0.5)]
+        html = render_html(target="t.com", findings=[], stage_results=stages, stats=agg.statistics(), aggregator=agg)
         self.assertIn("subfinder", html)
         self.assertIn("httpx", html)
         self.assertIn("success", html)
@@ -211,11 +156,7 @@ class JsonReportTests(unittest.TestCase):
         agg.add_finding(_finding(title="Test Finding", severity="high"))
         stages = [_stage("nuclei")]
         data = generate_json_report(
-            target="example.com",
-            findings=agg.findings,
-            stage_results=stages,
-            stats=agg.statistics(),
-            aggregator=agg,
+            target="example.com", findings=agg.findings, stage_results=stages, stats=agg.statistics(), aggregator=agg
         )
         self.assertEqual(data["report_type"], "vina-json")
         self.assertEqual(data["target"], "example.com")
@@ -228,11 +169,7 @@ class JsonReportTests(unittest.TestCase):
         agg = FindingAggregator()
         agg.add_finding(_finding(title="Critical Vuln", severity="critical", category="vulnerability"))
         data = generate_json_report(
-            target="t.com",
-            findings=agg.findings,
-            stage_results=[_stage()],
-            stats=agg.statistics(),
-            aggregator=agg,
+            target="t.com", findings=agg.findings, stage_results=[_stage()], stats=agg.statistics(), aggregator=agg
         )
         f = data["findings"][0]
         self.assertEqual(f["title"], "Critical Vuln")

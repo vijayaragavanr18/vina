@@ -313,13 +313,7 @@ class TestVulnerabilityMatch:
         assert "exploit" not in f.tags
 
     def test_to_finding_with_exploit_tags(self):
-        v = Vulnerability(
-            cve="CVE-2024-0001",
-            severity="critical",
-            cvss_v3=9.5,
-            kev=True,
-            exploit_available=True,
-        )
+        v = Vulnerability(cve="CVE-2024-0001", severity="critical", cvss_v3=9.5, kev=True, exploit_available=True)
         c = SoftwareComponent(name="test", version="1.0")
         m = VulnerabilityMatch(vulnerability=v, component=c, matching_version="1.0", risk_score=90)
         f = m.to_finding()
@@ -551,9 +545,7 @@ class TestVulnerabilityEngine:
 class TestBuildSoftwareInventory:
     def test_from_kernel_finding(self):
         f = make_finding(
-            title="Kernel: 6.8.0-35-generic",
-            source_stage="kernel",
-            evidence="kernel=6.8.0-35-generic arch=amd64",
+            title="Kernel: 6.8.0-35-generic", source_stage="kernel", evidence="kernel=6.8.0-35-generic arch=amd64"
         )
         inventory = build_software_inventory([f])
         assert len(inventory) == 1
@@ -562,9 +554,7 @@ class TestBuildSoftwareInventory:
 
     def test_from_package_finding(self):
         f = make_finding(
-            title="Installed: openssh (8.4p1)",
-            source_stage="packages",
-            evidence="openssh=8.4p1 arch=amd64",
+            title="Installed: openssh (8.4p1)", source_stage="packages", evidence="openssh=8.4p1 arch=amd64"
         )
         inventory = build_software_inventory([f])
         assert len(inventory) == 1
@@ -572,43 +562,20 @@ class TestBuildSoftwareInventory:
         assert inventory[0].version == "8.4p1"
 
     def test_dedup_same_component(self):
-        f1 = make_finding(
-            title="Installed: openssh (8.4p1)",
-            source_stage="packages",
-            evidence="openssh=8.4p1",
-        )
-        f2 = make_finding(
-            title="Installed: openssh (8.4p1)",
-            source_stage="packages",
-            evidence="openssh=8.4p1",
-        )
+        f1 = make_finding(title="Installed: openssh (8.4p1)", source_stage="packages", evidence="openssh=8.4p1")
+        f2 = make_finding(title="Installed: openssh (8.4p1)", source_stage="packages", evidence="openssh=8.4p1")
         inventory = build_software_inventory([f1, f2])
         assert len(inventory) == 1
 
     def test_no_version_finding(self):
-        f = make_finding(
-            title="ASLR is enabled",
-            source_stage="kernel",
-        )
+        f = make_finding(title="ASLR is enabled", source_stage="kernel")
         inventory = build_software_inventory([f])
         assert len(inventory) == 0
 
     def test_multiple_components(self):
-        f1 = make_finding(
-            title="Kernel: 6.8.0-35-generic",
-            source_stage="kernel",
-            evidence="kernel=6.8.0-35-generic",
-        )
-        f2 = make_finding(
-            title="Installed: openssh (8.4p1)",
-            source_stage="packages",
-            evidence="openssh=8.4p1",
-        )
-        f3 = make_finding(
-            title="Installed: openssl (1.1.1f)",
-            source_stage="packages",
-            evidence="openssl=1.1.1f",
-        )
+        f1 = make_finding(title="Kernel: 6.8.0-35-generic", source_stage="kernel", evidence="kernel=6.8.0-35-generic")
+        f2 = make_finding(title="Installed: openssh (8.4p1)", source_stage="packages", evidence="openssh=8.4p1")
+        f3 = make_finding(title="Installed: openssl (1.1.1f)", source_stage="packages", evidence="openssl=1.1.1f")
         inventory = build_software_inventory([f1, f2, f3])
         names = {c.name for c in inventory}
         assert "linux-kernel" in names
@@ -658,9 +625,7 @@ class TestComputeVulnStats:
     def test_single_critical(self):
         v = Vulnerability(cve="CVE-1", severity="critical", cvss_v3=9.0, kev=True, exploit_available=True)
         m = VulnerabilityMatch(
-            vulnerability=v,
-            component=SoftwareComponent(name="test", version="1.0"),
-            risk_score=90.0,
+            vulnerability=v, component=SoftwareComponent(name="test", version="1.0"), risk_score=90.0
         )
         stats = compute_vuln_stats([m])
         assert stats.total_vulnerabilities == 1

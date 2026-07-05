@@ -129,7 +129,4 @@ class StorageSecurityModule:
         )
 
 
-__all__ = [
-    "StorageSecurityModule",
-    "StorageSecurityResult",
-]
+__all__ = ["StorageSecurityModule", "StorageSecurityResult"]

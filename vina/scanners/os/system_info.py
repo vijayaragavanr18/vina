@@ -57,10 +57,7 @@ class SystemInfoModule:
         self.config = config
         self.context = context
 
-    async def run(
-        self,
-        target: TargetInput,
-    ) -> SystemInfoResult:
+    async def run(self, target: TargetInput) -> SystemInfoResult:
         """Execute system commands and return collected metadata.
 
         Parameters
@@ -86,11 +83,7 @@ class SystemInfoModule:
 
         results: dict[str, CommandResult] = {}
         for name, executable, args in commands:
-            cr = await self.context.runner.run(
-                executable,
-                args,
-                timeout_seconds=self.context.timeout_seconds,
-            )
+            cr = await self.context.runner.run(executable, args, timeout_seconds=self.context.timeout_seconds)
             results[name] = cr
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {executable}")
@@ -106,21 +99,12 @@ class SystemInfoModule:
         info = self._parse_info(results, warnings)
 
         primary = results.get("hostname") or next(
-            (cr for cr in results.values() if cr.succeeded),
-            self._empty_command_result(),
+            (cr for cr in results.values() if cr.succeeded), self._empty_command_result()
         )
 
         if info is None:
             warnings.append("No system information could be collected")
-        elif not any(
-            (
-                info.hostname,
-                info.kernel_version,
-                info.architecture,
-                info.distribution,
-                info.current_user,
-            )
-        ):
+        elif not any((info.hostname, info.kernel_version, info.architecture, info.distribution, info.current_user)):
             warnings.append("System information is incomplete")
 
         result = SystemInfoResult(
@@ -134,11 +118,7 @@ class SystemInfoModule:
         self._print_summary(result)
         return result
 
-    def _parse_info(
-        self,
-        results: dict[str, CommandResult],
-        _warnings: list[str],
-    ) -> SystemInfo | None:
+    def _parse_info(self, results: dict[str, CommandResult], _warnings: list[str]) -> SystemInfo | None:
         """Parse collected command outputs into a SystemInfo instance."""
         hostname = self._stdout_or_none(results.get("hostname"))
         kernel_raw = self._stdout_or_none(results.get("kernel"))

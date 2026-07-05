@@ -58,31 +58,35 @@ class NamespacesModule:
                 selinux_active = True
 
         if not apparmor_active and not selinux_active:
-            findings.append(make_finding(
-                title="No active Linux Security Module (LSM) resolved",
-                description="Neither AppArmor nor SELinux is active on this host. Without an active LSM, containers lack kernel-level access control restriction enforcement, leaving them vulnerable to escape.",
-                severity="high",
-                category="vulnerability",
-                source_stage="container_security",
-                target=target_str,
-                evidence="AppArmor parameters set to disabled, sestatus reports disabled or command missing",
-                recommendation="Enable SELinux or AppArmor via grub configurations.",
-                confidence=0.9,
-            ))
+            findings.append(
+                make_finding(
+                    title="No active Linux Security Module (LSM) resolved",
+                    description="Neither AppArmor nor SELinux is active on this host. Without an active LSM, containers lack kernel-level access control restriction enforcement, leaving them vulnerable to escape.",
+                    severity="high",
+                    category="vulnerability",
+                    source_stage="container_security",
+                    target=target_str,
+                    evidence="AppArmor parameters set to disabled, sestatus reports disabled or command missing",
+                    recommendation="Enable SELinux or AppArmor via grub configurations.",
+                    confidence=0.9,
+                )
+            )
 
         cr_sec = await self.context.runner.run(cat_cmd, ["/proc/sys/kernel/seccomp/actions_avail"], timeout_seconds=5)
         if not cr_sec.succeeded:
-            findings.append(make_finding(
-                title="Kernel lacks seccomp system call filtering support",
-                description="The kernel does not expose seccomp interfaces under /proc/sys/kernel/seccomp/. Container runtimes cannot restrict dangerous system calls, heightening privilege escalation risks.",
-                severity="medium",
-                category="vulnerability",
-                source_stage="container_security",
-                target=target_str,
-                evidence="/proc/sys/kernel/seccomp/actions_avail not found or unreadable",
-                recommendation="Rebuild kernel with CONFIG_SECCOMP enabled.",
-                confidence=0.85,
-            ))
+            findings.append(
+                make_finding(
+                    title="Kernel lacks seccomp system call filtering support",
+                    description="The kernel does not expose seccomp interfaces under /proc/sys/kernel/seccomp/. Container runtimes cannot restrict dangerous system calls, heightening privilege escalation risks.",
+                    severity="medium",
+                    category="vulnerability",
+                    source_stage="container_security",
+                    target=target_str,
+                    evidence="/proc/sys/kernel/seccomp/actions_avail not found or unreadable",
+                    recommendation="Rebuild kernel with CONFIG_SECCOMP enabled.",
+                    confidence=0.85,
+                )
+            )
 
         primary = cr_aa or cr_se or cr_sec or self._empty_command_result()
 

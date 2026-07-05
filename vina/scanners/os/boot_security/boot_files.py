@@ -41,37 +41,51 @@ class BootFilesModule:
 
         find_cmd = self.config.tool_bin("find", "find")
 
-        cr_owners = await self.context.runner.run(find_cmd, ["/boot", "-maxdepth", "2", "!", "-user", "root", "-printf", "%p %u\\n"], timeout_seconds=10)
+        cr_owners = await self.context.runner.run(
+            find_cmd, ["/boot", "-maxdepth", "2", "!", "-user", "root", "-printf", "%p %u\\n"], timeout_seconds=10
+        )
         if cr_owners.succeeded and cr_owners.stdout.strip():
             non_root_files = cr_owners.stdout.strip().splitlines()
-            findings.append(make_finding(
-                title="Boot files not owned by root",
-                description="One or more files under /boot are not owned by the root user, which is a significant privilege exposure.",
-                severity="high",
-                category="permissions",
-                source_stage="boot_security",
-                target=target_str,
-                evidence="\n".join(non_root_files[:10]) + (f"\n... total {len(non_root_files)} files" if len(non_root_files) > 10 else ""),
-                recommendation="Run 'chown -R root:root /boot' to restore proper ownership.",
-                confidence=0.9,
-            ))
+            findings.append(
+                make_finding(
+                    title="Boot files not owned by root",
+                    description="One or more files under /boot are not owned by the root user, which is a significant privilege exposure.",
+                    severity="high",
+                    category="permissions",
+                    source_stage="boot_security",
+                    target=target_str,
+                    evidence="\n".join(non_root_files[:10])
+                    + (f"\n... total {len(non_root_files)} files" if len(non_root_files) > 10 else ""),
+                    recommendation="Run 'chown -R root:root /boot' to restore proper ownership.",
+                    confidence=0.9,
+                )
+            )
 
-        cr_writable = await self.context.runner.run(find_cmd, ["/boot", "-maxdepth", "2", "-perm", "-002", "-type", "f"], timeout_seconds=10)
+        cr_writable = await self.context.runner.run(
+            find_cmd, ["/boot", "-maxdepth", "2", "-perm", "-002", "-type", "f"], timeout_seconds=10
+        )
         if cr_writable.succeeded and cr_writable.stdout.strip():
             writable_files = cr_writable.stdout.strip().splitlines()
-            findings.append(make_finding(
-                title="World-writable files detected in /boot",
-                description="World-writable files were discovered in the boot directory. Any local user can overwrite them to manipulate boot configuration or execute payloads.",
-                severity="critical",
-                category="permissions",
-                source_stage="boot_security",
-                target=target_str,
-                evidence="\n".join(writable_files[:10]) + (f"\n... total {len(writable_files)} files" if len(writable_files) > 10 else ""),
-                recommendation="Remove world-write permissions from boot files: 'chmod o-w /boot/file'.",
-                confidence=0.95,
-            ))
+            findings.append(
+                make_finding(
+                    title="World-writable files detected in /boot",
+                    description="World-writable files were discovered in the boot directory. Any local user can overwrite them to manipulate boot configuration or execute payloads.",
+                    severity="critical",
+                    category="permissions",
+                    source_stage="boot_security",
+                    target=target_str,
+                    evidence="\n".join(writable_files[:10])
+                    + (f"\n... total {len(writable_files)} files" if len(writable_files) > 10 else ""),
+                    recommendation="Remove world-write permissions from boot files: 'chmod o-w /boot/file'.",
+                    confidence=0.95,
+                )
+            )
 
-        cr_initrd = await self.context.runner.run(find_cmd, ["/boot", "-maxdepth", "2", "-name", "initrd.img*", "-o", "-name", "initramfs*", "-printf", "%p %a\\n"], timeout_seconds=10)
+        cr_initrd = await self.context.runner.run(
+            find_cmd,
+            ["/boot", "-maxdepth", "2", "-name", "initrd.img*", "-o", "-name", "initramfs*", "-printf", "%p %a\\n"],
+            timeout_seconds=10,
+        )
         if cr_initrd.succeeded and cr_initrd.stdout.strip():
             initrd_lines = cr_initrd.stdout.strip().splitlines()
             overly_open = []
@@ -87,17 +101,19 @@ class BootFilesModule:
                             overly_open.append(f"{path} ({val})")
 
             if overly_open:
-                findings.append(make_finding(
-                    title="Initramfs image permissions are too permissive",
-                    description="Initramfs files contain system secrets, private keys, and config parameters. They should be protected with 600 permissions to prevent unprivileged local users from reading or extracting their contents.",
-                    severity="medium",
-                    category="permissions",
-                    source_stage="boot_security",
-                    target=target_str,
-                    evidence="\n".join(overly_open),
-                    recommendation="Set permissions on initramfs files to 600: chmod 600 /boot/initrd.img-*",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title="Initramfs image permissions are too permissive",
+                        description="Initramfs files contain system secrets, private keys, and config parameters. They should be protected with 600 permissions to prevent unprivileged local users from reading or extracting their contents.",
+                        severity="medium",
+                        category="permissions",
+                        source_stage="boot_security",
+                        target=target_str,
+                        evidence="\n".join(overly_open),
+                        recommendation="Set permissions on initramfs files to 600: chmod 600 /boot/initrd.img-*",
+                        confidence=0.9,
+                    )
+                )
 
         primary = cr_owners or cr_writable or self._empty_command_result()
 

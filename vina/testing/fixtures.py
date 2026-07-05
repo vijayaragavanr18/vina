@@ -82,11 +82,7 @@ class MockCommandRunner:
         self._default_result: Any | None = None
         self.executed_commands: list[tuple[str, tuple[str, ...]]] = []
 
-    def set_result(
-        self,
-        command: str,
-        result: Any,
-    ) -> None:
+    def set_result(self, command: str, result: Any) -> None:
         """Set the canned result for *command*."""
         self._results[command] = result
 
@@ -94,12 +90,7 @@ class MockCommandRunner:
         """Fallback result when no specific command is registered."""
         self._default_result = result
 
-    async def run(
-        self,
-        command: str,
-        args: tuple[str, ...] | None = None,
-        **_kwargs: Any,
-    ) -> Any:
+    async def run(self, command: str, args: tuple[str, ...] | None = None, **_kwargs: Any) -> Any:
         self.executed_commands.append((command, tuple(args or ())))
         if command in self._results:
             return self._results[command]
@@ -108,12 +99,7 @@ class MockCommandRunner:
         from ..core.runner import CommandResult
 
         return CommandResult(
-            command=command,
-            args=tuple(args or ()),
-            stdout="",
-            stderr="",
-            returncode=0,
-            duration_seconds=0.01,
+            command=command, args=tuple(args or ()), stdout="", stderr="", returncode=0, duration_seconds=0.01
         )
 
 
@@ -208,10 +194,7 @@ class MockFindingFactory:
 
     @staticmethod
     def vulnerable_package(
-        target: str = "localhost",
-        package: str = "openssl",
-        version: str = "1.1.1",
-        _cve: str = "CVE-2024-0001",
+        target: str = "localhost", package: str = "openssl", version: str = "1.1.1", _cve: str = "CVE-2024-0001"
     ) -> list[Finding]:
         return [
             make_mock_finding(

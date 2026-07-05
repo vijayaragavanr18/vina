@@ -53,11 +53,7 @@ class GauModule:
         self.config = config
         self.context = context
 
-    async def run(
-        self,
-        alive_hosts: list[str],
-        target: TargetInput,
-    ) -> GauResult:
+    async def run(self, alive_hosts: list[str], target: TargetInput) -> GauResult:
         """Execute GAU against each hostname and return historical URLs.
 
         Parameters
@@ -89,9 +85,7 @@ class GauModule:
                     break
 
                 cmd_result = await self.context.runner.run(
-                    executable,
-                    [hostname],
-                    timeout_seconds=self.context.timeout_seconds,
+                    executable, [hostname], timeout_seconds=self.context.timeout_seconds
                 )
                 last_result = cmd_result
 
@@ -131,11 +125,7 @@ class GauModule:
         self._print_summary(result)
         return result
 
-    def _parse_output(
-        self,
-        output: str,
-        warnings: list[str],
-    ) -> list[GauUrl]:
+    def _parse_output(self, output: str, warnings: list[str]) -> list[GauUrl]:
         """Parse GAU line-based output into typed records."""
         gau_urls: list[GauUrl] = []
 
@@ -150,12 +140,7 @@ class GauModule:
 
         return gau_urls
 
-    def _parse_url_line(
-        self,
-        line: str,
-        line_number: int,
-        warnings: list[str],
-    ) -> GauUrl | None:
+    def _parse_url_line(self, line: str, line_number: int, warnings: list[str]) -> GauUrl | None:
         """Parse a single URL line into a GauUrl."""
         candidate = line if "://" in line else f"//{line}"
         parsed = urlparse(candidate)
@@ -181,13 +166,7 @@ class GauModule:
             params = [name for name, _ in parse_qsl(query, keep_blank_values=True) if name]
 
         return GauUrl(
-            url=line,
-            host=host,
-            path=path,
-            query_string=query,
-            file_extension=ext,
-            parameter_names=params,
-            source="gau",
+            url=line, host=host, path=path, query_string=query, file_extension=ext, parameter_names=params, source="gau"
         )
 
     @staticmethod
@@ -304,8 +283,4 @@ class GauModule:
         )
 
 
-__all__ = [
-    "GauModule",
-    "GauResult",
-    "GauUrl",
-]
+__all__ = ["GauModule", "GauResult", "GauUrl"]

@@ -46,11 +46,7 @@ class MonitoringSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
         self.config = AppConfig()
         self.runner = AsyncMock()
         self.store = MagicMock()
-        self.context = ModuleContext(
-            runner=self.runner,
-            store=self.store,
-            timeout_seconds=10,
-        )
+        self.context = ModuleContext(runner=self.runner, store=self.store, timeout_seconds=10)
         self.target = TargetInput.from_raw("localhost")
 
     async def test_auditing_scanner(self) -> None:

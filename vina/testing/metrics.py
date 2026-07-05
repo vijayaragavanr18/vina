@@ -185,11 +185,7 @@ class MetricsCollector:
         return (sum(self._cpu_samples) / len(self._cpu_samples)) if self._cpu_samples else 0.0
 
 
-def compute_metrics(
-    expected_titles: list[str],
-    actual_titles: list[str],
-    true_negatives: int = 0,
-) -> BenchmarkMetrics:
+def compute_metrics(expected_titles: list[str], actual_titles: list[str], true_negatives: int = 0) -> BenchmarkMetrics:
     """Compute precision, recall, F1, FP, FN between expected and actual finding titles.
 
     Parameters
@@ -255,9 +251,4 @@ def compare_cves(expected_cves: list[str], actual_cves: list[str]) -> dict[str, 
     }
 
 
-__all__ = [
-    "BenchmarkMetrics",
-    "MetricsCollector",
-    "compare_cves",
-    "compute_metrics",
-]
+__all__ = ["BenchmarkMetrics", "MetricsCollector", "compare_cves", "compute_metrics"]

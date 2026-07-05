@@ -60,9 +60,7 @@ class ReconModule:
 
         executable = self.config.tool_bin("subfinder", "subfinder")
         command_result = await self.context.runner.run(
-            executable,
-            ["-d", domain, "-silent", "-json"],
-            timeout_seconds=self.context.timeout_seconds,
+            executable, ["-d", domain, "-silent", "-json"], timeout_seconds=self.context.timeout_seconds
         )
 
         records = self._parse_records(command_result.stdout, warnings)
@@ -138,14 +136,7 @@ class ReconModule:
 
             source_value = payload.get("source")
             source = str(source_value).strip() if isinstance(source_value, str) and source_value.strip() else None
-            records.append(
-                SubfinderRecord(
-                    host=host,
-                    source=source,
-                    raw=dict(payload),
-                    line_number=line_number,
-                )
-            )
+            records.append(SubfinderRecord(host=host, source=source, raw=dict(payload), line_number=line_number))
         return records
 
     @staticmethod

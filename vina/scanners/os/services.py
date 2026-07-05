@@ -52,10 +52,7 @@ class ServicesModule:
         self.config = config
         self.context = context
 
-    async def run(
-        self,
-        target: TargetInput,
-    ) -> ServicesResult:
+    async def run(self, target: TargetInput) -> ServicesResult:
         """Execute system commands and return discovered services.
 
         Parameters
@@ -78,20 +75,12 @@ class ServicesModule:
                 self.config.tool_bin("systemctl", "systemctl"),
                 ["list-unit-files", "--type=service", "--no-pager", "--no-legend"],
             ),
-            (
-                "service_status",
-                self.config.tool_bin("service", "service"),
-                ["--status-all"],
-            ),
+            ("service_status", self.config.tool_bin("service", "service"), ["--status-all"]),
         ]
 
         results: dict[str, CommandResult] = {}
         for name, executable, args in commands:
-            cr = await self.context.runner.run(
-                executable,
-                args,
-                timeout_seconds=self.context.timeout_seconds,
-            )
+            cr = await self.context.runner.run(executable, args, timeout_seconds=self.context.timeout_seconds)
             results[name] = cr
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {executable}")
@@ -132,11 +121,7 @@ class ServicesModule:
         self._print_summary(result)
         return result
 
-    def _parse_services(
-        self,
-        results: dict[str, CommandResult],
-        warnings: list[str],
-    ) -> list[ServiceInfo]:
+    def _parse_services(self, results: dict[str, CommandResult], warnings: list[str]) -> list[ServiceInfo]:
         """Parse command outputs into a deduplicated list of ServiceInfo."""
         units_result = results.get("systemctl_list_units")
         files_result = results.get("systemctl_list_files")

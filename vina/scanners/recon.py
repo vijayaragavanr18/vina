@@ -80,12 +80,7 @@ class ReconModule:
         result = ReconResult(target=target, assets=assets, command_results=list(command_results), warnings=warnings)
         self._save_subdomains(result)
         elapsed_seconds = time.perf_counter() - started_at
-        logger.info(
-            "Recon finished for %s in %.3fs (%d unique subdomains)",
-            domain,
-            elapsed_seconds,
-            len(assets),
-        )
+        logger.info("Recon finished for %s in %.3fs (%d unique subdomains)", domain, elapsed_seconds, len(assets))
         return result
 
     def _parse_assets(self, results: list[CommandResult]) -> list[Asset]:
@@ -102,9 +97,7 @@ class ReconModule:
         return assets
 
     def _collect_warnings(
-        self,
-        command_results: list[CommandResult],
-        gathered: list[CommandResult | BaseException],
+        self, command_results: list[CommandResult], gathered: list[CommandResult | BaseException]
     ) -> list[str]:
         warnings: list[str] = []
         for item in gathered:
@@ -118,9 +111,7 @@ class ReconModule:
         return warnings
 
     @staticmethod
-    def _normalize_command_results(
-        gathered: list[CommandResult | BaseException],
-    ) -> list[CommandResult]:
+    def _normalize_command_results(gathered: list[CommandResult | BaseException]) -> list[CommandResult]:
         command_results: list[CommandResult] = []
         for item in gathered:
             if isinstance(item, CommandResult):

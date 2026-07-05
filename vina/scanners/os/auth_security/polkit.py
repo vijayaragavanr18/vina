@@ -63,9 +63,7 @@ class PolkitModule:
 
         for d in _POLKIT_DIRS:
             cr = await self.context.runner.run(
-                self.config.tool_bin("ls", "ls"),
-                ["-la", d],
-                timeout_seconds=self.context.timeout_seconds,
+                self.config.tool_bin("ls", "ls"), ["-la", d], timeout_seconds=self.context.timeout_seconds
             )
             if cr.missing_executable:
                 warnings.append("Missing executable for polkit dir check")
@@ -87,9 +85,7 @@ class PolkitModule:
                 is_writable = len(parts[0]) >= 4 and parts[0][3] == "w" if len(parts[0]) >= 4 else False
 
                 content_cr = await self.context.runner.run(
-                    self.config.tool_bin("cat", "cat"),
-                    [fpath],
-                    timeout_seconds=self.context.timeout_seconds,
+                    self.config.tool_bin("cat", "cat"), [fpath], timeout_seconds=self.context.timeout_seconds
                 )
                 content = content_cr.stdout if content_cr.succeeded else ""
                 dangerous = self._find_dangerous_actions(content)
@@ -107,46 +103,52 @@ class PolkitModule:
 
         for rf in rule_files:
             if rf.is_writable:
-                findings.append(make_finding(
-                    title=f"Writable polkit rule file: {rf.path}",
-                    description=f"Polkit rule file {rf.path} is world-writable. "
-                    "Any user can modify authorization rules.",
-                    severity="high",
-                    category="misconfiguration",
-                    source_stage="auth_security",
-                    target=target_str,
-                    evidence=f"Writable: {rf.path}",
-                    recommendation=f"chmod 644 {rf.path} && chown root:root {rf.path}",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Writable polkit rule file: {rf.path}",
+                        description=f"Polkit rule file {rf.path} is world-writable. "
+                        "Any user can modify authorization rules.",
+                        severity="high",
+                        category="misconfiguration",
+                        source_stage="auth_security",
+                        target=target_str,
+                        evidence=f"Writable: {rf.path}",
+                        recommendation=f"chmod 644 {rf.path} && chown root:root {rf.path}",
+                        confidence=0.9,
+                    )
+                )
 
             for action in rf.dangerous_actions:
-                findings.append(make_finding(
-                    title=f"Dangerous polkit action: {action}",
-                    description=f"Polkit action '{action}' has permissive authorization in {rf.path}. "
-                    "This may allow unauthorized privilege escalation.",
-                    severity="high",
-                    category="misconfiguration",
-                    source_stage="auth_security",
-                    target=target_str,
-                    evidence=f"Action: {action} in {rf.path}",
-                    recommendation="Review polkit authorization rules. Use 'auth_admin' or 'auth_admin_keep' "
-                    "instead of 'yes' for sensitive actions.",
-                    confidence=0.8,
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Dangerous polkit action: {action}",
+                        description=f"Polkit action '{action}' has permissive authorization in {rf.path}. "
+                        "This may allow unauthorized privilege escalation.",
+                        severity="high",
+                        category="misconfiguration",
+                        source_stage="auth_security",
+                        target=target_str,
+                        evidence=f"Action: {action} in {rf.path}",
+                        recommendation="Review polkit authorization rules. Use 'auth_admin' or 'auth_admin_keep' "
+                        "instead of 'yes' for sensitive actions.",
+                        confidence=0.8,
+                    )
+                )
 
         if not rule_files:
-            findings.append(make_finding(
-                title="No polkit rule files found",
-                description="No polkit rule files were found in standard directories. "
-                "PolicyKit may not be installed or configured.",
-                severity="info",
-                category="information",
-                source_stage="auth_security",
-                target=target_str,
-                evidence="No polkit rules found",
-                confidence=0.3,
-            ))
+            findings.append(
+                make_finding(
+                    title="No polkit rule files found",
+                    description="No polkit rule files were found in standard directories. "
+                    "PolicyKit may not be installed or configured.",
+                    severity="info",
+                    category="information",
+                    source_stage="auth_security",
+                    target=target_str,
+                    evidence="No polkit rules found",
+                    confidence=0.3,
+                )
+            )
 
         primary = self._empty_command_result()
 
@@ -166,10 +168,8 @@ class PolkitModule:
         if not content:
             return dangerous
         import re
-        for m in re.finditer(
-            r'action_id\s*:\s*["\']([^"\']+)["\']',
-            content,
-        ):
+
+        for m in re.finditer(r'action_id\s*:\s*["\']([^"\']+)["\']', content):
             action = m.group(1)
             dangerous.append(action)
         return dangerous

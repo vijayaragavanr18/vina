@@ -58,10 +58,7 @@ class FilesystemModule:
         self.config = config
         self.context = context
 
-    async def run(
-        self,
-        target: TargetInput,
-    ) -> FilesystemResult:
+    async def run(self, target: TargetInput) -> FilesystemResult:
         """Execute system commands and return discovered filesystem entries.
 
         Parameters
@@ -74,16 +71,8 @@ class FilesystemModule:
         warnings: list[str] = []
 
         commands: list[tuple[str, str, list[str]]] = [
-            (
-                "mount",
-                self.config.tool_bin("mount", "mount"),
-                [],
-            ),
-            (
-                "df",
-                self.config.tool_bin("df", "df"),
-                ["-h"],
-            ),
+            ("mount", self.config.tool_bin("mount", "mount"), []),
+            ("df", self.config.tool_bin("df", "df"), ["-h"]),
             (
                 "find_writable",
                 self.config.tool_bin("find", "find"),
@@ -98,11 +87,7 @@ class FilesystemModule:
 
         results: dict[str, CommandResult] = {}
         for name, executable, args in commands:
-            cr = await self.context.runner.run(
-                executable,
-                args,
-                timeout_seconds=self.context.timeout_seconds,
-            )
+            cr = await self.context.runner.run(executable, args, timeout_seconds=self.context.timeout_seconds)
             results[name] = cr
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {executable}")
@@ -122,9 +107,7 @@ class FilesystemModule:
         if mount_points:
             stat_args = ["--format=%a %U %G %s %n", *mount_points]
             stat_cr = await self.context.runner.run(
-                self.config.tool_bin("stat", "stat"),
-                stat_args,
-                timeout_seconds=self.context.timeout_seconds,
+                self.config.tool_bin("stat", "stat"), stat_args, timeout_seconds=self.context.timeout_seconds
             )
             results["stat"] = stat_cr
             if stat_cr.missing_executable:
@@ -139,12 +122,7 @@ class FilesystemModule:
                 warnings.append(msg)
             stat_result = stat_cr
 
-        entries = self._build_entries(
-            results,
-            mount_entries,
-            stat_result,
-            warnings,
-        )
+        entries = self._build_entries(results, mount_entries, stat_result, warnings)
 
         if not entries:
             warnings.append("No filesystem entries could be discovered")
@@ -219,10 +197,7 @@ class FilesystemModule:
         return list(seen.values())
 
     @staticmethod
-    def _parse_mount(
-        results: dict[str, CommandResult],
-        warnings: list[str],
-    ) -> list[FilesystemEntry]:
+    def _parse_mount(results: dict[str, CommandResult], warnings: list[str]) -> list[FilesystemEntry]:
         """Parse ``mount`` output into FilesystemEntry objects.
 
         Format: device on mount_point type filesystem (options,...)
@@ -263,10 +238,7 @@ class FilesystemModule:
         return entries
 
     @staticmethod
-    def _parse_df(
-        stdout: str,
-        warnings: list[str],
-    ) -> list[FilesystemEntry]:
+    def _parse_df(stdout: str, warnings: list[str]) -> list[FilesystemEntry]:
         """Parse ``df -h`` output into FilesystemEntry objects.
 
         Format: Filesystem  Size  Used  Avail  Use%  Mounted on
@@ -298,10 +270,7 @@ class FilesystemModule:
         return entries
 
     @staticmethod
-    def _parse_stat(
-        stdout: str,
-        warnings: list[str],
-    ) -> list[FilesystemEntry]:
+    def _parse_stat(stdout: str, warnings: list[str]) -> list[FilesystemEntry]:
         """Parse ``stat --format='%a %U %G %s %n'`` output.
 
         Format: <octal_mode> <owner> <group> <size_bytes> <path>
@@ -343,11 +312,7 @@ class FilesystemModule:
         return entries
 
     @staticmethod
-    def _parse_find_output(
-        stdout: str,
-        source: str,
-        _warnings: list[str],
-    ) -> list[FilesystemEntry]:
+    def _parse_find_output(stdout: str, source: str, _warnings: list[str]) -> list[FilesystemEntry]:
         """Parse ``find`` output (one path per line) into entries."""
         entries: list[FilesystemEntry] = []
         for line in stdout.splitlines():

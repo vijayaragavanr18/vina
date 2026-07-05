@@ -53,17 +53,19 @@ class VirtualizationModule:
                 detected_hypervisors.append("VMware Virtualization Drivers")
 
         if detected_hypervisors:
-            findings.append(make_finding(
-                title=f"Virtualization hypervisor modules active: {', '.join(detected_hypervisors)}",
-                description="Hypervisor/Virtualization kernel drivers are active on the host. Ensure the virtual machines are monitored and hypervisor patches are up to date to prevent hypervisor escape.",
-                severity="info",
-                category="information",
-                source_stage="container_security",
-                target=target_str,
-                evidence=f"Loaded modules: {', '.join(detected_hypervisors)}",
-                recommendation="Audit active virtual machines. Unused virtualization modules should be disabled or blacklisted.",
-                confidence=0.9,
-            ))
+            findings.append(
+                make_finding(
+                    title=f"Virtualization hypervisor modules active: {', '.join(detected_hypervisors)}",
+                    description="Hypervisor/Virtualization kernel drivers are active on the host. Ensure the virtual machines are monitored and hypervisor patches are up to date to prevent hypervisor escape.",
+                    severity="info",
+                    category="information",
+                    source_stage="container_security",
+                    target=target_str,
+                    evidence=f"Loaded modules: {', '.join(detected_hypervisors)}",
+                    recommendation="Audit active virtual machines. Unused virtualization modules should be disabled or blacklisted.",
+                    confidence=0.9,
+                )
+            )
 
         primary = cr_mod or self._empty_command_result()
 

@@ -13,12 +13,7 @@ def _fake_stage(
     name: str, duration: float = 0.01, status: StageState = StageState.SUCCESS, record_count: int = 1
 ) -> StageResult:
     return StageResult(
-        name=name,
-        status=status,
-        command=f"tool-{name}",
-        exit_code=0,
-        duration=duration,
-        record_count=record_count,
+        name=name, status=status, command=f"tool-{name}", exit_code=0, duration=duration, record_count=record_count
     )
 
 
@@ -61,11 +56,7 @@ class PipelineSchedulerTests(unittest.IsolatedAsyncioTestCase):
             order.append("c")
             return _fake_stage("c")
 
-        stages = [
-            StageDef("a", [], a),
-            StageDef("b", ["a"], b),
-            StageDef("c", ["b"], c),
-        ]
+        stages = [StageDef("a", [], a), StageDef("b", ["a"], b), StageDef("c", ["b"], c)]
         await PipelineScheduler().run(stages)
         self.assertEqual(order, ["a", "b", "c"])
 
@@ -124,11 +115,7 @@ class PipelineSchedulerTests(unittest.IsolatedAsyncioTestCase):
             order.append("c")
             return _fake_stage("c")
 
-        stages = [
-            StageDef("a", [], a),
-            StageDef("b", ["a"], b),
-            StageDef("c", ["a"], c),
-        ]
+        stages = [StageDef("a", [], a), StageDef("b", ["a"], b), StageDef("c", ["a"], c)]
         await PipelineScheduler().run(stages)
         # a must come first, b and c can be in any order.
         self.assertEqual(order[0], "a")
@@ -154,11 +141,7 @@ class PipelineSchedulerTests(unittest.IsolatedAsyncioTestCase):
             order.append("c")
             return _fake_stage("c")
 
-        stages = [
-            StageDef("a", [], a),
-            StageDef("b", [], b),
-            StageDef("c", ["a", "b"], c),
-        ]
+        stages = [StageDef("a", [], a), StageDef("b", [], b), StageDef("c", ["a", "b"], c)]
         await PipelineScheduler().run(stages)
         self.assertEqual(order[-1], "c")  # c must be last
         self.assertIn("a", order[:2])
@@ -186,12 +169,7 @@ class PipelineSchedulerTests(unittest.IsolatedAsyncioTestCase):
             order.append("d")
             return _fake_stage("d")
 
-        stages = [
-            StageDef("a", [], a),
-            StageDef("b", ["a"], b),
-            StageDef("c", ["a"], c),
-            StageDef("d", ["b", "c"], d),
-        ]
+        stages = [StageDef("a", [], a), StageDef("b", ["a"], b), StageDef("c", ["a"], c), StageDef("d", ["b", "c"], d)]
         await PipelineScheduler().run(stages)
         self.assertEqual(order[0], "a")
         self.assertEqual(order[-1], "d")
@@ -223,10 +201,7 @@ class PipelineSchedulerTests(unittest.IsolatedAsyncioTestCase):
         async def s2() -> StageResult:
             return _fake_stage("s2", 0.2)
 
-        stages = [
-            StageDef("s1", [], s1),
-            StageDef("s2", [], s2),
-        ]
+        stages = [StageDef("s1", [], s1), StageDef("s2", [], s2)]
         result = await PipelineScheduler().run(stages)
         self.assertAlmostEqual(result.sequential_duration, 0.3, places=2)
 

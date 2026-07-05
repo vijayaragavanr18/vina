@@ -388,13 +388,9 @@ def _normalize_config(raw: Mapping[str, Any], base_dir: Path) -> dict[str, Any]:
 
     return {
         "runner": runner_data,
-        "output": {
-            "output_dir": _resolve_relative_path(Path(output_dir_value), base_dir),
-        },
+        "output": {"output_dir": _resolve_relative_path(Path(output_dir_value), base_dir)},
         "logging": logging_data,
-        "tools": {
-            "paths": _merge_tool_paths(raw),
-        },
+        "tools": {"paths": _merge_tool_paths(raw)},
         "common_ports": raw.get("common_ports", list(DEFAULT_COMMON_PORTS)),
     }
 

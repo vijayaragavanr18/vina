@@ -32,7 +32,7 @@ console = Console()
 @app.command()
 def scan(
     target: str = typer.Argument(..., help="Target domain or URL to scan"),
-    output_dir: Path | None = typer.Option(None, "--output-dir", help="Directory for generated artifacts"),  # noqa: B008
+    output_dir: Path | None = typer.Option(None, "--output-dir", help="Directory for generated artifacts"),
     config_path: Path | None = typer.Option(None, "--config", help="Optional JSON config override"),  # noqa: B008
 ) -> None:
     """Run the legacy VINA pipeline for a target."""
@@ -42,7 +42,7 @@ def scan(
 @app.command()
 def scan_web(
     target: str = typer.Argument(..., help="Target domain or URL to scan"),
-    output_dir: Path | None = typer.Option(None, "--output-dir", help="Directory for generated artifacts"),  # noqa: B008
+    output_dir: Path | None = typer.Option(None, "--output-dir", help="Directory for generated artifacts"),
     config_path: Path | None = typer.Option(None, "--config", help="Optional YAML/JSON config override"),  # noqa: B008
     resume: bool = typer.Option(False, "--resume", help="Resume from last checkpoint"),
     force: bool = typer.Option(False, "--force", help="Re-run all stages, ignoring cache and checkpoints"),
@@ -56,7 +56,7 @@ def scan_web(
 
 @app.command()
 def scan_os(
-    output_dir: Path | None = typer.Option(None, "--output-dir", help="Directory for generated artifacts"),  # noqa: B008
+    output_dir: Path | None = typer.Option(None, "--output-dir", help="Directory for generated artifacts"),
     config_path: Path | None = typer.Option(None, "--config", help="Optional YAML/JSON config override"),  # noqa: B008
 ) -> None:
     """Run the OS-level enumeration pipeline on the local host.
@@ -76,11 +76,7 @@ def _fatal(message: str, code: int = 1) -> NoReturn:
     raise typer.Exit(code=code)
 
 
-def _show_stage_table(
-    title: str,
-    stages: list[StageResult],
-    total_duration: float,
-) -> None:
+def _show_stage_table(title: str, stages: list[StageResult], total_duration: float) -> None:
     table = Table(title=title)
     table.add_column("Stage")
     table.add_column("Status", justify="right")
@@ -163,12 +159,7 @@ def _run_legacy(target: str, output_dir: Path | None, config_path: Path | None) 
 
 
 def _run_web(
-    target: str,
-    output_dir: Path | None,
-    config_path: Path | None,
-    *,
-    resume: bool = False,
-    force: bool = False,
+    target: str, output_dir: Path | None, config_path: Path | None, *, resume: bool = False, force: bool = False
 ) -> None:
     config = _load_cfg(config_path)
     configure_logging(config.log_dir)
@@ -184,10 +175,7 @@ def _run_web(
 # ------------------------------------------------------------------
 
 
-def _show_vuln_intel_summary(
-    vuln_matches: list,
-    vuln_stats: Any | None,
-) -> None:
+def _show_vuln_intel_summary(vuln_matches: list, vuln_stats: Any | None) -> None:
     if not vuln_matches:
         return
     console.print()
@@ -208,13 +196,7 @@ def _show_vuln_intel_summary(
         if vs.feed_age_hours >= 0:
             age_str = f"{vs.feed_age_hours:.1f}h" if vs.feed_age_hours < 24 else f"{vs.feed_age_hours / 24:.1f}d"
             vuln_parts.append(f"[bold]Feed Age[/bold]: {age_str}")
-    console.print(
-        Panel.fit(
-            "\n".join(vuln_parts),
-            title="Vulnerability Intelligence",
-            border_style="red",
-        )
-    )
+    console.print(Panel.fit("\n".join(vuln_parts), title="Vulnerability Intelligence", border_style="red"))
 
 
 def _show_top_cves_table(vuln_matches: list) -> None:
@@ -293,10 +275,7 @@ def _show_attack_path_analysis(findings: list) -> None:
         console.print(path_table)
 
 
-def _show_exploitability_assessment(
-    exp_assessments: list,
-    result: Any,
-) -> None:
+def _show_exploitability_assessment(exp_assessments: list, result: Any) -> None:
     if not exp_assessments:
         return
     console.print()
@@ -311,13 +290,7 @@ def _show_exploitability_assessment(
             f"[bold]Average Score[/bold]: {exp_summary.average_score}/100",
             f"[bold]Highest Score[/bold]: {exp_summary.highest_score}/100",
         ]
-        console.print(
-            Panel.fit(
-                "\n".join(exp_parts),
-                title="Exploitability Assessment",
-                border_style="orange1",
-            )
-        )
+        console.print(Panel.fit("\n".join(exp_parts), title="Exploitability Assessment", border_style="orange1"))
     from rich.table import Table as RichTable
 
     exp_table = RichTable(title="Top Exploitability Assessments", box=None)
@@ -339,13 +312,7 @@ def _show_exploitability_assessment(
             if cpx_color
             else a.complexity.replace("_", " ").title()
         )
-        exp_table.add_row(
-            a.title[:60],
-            score_label,
-            f"{a.confidence:.0%}",
-            cpx_label,
-            a.estimated_time_to_exploit,
-        )
+        exp_table.add_row(a.title[:60], score_label, f"{a.confidence:.0%}", cpx_label, a.estimated_time_to_exploit)
     console.print(exp_table)
 
 
@@ -386,9 +353,7 @@ def _exploitability_tier(score: float) -> str:
 # ------------------------------------------------------------------
 
 
-def _load_checkpoint_data(
-    output_dir: Path,
-) -> tuple[str, list[Finding], list[StageResult]]:
+def _load_checkpoint_data(output_dir: Path) -> tuple[str, list[Finding], list[StageResult]]:
     from .core.storage import JsonStore
 
     JsonStore(output_dir)
@@ -474,10 +439,7 @@ def _load_checkpoint_data(
     return target, findings, stage_results
 
 
-def _load_nuclei_findings(
-    output_dir: Path,
-    target: str,
-) -> list[Finding]:
+def _load_nuclei_findings(output_dir: Path, target: str) -> list[Finding]:
     import json as _json
 
     findings: list[Finding] = []
@@ -494,9 +456,11 @@ def _load_nuclei_findings(
                         category="vulnerability",
                         source_stage="nuclei",
                         target=nf.get("host", target),
-                        evidence=nf.get("matched_url", "") or nf.get("extracted_results", [""])[0]
-                        if nf.get("extracted_results")
-                        else "",
+                        evidence=(
+                            nf.get("matched_url", "") or nf.get("extracted_results", [""])[0]
+                            if nf.get("extracted_results")
+                            else ""
+                        ),
                         host=nf.get("host", ""),
                         url=nf.get("matched_url", ""),
                         tags=nf.get("tags", []),
@@ -508,11 +472,7 @@ def _load_nuclei_findings(
     return findings
 
 
-def _determine_report_formats(
-    html_format: bool,
-    markdown_format: bool,
-    json_format: bool,
-) -> set[str]:
+def _determine_report_formats(html_format: bool, markdown_format: bool, json_format: bool) -> set[str]:
     explicit = {html_format, markdown_format, json_format}
     if not any(explicit):
         return {"json", "markdown", "html"}
@@ -771,13 +731,7 @@ def benchmark_list() -> None:
     table.add_column("Expected Findings")
     table.add_column("Max Runtime")
     for name, p in sorted(profiles.items()):
-        table.add_row(
-            name,
-            p.pipeline,
-            p.target,
-            str(len(p.expected_findings)),
-            f"{p.max_runtime_seconds:.0f}s",
-        )
+        table.add_row(name, p.pipeline, p.target, str(len(p.expected_findings)), f"{p.max_runtime_seconds:.0f}s")
     console.print(table)
 
 
@@ -879,7 +833,7 @@ def benchmark_compare(
 
 @app.command()
 def benchmark_report(
-    output_dir: Path = typer.Argument(..., help="Directory containing benchmark results"),  # noqa: B008
+    output_dir: Path = typer.Argument(..., help="Directory containing benchmark results")  # noqa: B008
 ) -> None:
     """Generate an aggregate benchmark report from saved results."""
     import json
@@ -965,9 +919,7 @@ def plugin_list() -> None:
 
 
 @app.command()
-def plugin_info(
-    plugin_id: str = typer.Argument(..., help="Plugin ID"),
-) -> None:
+def plugin_info(plugin_id: str = typer.Argument(..., help="Plugin ID")) -> None:
     """Show detailed information about a plugin."""
     from .plugins.exceptions import PluginNotFoundError
     from .plugins.registry import get_registry
@@ -999,9 +951,7 @@ def plugin_info(
 
 
 @app.command()
-def plugin_enable(
-    plugin_id: str = typer.Argument(..., help="Plugin ID to enable"),
-) -> None:
+def plugin_enable(plugin_id: str = typer.Argument(..., help="Plugin ID to enable")) -> None:
     """Enable a plugin."""
     from .plugins.exceptions import PluginNotFoundError
     from .plugins.registry import get_registry
@@ -1015,9 +965,7 @@ def plugin_enable(
 
 
 @app.command()
-def plugin_disable(
-    plugin_id: str = typer.Argument(..., help="Plugin ID to disable"),
-) -> None:
+def plugin_disable(plugin_id: str = typer.Argument(..., help="Plugin ID to disable")) -> None:
     """Disable a plugin."""
     from .plugins.exceptions import PluginNotFoundError
     from .plugins.registry import get_registry
@@ -1133,10 +1081,7 @@ def update_db(
     console.print("[bold]Updating vulnerability database...[/bold]")
 
     with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        TimeElapsedColumn(),
-        console=console,
+        SpinnerColumn(), TextColumn("[progress.description]{task.description}"), TimeElapsedColumn(), console=console
     ) as progress:
         task = progress.add_task("Updating feeds...", total=None)
 
@@ -1149,9 +1094,7 @@ def update_db(
                 color = (
                     "green"
                     if result.status == UpdateStatus.SUCCESS
-                    else "yellow"
-                    if result.status == UpdateStatus.NO_UPDATE
-                    else "red"
+                    else "yellow" if result.status == UpdateStatus.NO_UPDATE else "red"
                 )
                 console.print(f"  {feed_name}: [{color}]{status_str}[/{color}] ({result.total_entries} entries)")
             else:
@@ -1165,16 +1108,12 @@ def update_db(
                 color = (
                     "green"
                     if result.status == UpdateStatus.SUCCESS
-                    else "yellow"
-                    if result.status == UpdateStatus.NO_UPDATE
-                    else "red"
+                    else "yellow" if result.status == UpdateStatus.NO_UPDATE else "red"
                 )
                 icon = (
                     "[green]✓[/]"
                     if result.status == UpdateStatus.SUCCESS
-                    else "[yellow]~[/]"
-                    if result.status == UpdateStatus.NO_UPDATE
-                    else "[red]✗[/]"
+                    else "[yellow]~[/]" if result.status == UpdateStatus.NO_UPDATE else "[red]✗[/]"
                 )
                 detail = f" ({result.total_entries} entries)" if result.total_entries > 0 else ""
                 err_info = f" - {result.error}" if result.error else ""

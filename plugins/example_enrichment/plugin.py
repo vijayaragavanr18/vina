@@ -31,14 +31,11 @@ class ExampleEnrichmentPlugin(Plugin):
                 remediation="No action required.",
                 references=["https://example.com/plugin-docs"],
                 confidence_score=0.5,
-            ),
+            )
         ]
 
     def register_hooks(self):
-        return {
-            HookPoint.BEFORE_FINDING: [self._tag_findings],
-            HookPoint.AFTER_FINDING: [self._log_findings],
-        }
+        return {HookPoint.BEFORE_FINDING: [self._tag_findings], HookPoint.AFTER_FINDING: [self._log_findings]}
 
     @staticmethod
     def _tag_findings(event) -> None:

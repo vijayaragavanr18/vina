@@ -35,12 +35,7 @@ class CheckpointManager:
     * Serializable output data needed to reconstruct shared state on resume.
     """
 
-    def __init__(
-        self,
-        output_dir: Path,
-        pipeline_name: str,
-        target: str,
-    ) -> None:
+    def __init__(self, output_dir: Path, pipeline_name: str, target: str) -> None:
         self._pipeline = pipeline_name
         self._target = target
         self._dir = output_dir / "checkpoints"
@@ -52,11 +47,7 @@ class CheckpointManager:
     # Public API
     # ------------------------------------------------------------------
 
-    def record_stage(
-        self,
-        stage: StageResult,
-        outputs: dict | None = None,
-    ) -> None:
+    def record_stage(self, stage: StageResult, outputs: dict | None = None) -> None:
         """Persist a completed stage to the checkpoint file."""
         self._data.setdefault("stages", {})[stage.name] = {
             "name": stage.name,
@@ -146,12 +137,7 @@ class CheckpointManager:
     # ------------------------------------------------------------------
 
     def _blank(self) -> dict:
-        return {
-            "pipeline": self._pipeline,
-            "target": self._target,
-            "stages": {},
-            "outputs": {},
-        }
+        return {"pipeline": self._pipeline, "target": self._target, "stages": {}, "outputs": {}}
 
     def _load(self) -> dict:
         if self._file.exists():
@@ -164,10 +150,7 @@ class CheckpointManager:
 
     def _save(self) -> None:
         try:
-            self._file.write_text(
-                json.dumps(self._data, indent=2, default=str),
-                encoding="utf-8",
-            )
+            self._file.write_text(json.dumps(self._data, indent=2, default=str), encoding="utf-8")
         except OSError as exc:
             logger.warning("Failed to write checkpoint %s: %s", self._file, exc)
 
@@ -176,6 +159,4 @@ def _now_iso() -> str:
     return datetime.now(UTC).isoformat()
 
 
-__all__ = [
-    "CheckpointManager",
-]
+__all__ = ["CheckpointManager"]

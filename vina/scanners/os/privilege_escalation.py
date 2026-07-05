@@ -19,21 +19,8 @@ from ...modules.common import ModuleContext
 
 logger = logging.getLogger(__name__)
 
-_INTERESTING_WRITABLE_PREFIXES = (
-    "/etc",
-    "/usr",
-    "/opt",
-    "/root",
-    "/var",
-    "/home",
-)
-_UNINTERESTING_PREFIXES = (
-    "/proc",
-    "/sys",
-    "/dev",
-    "/run",
-    "/tmp",
-)
+_INTERESTING_WRITABLE_PREFIXES = ("/etc", "/usr", "/opt", "/root", "/var", "/home")
+_UNINTERESTING_PREFIXES = ("/proc", "/sys", "/dev", "/run", "/tmp")
 
 
 @dataclass(slots=True)
@@ -70,10 +57,7 @@ class PrivilegeEscalationModule:
         self.config = config
         self.context = context
 
-    async def run(
-        self,
-        target: TargetInput,
-    ) -> PrivilegeEscalationResult:
+    async def run(self, target: TargetInput) -> PrivilegeEscalationResult:
         """Execute system commands and return PE-related findings.
 
         Parameters
@@ -86,75 +70,23 @@ class PrivilegeEscalationModule:
         warnings: list[str] = []
 
         commands: list[tuple[str, str, list[str]]] = [
-            (
-                "suid",
-                self.config.tool_bin("find", "find"),
-                ["/", "-perm", "-4000", "-type", "f"],
-            ),
-            (
-                "getcap",
-                self.config.tool_bin("getcap", "getcap"),
-                ["-r", "/"],
-            ),
-            (
-                "sudo_l",
-                self.config.tool_bin("sudo", "sudo"),
-                ["-n", "-l"],
-            ),
-            (
-                "writable_dirs",
-                self.config.tool_bin("find", "find"),
-                ["/", "-writable", "-type", "d", "-maxdepth", "4"],
-            ),
-            (
-                "systemctl",
-                self.config.tool_bin("systemctl", "systemctl"),
-                ["list-unit-files"],
-            ),
-            (
-                "crontab_l",
-                self.config.tool_bin("crontab", "crontab"),
-                ["-l"],
-            ),
-            (
-                "cat_crontab",
-                self.config.tool_bin("cat", "cat"),
-                ["/etc/crontab"],
-            ),
-            (
-                "ls_cron_d",
-                self.config.tool_bin("ls", "ls"),
-                ["-la", "/etc/cron.d"],
-            ),
-            (
-                "ls_cron_daily",
-                self.config.tool_bin("ls", "ls"),
-                ["-la", "/etc/cron.daily"],
-            ),
-            (
-                "ls_cron_hourly",
-                self.config.tool_bin("ls", "ls"),
-                ["-la", "/etc/cron.hourly"],
-            ),
-            (
-                "ls_cron_weekly",
-                self.config.tool_bin("ls", "ls"),
-                ["-la", "/etc/cron.weekly"],
-            ),
-            (
-                "ls_cron_monthly",
-                self.config.tool_bin("ls", "ls"),
-                ["-la", "/etc/cron.monthly"],
-            ),
+            ("suid", self.config.tool_bin("find", "find"), ["/", "-perm", "-4000", "-type", "f"]),
+            ("getcap", self.config.tool_bin("getcap", "getcap"), ["-r", "/"]),
+            ("sudo_l", self.config.tool_bin("sudo", "sudo"), ["-n", "-l"]),
+            ("writable_dirs", self.config.tool_bin("find", "find"), ["/", "-writable", "-type", "d", "-maxdepth", "4"]),
+            ("systemctl", self.config.tool_bin("systemctl", "systemctl"), ["list-unit-files"]),
+            ("crontab_l", self.config.tool_bin("crontab", "crontab"), ["-l"]),
+            ("cat_crontab", self.config.tool_bin("cat", "cat"), ["/etc/crontab"]),
+            ("ls_cron_d", self.config.tool_bin("ls", "ls"), ["-la", "/etc/cron.d"]),
+            ("ls_cron_daily", self.config.tool_bin("ls", "ls"), ["-la", "/etc/cron.daily"]),
+            ("ls_cron_hourly", self.config.tool_bin("ls", "ls"), ["-la", "/etc/cron.hourly"]),
+            ("ls_cron_weekly", self.config.tool_bin("ls", "ls"), ["-la", "/etc/cron.weekly"]),
+            ("ls_cron_monthly", self.config.tool_bin("ls", "ls"), ["-la", "/etc/cron.monthly"]),
         ]
 
         results: dict[str, CommandResult] = {}
         for name, executable, args in commands:
-            cr = await self.context.runner.run(
-                executable,
-                args,
-                timeout_seconds=self.context.timeout_seconds,
-            )
+            cr = await self.context.runner.run(executable, args, timeout_seconds=self.context.timeout_seconds)
             results[name] = cr
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {executable}")
@@ -218,9 +150,7 @@ class PrivilegeEscalationModule:
 
     @staticmethod
     def _check_suid(
-        results: dict[str, CommandResult],
-        _warnings: list[str],
-        target: str,
+        results: dict[str, CommandResult], _warnings: list[str], target: str
     ) -> list[PrivilegeEscalationFinding]:
         """Check for SUID binaries that may be worth investigating."""
         findings: list[PrivilegeEscalationFinding] = []
@@ -292,9 +222,7 @@ class PrivilegeEscalationModule:
 
     @staticmethod
     def _check_capabilities(
-        results: dict[str, CommandResult],
-        warnings: list[str],
-        target: str,
+        results: dict[str, CommandResult], warnings: list[str], target: str
     ) -> list[PrivilegeEscalationFinding]:
         """Check for dangerous file capabilities."""
         findings: list[PrivilegeEscalationFinding] = []
@@ -359,9 +287,7 @@ class PrivilegeEscalationModule:
 
     @staticmethod
     def _check_sudo(
-        results: dict[str, CommandResult],
-        warnings: list[str],
-        target: str,
+        results: dict[str, CommandResult], warnings: list[str], target: str
     ) -> list[PrivilegeEscalationFinding]:
         """Check for NOPASSWD sudo rules or overly permissive access."""
         findings: list[PrivilegeEscalationFinding] = []
@@ -452,9 +378,7 @@ class PrivilegeEscalationModule:
 
     @staticmethod
     def _check_writable_dirs(
-        results: dict[str, CommandResult],
-        _warnings: list[str],
-        target: str,
+        results: dict[str, CommandResult], _warnings: list[str], target: str
     ) -> list[PrivilegeEscalationFinding]:
         """Check for writable directories under system paths."""
         findings: list[PrivilegeEscalationFinding] = []
@@ -506,9 +430,7 @@ class PrivilegeEscalationModule:
 
     @staticmethod
     def _check_systemd(
-        results: dict[str, CommandResult],
-        _warnings: list[str],
-        target: str,
+        results: dict[str, CommandResult], _warnings: list[str], target: str
     ) -> list[PrivilegeEscalationFinding]:
         """Check for writable or modified systemd service files."""
         findings: list[PrivilegeEscalationFinding] = []
@@ -561,9 +483,7 @@ class PrivilegeEscalationModule:
 
     @staticmethod
     def _check_cron(
-        results: dict[str, CommandResult],
-        _warnings: list[str],
-        target: str,
+        results: dict[str, CommandResult], _warnings: list[str], target: str
     ) -> list[PrivilegeEscalationFinding]:
         """Check for interesting scheduled tasks and writable cron dirs."""
         findings: list[PrivilegeEscalationFinding] = []
@@ -721,8 +641,4 @@ class PrivilegeEscalationModule:
         )
 
 
-__all__ = [
-    "PrivilegeEscalationFinding",
-    "PrivilegeEscalationModule",
-    "PrivilegeEscalationResult",
-]
+__all__ = ["PrivilegeEscalationFinding", "PrivilegeEscalationModule", "PrivilegeEscalationResult"]

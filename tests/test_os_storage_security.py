@@ -46,11 +46,7 @@ class StorageSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
         self.config = AppConfig()
         self.runner = AsyncMock()
         self.store = MagicMock()
-        self.context = ModuleContext(
-            runner=self.runner,
-            store=self.store,
-            timeout_seconds=10,
-        )
+        self.context = ModuleContext(runner=self.runner, store=self.store, timeout_seconds=10)
         self.target = TargetInput.from_raw("localhost")
 
     async def test_permissions_scanner(self) -> None:
@@ -101,8 +97,7 @@ class StorageSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
         def run_mock(executable: str, args: list[str], **_kwargs: Any) -> CommandResult:
             if "cat" in executable and "/proc/mounts" in args:
                 stdout_data = (
-                    "sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0\n"
-                    "tmpfs /tmp tmpfs rw,relatime 0 0\n"
+                    "sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0\n" "tmpfs /tmp tmpfs rw,relatime 0 0\n"
                 )
                 return CommandResult(
                     command=executable,
@@ -160,10 +155,7 @@ class StorageSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
                     missing_executable=False,
                 )
             elif "cat" in executable and "/proc/swaps" in args:
-                stdout_data = (
-                    "Filename\tType\tSize\tUsed\tPriority\n"
-                    "/dev/sda2\tpartition\t2097148\t0\t-2\n"
-                )
+                stdout_data = "Filename\tType\tSize\tUsed\tPriority\n" "/dev/sda2\tpartition\t2097148\t0\t-2\n"
                 return CommandResult(
                     command=executable,
                     args=tuple(args),

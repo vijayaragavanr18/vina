@@ -14,13 +14,7 @@ from typing import Any, cast
 from ..core.knowledge import EnrichedFinding
 from ..models.findings import Finding, severity_key
 
-_SEVERITY_WEIGHTS: dict[str, float] = {
-    "info": 5,
-    "low": 20,
-    "medium": 45,
-    "high": 70,
-    "critical": 90,
-}
+_SEVERITY_WEIGHTS: dict[str, float] = {"info": 5, "low": 20, "medium": 45, "high": 70, "critical": 90}
 
 # ---------------------------------------------------------------------------
 #  AttackPath model
@@ -233,12 +227,8 @@ _CORRELATION_RULES: list[CorrelationRule] = [
         "privileges to the owner of the binary (typically root).",
         attack_type="privilege_escalation",
         severity="high",
-        required_findings=[
-            FindingMatcher(title_contains="SUID binary"),
-        ],
-        optional_findings=[
-            FindingMatcher(title_contains="SUID binary"),
-        ],
+        required_findings=[FindingMatcher(title_contains="SUID binary")],
+        optional_findings=[FindingMatcher(title_contains="SUID binary")],
         attack_chain=[
             "User",
             "↓",
@@ -264,9 +254,7 @@ _CORRELATION_RULES: list[CorrelationRule] = [
         "that is also listed on GTFOBins can be used to escalate privileges.",
         attack_type="privilege_escalation",
         severity="high",
-        required_findings=[
-            FindingMatcher(title_contains="Capability:"),
-        ],
+        required_findings=[FindingMatcher(title_contains="Capability:")],
         attack_chain=[
             "User",
             "↓",
@@ -380,9 +368,7 @@ _CORRELATION_RULES: list[CorrelationRule] = [
         "with SSH access allow lateral movement to other systems.",
         attack_type="lateral_movement",
         severity="high",
-        required_findings=[
-            FindingMatcher(title_contains="SSH key found", source_stage="secrets"),
-        ],
+        required_findings=[FindingMatcher(title_contains="SSH key found", source_stage="secrets")],
         optional_findings=[
             FindingMatcher(title_contains="Credentials in config:"),
             FindingMatcher(title_contains=".env file found"),
@@ -466,9 +452,7 @@ _CORRELATION_RULES: list[CorrelationRule] = [
         "is not enforcing, allowing persistent kernel-level tampering without detection.",
         attack_type="privilege_escalation",
         severity="high",
-        required_findings=[
-            FindingMatcher(title_contains="Secure Boot is disabled"),
-        ],
+        required_findings=[FindingMatcher(title_contains="Secure Boot is disabled")],
         optional_findings=[
             FindingMatcher(title_contains="SELinux is permissive", source_stage="kernel_hardening"),
             FindingMatcher(title_contains="SELinux is disabled", source_stage="kernel_hardening"),
@@ -484,7 +468,10 @@ _CORRELATION_RULES: list[CorrelationRule] = [
             "Attacker loads rootkit as unsigned kernel module, persists across reboots",
         ],
         remediation="Enable Secure Boot in UEFI and enforce SELinux or AppArmor.",
-        mitre_attack=["T1542 - Boot or Logon Autostart Execution", "T1562.001 - Impair Defenses: Disable or Modify Tools"],
+        mitre_attack=[
+            "T1542 - Boot or Logon Autostart Execution",
+            "T1562.001 - Impair Defenses: Disable or Modify Tools",
+        ],
         cwe="CWE-284: Improper Access Control",
         cis_controls=["CIS Control 4: Secure Configuration"],
         persistence_bonus=7,
@@ -497,9 +484,7 @@ _CORRELATION_RULES: list[CorrelationRule] = [
         "no MAC enforcement, making memory disclosure attacks more impactful.",
         attack_type="exploitation",
         severity="high",
-        required_findings=[
-            FindingMatcher(title_contains="CPU vulnerable to", source_stage="kernel_hardening"),
-        ],
+        required_findings=[FindingMatcher(title_contains="CPU vulnerable to", source_stage="kernel_hardening")],
         optional_findings=[
             FindingMatcher(title_contains="SELinux is disabled", source_stage="kernel_hardening"),
             FindingMatcher(title_contains="AppArmor is disabled", source_stage="kernel_hardening"),
@@ -528,9 +513,7 @@ _CORRELATION_RULES: list[CorrelationRule] = [
         "direct path for kernel privilege escalation using BPF exploits.",
         attack_type="privilege_escalation",
         severity="critical",
-        required_findings=[
-            FindingMatcher(title_contains="eBPF is accessible", source_stage="kernel_hardening"),
-        ],
+        required_findings=[FindingMatcher(title_contains="eBPF is accessible", source_stage="kernel_hardening")],
         optional_findings=[
             FindingMatcher(title_contains="SELinux is disabled", source_stage="kernel_hardening"),
             FindingMatcher(title_contains="SELinux is permissive", source_stage="kernel_hardening"),
@@ -591,10 +574,7 @@ _CORRELATION_RULES: list[CorrelationRule] = [
         "GTFOBins-listed commands have known shell-escape techniques that bypass command restrictions.",
         attack_type="privilege_escalation",
         severity="critical",
-        required_findings=[
-            FindingMatcher(title_contains="NOPASSWD sudo"),
-            FindingMatcher(title_contains="GTFOBins"),
-        ],
+        required_findings=[FindingMatcher(title_contains="NOPASSWD sudo"), FindingMatcher(title_contains="GTFOBins")],
         attack_chain=[
             "Low-privilege user",
             "↓",
@@ -649,9 +629,7 @@ _CORRELATION_RULES: list[CorrelationRule] = [
         "filesystem and SSH is enabled, allowing credential reuse for lateral movement.",
         attack_type="lateral_movement",
         severity="high",
-        required_findings=[
-            FindingMatcher(title_contains="Credential exposure:"),
-        ],
+        required_findings=[FindingMatcher(title_contains="Credential exposure:")],
         optional_findings=[
             FindingMatcher(title_contains="SSH password authentication is enabled"),
             FindingMatcher(title_contains="SSH key found", source_stage="secrets"),
@@ -803,11 +781,9 @@ _CORRELATION_RULES: list[CorrelationRule] = [
         "making memory corruption exploits significantly more reliable.",
         attack_type="exploitation",
         severity="medium",
-        required_findings=[
-            FindingMatcher(title_contains="ASLR is disabled"),
-        ],
+        required_findings=[FindingMatcher(title_contains="ASLR is disabled")],
         optional_findings=[
-            FindingMatcher(title_contains="expected", source_stage="kernel", category="security_control"),
+            FindingMatcher(title_contains="expected", source_stage="kernel", category="security_control")
         ],
         attack_chain=[
             "Attacker",
@@ -862,12 +838,8 @@ _CORRELATION_RULES: list[CorrelationRule] = [
         "authenticate to other systems via SSH, enabling lateral movement.",
         attack_type="lateral_movement",
         severity="high",
-        required_findings=[
-            FindingMatcher(title_contains="private-key:"),
-        ],
-        optional_findings=[
-            FindingMatcher(title_contains="SSH key found"),
-        ],
+        required_findings=[FindingMatcher(title_contains="private-key:")],
+        optional_findings=[FindingMatcher(title_contains="SSH key found")],
         attack_chain=[
             "Attacker",
             "↓",
@@ -1092,7 +1064,10 @@ _CORRELATION_RULES: list[CorrelationRule] = [
             "Privilege escalation to Root",
         ],
         remediation="Upgrade the sudo package to the latest secure version.",
-        mitre_attack=["T1068 - Exploitation for Privilege Escalation", "T1548.003 - Abuse Elevation Control Mechanism: Sudo"],
+        mitre_attack=[
+            "T1068 - Exploitation for Privilege Escalation",
+            "T1548.003 - Abuse Elevation Control Mechanism: Sudo",
+        ],
         cwe="CWE-250: Execution with Unnecessary Privileges",
         cis_controls=["CIS Control 5: Account Management"],
         exploitability_bonus=12,
@@ -1260,7 +1235,10 @@ _CORRELATION_RULES: list[CorrelationRule] = [
             "Persistent kernel-level rootkit execution",
         ],
         remediation="Enable UEFI Secure Boot and enforce SELinux/AppArmor MAC enforcement.",
-        mitre_attack=["T1542.001 - Pre-OS Boot: System Firmware", "T1562.001 - Impair Defenses: Disable or Modify Tools"],
+        mitre_attack=[
+            "T1542.001 - Pre-OS Boot: System Firmware",
+            "T1562.001 - Impair Defenses: Disable or Modify Tools",
+        ],
         cwe="CWE-284: Improper Access Control",
         cis_controls=["CIS Control 4: Secure Configuration"],
         exploitability_bonus=15,
@@ -1273,7 +1251,9 @@ _CORRELATION_RULES: list[CorrelationRule] = [
         attack_type="persistence",
         severity="high",
         required_findings=[
-            FindingMatcher(title_contains="GRUB configuration file permissions are too open", source_stage="boot_security"),
+            FindingMatcher(
+                title_contains="GRUB configuration file permissions are too open", source_stage="boot_security"
+            ),
             FindingMatcher(title_contains="World-writable files detected in /boot", source_stage="boot_security"),
         ],
         attack_chain=[
@@ -1288,7 +1268,10 @@ _CORRELATION_RULES: list[CorrelationRule] = [
             "System boots directly into unauthenticated root shell",
         ],
         remediation="Secure /boot directory permissions (chmod 700 /boot) and make GRUB configuration root-only writable.",
-        mitre_attack=["T1542.003 - Pre-OS Boot: Bootkit", "T1222.002 - File and Directory Permissions Modification: Linux File and Directory Permissions Modification"],
+        mitre_attack=[
+            "T1542.003 - Pre-OS Boot: Bootkit",
+            "T1222.002 - File and Directory Permissions Modification: Linux File and Directory Permissions Modification",
+        ],
         cwe="CWE-732: Incorrect Permission Assignment for Critical Resource",
         cis_controls=["CIS Control 4: Secure Configuration"],
         persistence_bonus=15,
@@ -1402,7 +1385,10 @@ _CORRELATION_RULES: list[CorrelationRule] = [
             "Host compromise",
         ],
         remediation="Ensure PATH only contains directories owned and writable exclusively by root.",
-        mitre_attack=["T1574.007 - Hijack Execution Flow: Path Privilege Escalation", "T1548.001 - Abuse Elevation Control Mechanism: Setuid and Setgid"],
+        mitre_attack=[
+            "T1574.007 - Hijack Execution Flow: Path Privilege Escalation",
+            "T1548.001 - Abuse Elevation Control Mechanism: Setuid and Setgid",
+        ],
         cwe="CWE-427: Uncontrolled Search Path Element",
         cis_controls=["CIS Control 4: Secure Configuration"],
         exploitability_bonus=12,
@@ -1711,9 +1697,7 @@ class CorrelationEngine:
         return paths
 
     def _match_rule(
-        self,
-        rule: CorrelationRule,
-        findings: Sequence[Finding | EnrichedFinding],
+        self, rule: CorrelationRule, findings: Sequence[Finding | EnrichedFinding]
     ) -> tuple[dict[int, list[Finding]], dict[int, list[Finding]]]:
         """Match a rule's required and optional patterns against findings.
 
@@ -1757,8 +1741,7 @@ class CorrelationEngine:
 
     @staticmethod
     def _collect_matched_findings(
-        required_matches: dict[int, list[Finding]],
-        optional_matches: dict[int, list[Finding]],
+        required_matches: dict[int, list[Finding]], optional_matches: dict[int, list[Finding]]
     ) -> list[Finding]:
         """Gather all matched findings (required + optional) without duplicates."""
         seen_ids: set[str] = set()
@@ -1787,9 +1770,7 @@ class CorrelationEngine:
         return sum(confidences) / len(confidences) if confidences else 0.5
 
     @staticmethod
-    def _check_attack_indicators(
-        findings: list[Finding],
-    ) -> tuple[bool, bool, bool, bool]:
+    def _check_attack_indicators(findings: list[Finding]) -> tuple[bool, bool, bool, bool]:
         """Check for GTFOBins, exploitability, credential, and persistence indicators."""
         has_gtfo = any(hasattr(f, "gtfo_bins") and f.gtfo_bins for f in findings)
         has_exploit = any(hasattr(f, "mitre_attack") and f.mitre_attack for f in findings)
@@ -1893,9 +1874,7 @@ class CorrelationStats:
 def compute_correlation_stats(paths: list[AttackPath]) -> CorrelationStats:
     """Produce summary statistics from a list of AttackPaths."""
     if not paths:
-        return CorrelationStats(
-            by_severity={"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0},
-        )
+        return CorrelationStats(by_severity={"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0})
 
     sev_counter: dict[str, int] = {}
     total_conf = 0.0

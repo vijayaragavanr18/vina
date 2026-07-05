@@ -28,12 +28,7 @@ class CheckpointManagerTests(unittest.TestCase):
 
     def _make_stage(self, name: str, status: StageState = StageState.SUCCESS, record_count: int = 1) -> StageResult:
         return StageResult(
-            name=name,
-            status=status,
-            command=f"tool-{name}",
-            exit_code=0,
-            duration=1.0,
-            record_count=record_count,
+            name=name, status=status, command=f"tool-{name}", exit_code=0, duration=1.0, record_count=record_count
         )
 
     def test_record_and_has_completed(self) -> None:

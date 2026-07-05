@@ -80,9 +80,7 @@ class PasswordModule:
 
         results: dict[str, CommandResult] = {}
         for name, executable, args in commands:
-            cr = await self.context.runner.run(
-                executable, args, timeout_seconds=self.context.timeout_seconds
-            )
+            cr = await self.context.runner.run(executable, args, timeout_seconds=self.context.timeout_seconds)
             results[name] = cr
 
         passwd_lines = ""
@@ -131,7 +129,7 @@ class PasswordModule:
             return "$7$", "scrypt"
         if hash_field.startswith("$"):
             end = hash_field.find("$", 1)
-            prefix = hash_field[:end+1] if end > 0 else hash_field
+            prefix = hash_field[: end + 1] if end > 0 else hash_field
             return prefix, "unknown"
         return "", "DES/other"
 
@@ -177,20 +175,22 @@ class PasswordModule:
             if sh:
                 _, hash_type = PasswordModule._hash_type(sh[0])
 
-            entries.append(PasswordEntry(
-                username=username,
-                uid=uid,
-                gid=gid,
-                hash_prefix=hash_prefix,
-                hash_type=hash_type,
-                last_change_days=sh[2] if sh else -1,
-                min_age=sh[3] if sh else -1,
-                max_age=sh[4] if sh else -1,
-                warn_days=sh[5] if sh else -1,
-                inactive_days=sh[6] if sh else -1,
-                expiration_days=sh[7] if sh else -1,
-                shell=shell,
-            ))
+            entries.append(
+                PasswordEntry(
+                    username=username,
+                    uid=uid,
+                    gid=gid,
+                    hash_prefix=hash_prefix,
+                    hash_type=hash_type,
+                    last_change_days=sh[2] if sh else -1,
+                    min_age=sh[3] if sh else -1,
+                    max_age=sh[4] if sh else -1,
+                    warn_days=sh[5] if sh else -1,
+                    inactive_days=sh[6] if sh else -1,
+                    expiration_days=sh[7] if sh else -1,
+                    shell=shell,
+                )
+            )
 
         return entries
 
@@ -201,17 +201,19 @@ class PasswordModule:
             if parts:
                 perm = parts[0]
                 if perm != "644" and perm != "444":
-                    findings.append(make_finding(
-                        title="Incorrect permissions on /etc/passwd",
-                        description=f"/etc/passwd has permissions {perm}, expected 644 or 444.",
-                        severity="medium",
-                        category="misconfiguration",
-                        source_stage="auth_security",
-                        target=target,
-                        evidence=f"/etc/passwd permissions: {perm}",
-                        recommendation="chmod 644 /etc/passwd",
-                        confidence=0.9,
-                    ))
+                    findings.append(
+                        make_finding(
+                            title="Incorrect permissions on /etc/passwd",
+                            description=f"/etc/passwd has permissions {perm}, expected 644 or 444.",
+                            severity="medium",
+                            category="misconfiguration",
+                            source_stage="auth_security",
+                            target=target,
+                            evidence=f"/etc/passwd permissions: {perm}",
+                            recommendation="chmod 644 /etc/passwd",
+                            confidence=0.9,
+                        )
+                    )
 
         stat_shadow = results.get("stat_shadow")
         if stat_shadow and stat_shadow.succeeded and stat_shadow.stdout.strip():
@@ -219,73 +221,83 @@ class PasswordModule:
             if parts:
                 perm = parts[0]
                 if perm not in ("0", "400", "600", "640"):
-                    findings.append(make_finding(
-                        title="Incorrect permissions on /etc/shadow",
-                        description=f"/etc/shadow has permissions {perm}, expected 0 or 400/600/640.",
-                        severity="high",
-                        category="misconfiguration",
-                        source_stage="auth_security",
-                        target=target,
-                        evidence=f"/etc/shadow permissions: {perm}",
-                        recommendation="chmod 0 /etc/shadow or chmod 400 /etc/shadow",
-                        confidence=0.95,
-                    ))
+                    findings.append(
+                        make_finding(
+                            title="Incorrect permissions on /etc/shadow",
+                            description=f"/etc/shadow has permissions {perm}, expected 0 or 400/600/640.",
+                            severity="high",
+                            category="misconfiguration",
+                            source_stage="auth_security",
+                            target=target,
+                            evidence=f"/etc/shadow permissions: {perm}",
+                            recommendation="chmod 0 /etc/shadow or chmod 400 /etc/shadow",
+                            confidence=0.95,
+                        )
+                    )
 
     def _audit_entries(self, entries: list[PasswordEntry], findings: list[Finding], target: str) -> None:
         for e in entries:
             if e.hash_type == "empty":
-                findings.append(make_finding(
-                    title=f"Empty password for user {e.username}",
-                    description=f"User {e.username} has an empty password hash, meaning no password is required.",
-                    severity="critical",
-                    category="misconfiguration",
-                    source_stage="auth_security",
-                    target=target,
-                    evidence=f"/etc/shadow: {e.username} has empty password field",
-                    recommendation=f"Set a password for {e.username}: passwd {e.username}",
-                    confidence=0.95,
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Empty password for user {e.username}",
+                        description=f"User {e.username} has an empty password hash, meaning no password is required.",
+                        severity="critical",
+                        category="misconfiguration",
+                        source_stage="auth_security",
+                        target=target,
+                        evidence=f"/etc/shadow: {e.username} has empty password field",
+                        recommendation=f"Set a password for {e.username}: passwd {e.username}",
+                        confidence=0.95,
+                    )
+                )
 
             if e.hash_type in ("MD5", "DES/other", "Blowfish (old)"):
-                findings.append(make_finding(
-                    title=f"Weak password hash for user {e.username}",
-                    description=f"User {e.username} uses {e.hash_type} hashing, which is considered weak. "
-                    "SHA-512 or yescrypt is recommended.",
-                    severity="high",
-                    category="misconfiguration",
-                    source_stage="auth_security",
-                    target=target,
-                    evidence=f"Hash type: {e.hash_type} for {e.username}",
-                    recommendation="Force password change to upgrade hash: passwd {e.username}",
-                    confidence=0.85,
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Weak password hash for user {e.username}",
+                        description=f"User {e.username} uses {e.hash_type} hashing, which is considered weak. "
+                        "SHA-512 or yescrypt is recommended.",
+                        severity="high",
+                        category="misconfiguration",
+                        source_stage="auth_security",
+                        target=target,
+                        evidence=f"Hash type: {e.hash_type} for {e.username}",
+                        recommendation="Force password change to upgrade hash: passwd {e.username}",
+                        confidence=0.85,
+                    )
+                )
 
             if e.max_age > 0 and e.max_age > 90:
-                findings.append(make_finding(
-                    title=f"Password maximum age too high for {e.username}",
-                    description=f"Password max age for {e.username} is {e.max_age} days (recommended: <= 90).",
-                    severity="low",
-                    category="misconfiguration",
-                    source_stage="auth_security",
-                    target=target,
-                    evidence=f"max_age={e.max_age} for {e.username}",
-                    recommendation=f"chage -M 90 {e.username}",
-                    confidence=0.6,
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Password maximum age too high for {e.username}",
+                        description=f"Password max age for {e.username} is {e.max_age} days (recommended: <= 90).",
+                        severity="low",
+                        category="misconfiguration",
+                        source_stage="auth_security",
+                        target=target,
+                        evidence=f"max_age={e.max_age} for {e.username}",
+                        recommendation=f"chage -M 90 {e.username}",
+                        confidence=0.6,
+                    )
+                )
 
             if e.min_age < 0 or e.min_age == 0:
-                findings.append(make_finding(
-                    title=f"Password minimum age not set for {e.username}",
-                    description=f"Password minimum age for {e.username} is {e.min_age}. "
-                    "A minimum age prevents rapid password changes.",
-                    severity="low",
-                    category="misconfiguration",
-                    source_stage="auth_security",
-                    target=target,
-                    evidence=f"min_age={e.min_age} for {e.username}",
-                    recommendation=f"chage -m 7 {e.username}",
-                    confidence=0.5,
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Password minimum age not set for {e.username}",
+                        description=f"Password minimum age for {e.username} is {e.min_age}. "
+                        "A minimum age prevents rapid password changes.",
+                        severity="low",
+                        category="misconfiguration",
+                        source_stage="auth_security",
+                        target=target,
+                        evidence=f"min_age={e.min_age} for {e.username}",
+                        recommendation=f"chage -m 7 {e.username}",
+                        confidence=0.5,
+                    )
+                )
 
     @staticmethod
     def _empty_command_result() -> CommandResult:

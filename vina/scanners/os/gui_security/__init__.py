@@ -129,7 +129,4 @@ class GuiSecurityModule:
         )
 
 
-__all__ = [
-    "GuiSecurityModule",
-    "GuiSecurityResult",
-]
+__all__ = ["GuiSecurityModule", "GuiSecurityResult"]

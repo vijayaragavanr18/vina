@@ -38,11 +38,7 @@ class FindingAggregator:
         self._seen_keys: set[tuple[str, str, str]] = set()
 
     def add_finding(self, finding: Finding) -> None:
-        key = (
-            finding.title.strip().lower(),
-            finding.target.strip().lower(),
-            finding.source_stage.strip().lower(),
-        )
+        key = (finding.title.strip().lower(), finding.target.strip().lower(), finding.source_stage.strip().lower())
         if key not in self._seen_keys:
             self._seen_keys.add(key)
             self._findings.append(finding)
@@ -65,11 +61,7 @@ class FindingAggregator:
         seen: set[tuple[str, str, str]] = set()
         deduped: list[Finding] = []
         for f in self._findings:
-            key = (
-                f.title.strip().lower(),
-                f.target.strip().lower(),
-                f.source_stage.strip().lower(),
-            )
+            key = (f.title.strip().lower(), f.target.strip().lower(), f.source_stage.strip().lower())
             if key not in seen:
                 seen.add(key)
                 deduped.append(f)
@@ -88,11 +80,7 @@ class FindingAggregator:
         return groups
 
     def sorted_by_severity(self, reverse: bool = True) -> list[Finding]:
-        return sorted(
-            self._findings,
-            key=lambda f: severity_key(f.severity),
-            reverse=reverse,
-        )
+        return sorted(self._findings, key=lambda f: severity_key(f.severity), reverse=reverse)
 
     def statistics(self) -> AggregatorStats:
         if not self._findings:
@@ -129,7 +117,4 @@ class FindingAggregator:
         )
 
 
-__all__ = [
-    "AggregatorStats",
-    "FindingAggregator",
-]
+__all__ = ["AggregatorStats", "FindingAggregator"]

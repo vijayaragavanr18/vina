@@ -129,7 +129,4 @@ class MonitoringSecurityModule:
         )
 
 
-__all__ = [
-    "MonitoringSecurityModule",
-    "MonitoringSecurityResult",
-]
+__all__ = ["MonitoringSecurityModule", "MonitoringSecurityResult"]

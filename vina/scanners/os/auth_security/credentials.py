@@ -29,7 +29,12 @@ _CREDENTIAL_PATTERNS: list[tuple[str, str, str, str]] = [
     ("gcp_creds", r"(?i)GOOGLE_APPLICATION_CREDENTIALS\s*[=:]\s*['\"]?\S+", "critical", "GCP Credentials"),
     ("gcp_api_key", r"(?i)GCP_API_KEY\s*[=:]\s*['\"]?\S+", "high", "GCP API Key"),
     ("db_password", r"(?i)DB_PASSWORD\s*[=:]\s*['\"]?\S+", "critical", "Database Password"),
-    ("db_url_with_pwd", r"(?i)(mysql|postgres|mongo|redis)://\S+:\S+@\S+", "critical", "Database URL (contains password)"),
+    (
+        "db_url_with_pwd",
+        r"(?i)(mysql|postgres|mongo|redis)://\S+:\S+@\S+",
+        "critical",
+        "Database URL (contains password)",
+    ),
     ("api_key", r"(?i)api[_-]?key\s*[=:]\s*['\"]?\S{8,}", "high", "API Key"),
     ("api_token", r"(?i)api[_-]?token\s*[=:]\s*['\"]?\S{8,}", "high", "API Token"),
     ("secret_key", r"(?i)secret[_-]?key\s*[=:]\s*['\"]?\S{8,}", "high", "Secret Key"),
@@ -127,11 +132,45 @@ class CredentialsModule:
 
         cr = await self.context.runner.run(
             self.config.tool_bin("find", "find"),
-            ["/", "-type", "f", "(", "-name", "*.env", "-o", "-name", "*.pem", "-o",
-             "-name", "*.key", "-o", "-name", "credentials", "-o", "-name", "config.json",
-             "-o", "-name", ".netrc", "-o", "-name", "*.credentials", "-o",
-             "-name", ".env.*", "-o", "-name", "secrets.yml", "-o", "-name", "secrets.yaml",
-             ")", "-maxdepth", "5", "2>/dev/null"],
+            [
+                "/",
+                "-type",
+                "f",
+                "(",
+                "-name",
+                "*.env",
+                "-o",
+                "-name",
+                "*.pem",
+                "-o",
+                "-name",
+                "*.key",
+                "-o",
+                "-name",
+                "credentials",
+                "-o",
+                "-name",
+                "config.json",
+                "-o",
+                "-name",
+                ".netrc",
+                "-o",
+                "-name",
+                "*.credentials",
+                "-o",
+                "-name",
+                ".env.*",
+                "-o",
+                "-name",
+                "secrets.yml",
+                "-o",
+                "-name",
+                "secrets.yaml",
+                ")",
+                "-maxdepth",
+                "5",
+                "2>/dev/null",
+            ],
             timeout_seconds=self.context.timeout_seconds,
         )
 
@@ -147,39 +186,35 @@ class CredentialsModule:
             for fpath in file_paths:
                 if any(fpath.startswith(p) for p in _IGNORE_PATHS):
                     continue
-                read_cr = await self.context.runner.run(
-                    self.config.tool_bin("cat", "cat"),
-                    [fpath],
-                    timeout_seconds=10,
-                )
+                read_cr = await self.context.runner.run(self.config.tool_bin("cat", "cat"), [fpath], timeout_seconds=10)
                 if read_cr.succeeded and read_cr.stdout.strip():
                     content = read_cr.stdout
                     for name, pattern, severity, desc in _CREDENTIAL_PATTERNS:
                         for m in re.finditer(pattern, content):
                             snippet = m.group()[:120]
-                            matches.append(CredentialMatch(
-                                path=fpath,
-                                pattern_name=name,
-                                description=desc,
-                                severity=severity,
-                                snippet=snippet,
-                            ))
+                            matches.append(
+                                CredentialMatch(
+                                    path=fpath, pattern_name=name, description=desc, severity=severity, snippet=snippet
+                                )
+                            )
 
         if not matches:
             warnings.append("No credential exposures found")
 
         for c_match in matches:
-            findings.append(make_finding(
-                title=f"Credential exposure: {c_match.description}",
-                description=f"Found potential {c_match.description} in {c_match.path}.",
-                severity=c_match.severity,
-                category="misconfiguration",
-                source_stage="auth_security",
-                target=target_str,
-                evidence=c_match.snippet,
-                recommendation=f"Remove the credential from {c_match.path}. Use a secrets manager or environment variables with restricted access.",
-                confidence=0.7 if c_match.severity != "critical" else 0.85,
-            ))
+            findings.append(
+                make_finding(
+                    title=f"Credential exposure: {c_match.description}",
+                    description=f"Found potential {c_match.description} in {c_match.path}.",
+                    severity=c_match.severity,
+                    category="misconfiguration",
+                    source_stage="auth_security",
+                    target=target_str,
+                    evidence=c_match.snippet,
+                    recommendation=f"Remove the credential from {c_match.path}. Use a secrets manager or environment variables with restricted access.",
+                    confidence=0.7 if c_match.severity != "critical" else 0.85,
+                )
+            )
 
         primary = cr or self._empty_command_result()
 

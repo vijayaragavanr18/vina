@@ -55,35 +55,42 @@ class RuntimesModule:
                     userns_configured = True
 
             if not userns_configured:
-                findings.append(make_finding(
-                    title="Docker user namespace remapping is disabled",
-                    description="User namespace remapping ('userns-remap') is not configured in Docker. Root inside a container maps directly to the root user on the host, increasing the risk of container escape.",
-                    severity="high",
-                    category="misconfiguration",
-                    source_stage="container_security",
-                    target=target_str,
-                    evidence="userns-remap not found in /etc/docker/daemon.json",
-                    recommendation="Configure user namespace remapping in /etc/docker/daemon.json.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title="Docker user namespace remapping is disabled",
+                        description="User namespace remapping ('userns-remap') is not configured in Docker. Root inside a container maps directly to the root user on the host, increasing the risk of container escape.",
+                        severity="high",
+                        category="misconfiguration",
+                        source_stage="container_security",
+                        target=target_str,
+                        evidence="userns-remap not found in /etc/docker/daemon.json",
+                        recommendation="Configure user namespace remapping in /etc/docker/daemon.json.",
+                        confidence=0.9,
+                    )
+                )
 
         if cr_kubelet.succeeded:
             cat_cmd = self.config.tool_bin("cat", "cat")
             cr_kconfig = await self.context.runner.run(cat_cmd, ["/var/lib/kubelet/config.yaml"], timeout_seconds=5)
             if cr_kconfig.succeeded and cr_kconfig.stdout.strip():
                 content = cr_kconfig.stdout
-                if "anonymous: \n      enabled: true" in content.replace(" ", "") or "anonymous:\n    enabled: true" in content:
-                    findings.append(make_finding(
-                        title="Kubelet anonymous authentication is enabled",
-                        description="Kubelet anonymous authentication is enabled in configuration, allowing unauthenticated requests to read Node or Pod details.",
-                        severity="high",
-                        category="vulnerability",
-                        source_stage="container_security",
-                        target=target_str,
-                        evidence="anonymous authentication enabled",
-                        recommendation="Set authentication.anonymous.enabled to false in Kubelet configuration.",
-                        confidence=0.9,
-                    ))
+                if (
+                    "anonymous: \n      enabled: true" in content.replace(" ", "")
+                    or "anonymous:\n    enabled: true" in content
+                ):
+                    findings.append(
+                        make_finding(
+                            title="Kubelet anonymous authentication is enabled",
+                            description="Kubelet anonymous authentication is enabled in configuration, allowing unauthenticated requests to read Node or Pod details.",
+                            severity="high",
+                            category="vulnerability",
+                            source_stage="container_security",
+                            target=target_str,
+                            evidence="anonymous authentication enabled",
+                            recommendation="Set authentication.anonymous.enabled to false in Kubelet configuration.",
+                            confidence=0.9,
+                        )
+                    )
 
         primary = cr_docker or cr_kubelet or cr_crio or self._empty_command_result()
 

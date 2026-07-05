@@ -82,7 +82,9 @@ class PamResultTests(unittest.TestCase):
     def test_pam_rule(self) -> None:
         from vina.scanners.os.auth_security.pam import PamRule
 
-        rule = PamRule(service="common-auth", type="auth", control="required", module="pam_unix.so", args="sha512", line=10)
+        rule = PamRule(
+            service="common-auth", type="auth", control="required", module="pam_unix.so", args="sha512", line=10
+        )
         self.assertEqual(rule.module, "pam_unix.so")
         self.assertEqual(rule.service, "common-auth")
         self.assertEqual(rule.args, "sha512")
@@ -113,7 +115,9 @@ session required        pam_unix.so
         from vina.models.findings import Finding
         from vina.scanners.os.auth_security.pam import PamModule, PamRule
 
-        rules = [PamRule(service="common-auth", type="auth", control="required", module="pam_unix.so", args="sha512", line=1)]
+        rules = [
+            PamRule(service="common-auth", type="auth", control="required", module="pam_unix.so", args="sha512", line=1)
+        ]
         findings: list[Finding] = []
         PamModule._audit_pam(rules, findings, "testhost")
         self.assertTrue(any("PAM password quality module not configured" in f.title for f in findings))
@@ -123,8 +127,22 @@ session required        pam_unix.so
         from vina.scanners.os.auth_security.pam import PamModule, PamRule
 
         rules = [
-            PamRule(service="common-password", type="password", control="requisite", module="pam_pwquality.so", args="retry=3", line=1),
-            PamRule(service="common-password", type="password", control="requisite", module="pam_unix.so", args="sha512", line=2),
+            PamRule(
+                service="common-password",
+                type="password",
+                control="requisite",
+                module="pam_pwquality.so",
+                args="retry=3",
+                line=1,
+            ),
+            PamRule(
+                service="common-password",
+                type="password",
+                control="requisite",
+                module="pam_unix.so",
+                args="sha512",
+                line=2,
+            ),
         ]
         findings: list[Finding] = []
         PamModule._audit_pam(rules, findings, "testhost")

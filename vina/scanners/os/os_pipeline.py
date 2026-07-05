@@ -396,7 +396,9 @@ class OSPipeline:
             StageDef("boot_security", _STAGE_DEPS["boot_security"], _stage_boot_security, RetryConfig()),
             StageDef("gui_security", _STAGE_DEPS["gui_security"], _stage_gui_security, RetryConfig()),
             StageDef("storage_security", _STAGE_DEPS["storage_security"], _stage_storage_security, RetryConfig()),
-            StageDef("monitoring_security", _STAGE_DEPS["monitoring_security"], _stage_monitoring_security, RetryConfig()),
+            StageDef(
+                "monitoring_security", _STAGE_DEPS["monitoring_security"], _stage_monitoring_security, RetryConfig()
+            ),
             StageDef("crypto_security", _STAGE_DEPS["crypto_security"], _stage_crypto_security, RetryConfig()),
             StageDef("container_security", _STAGE_DEPS["container_security"], _stage_container_security, RetryConfig()),
         ]
@@ -470,11 +472,7 @@ class OSPipeline:
         vuln_stats: Any = None
         inventory: list[Any] = []
         if findings:
-            from ...core.vuln_intel import (
-                VulnerabilityEngine,
-                build_software_inventory,
-                compute_vuln_stats,
-            )
+            from ...core.vuln_intel import VulnerabilityEngine, build_software_inventory, compute_vuln_stats
 
             inventory = build_software_inventory(findings)
             ve = VulnerabilityEngine()
@@ -501,10 +499,7 @@ class OSPipeline:
         reports_dir = self.output_root / "reports"
 
         from ...core.correlation import CorrelationEngine, compute_correlation_stats
-        from ...core.exploitability import (
-            ExploitabilityEngine,
-            compute_exploitability_summary,
-        )
+        from ...core.exploitability import ExploitabilityEngine, compute_exploitability_summary
         from ...core.knowledge import EnrichedFinding, EnrichmentEngine
 
         ee = EnrichmentEngine()
@@ -571,10 +566,7 @@ class OSPipeline:
         finished_at = datetime.now(UTC)
         total_duration = perf_counter() - started_perf
         summary = summary_for_stages(
-            "OS Pipeline",
-            target_display,
-            scheduler_result.stage_results,
-            scheduler_result.total_duration,
+            "OS Pipeline", target_display, scheduler_result.stage_results, scheduler_result.total_duration
         )
         print(summary)
 
@@ -663,9 +655,4 @@ class OSPipeline:
         return stage
 
 
-__all__ = [
-    "OSPipeline",
-    "OSPipelineResult",
-    "StageResult",
-    "StageState",
-]
+__all__ = ["OSPipeline", "OSPipelineResult", "StageResult", "StageState"]

@@ -14,11 +14,7 @@ class RunnerTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_timeout(self) -> None:
         runner = AsyncCommandRunner()
-        result = await runner.run(
-            sys.executable,
-            ["-c", "import time; time.sleep(0.2)"],
-            timeout_seconds=0.01,
-        )
+        result = await runner.run(sys.executable, ["-c", "import time; time.sleep(0.2)"], timeout_seconds=0.01)
         self.assertTrue(result.timed_out)
 
 

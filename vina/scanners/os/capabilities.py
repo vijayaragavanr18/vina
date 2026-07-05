@@ -52,10 +52,7 @@ class CapabilitiesModule:
         self.config = config
         self.context = context
 
-    async def run(
-        self,
-        target: TargetInput,
-    ) -> CapabilitiesResult:
+    async def run(self, target: TargetInput) -> CapabilitiesResult:
         """Execute system commands and return discovered capabilities.
 
         Parameters
@@ -67,21 +64,11 @@ class CapabilitiesModule:
         started_at = time.perf_counter()
         warnings: list[str] = []
 
-        commands: list[tuple[str, str, list[str]]] = [
-            (
-                "getcap",
-                self.config.tool_bin("getcap", "getcap"),
-                ["-r", "/"],
-            ),
-        ]
+        commands: list[tuple[str, str, list[str]]] = [("getcap", self.config.tool_bin("getcap", "getcap"), ["-r", "/"])]
 
         results: dict[str, CommandResult] = {}
         for name, executable, args in commands:
-            cr = await self.context.runner.run(
-                executable,
-                args,
-                timeout_seconds=self.context.timeout_seconds,
-            )
+            cr = await self.context.runner.run(executable, args, timeout_seconds=self.context.timeout_seconds)
             results[name] = cr
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {executable}")
@@ -100,9 +87,7 @@ class CapabilitiesModule:
         if paths:
             stat_args = ["--format=%a %U %G %s %n", *paths]
             stat_cr = await self.context.runner.run(
-                self.config.tool_bin("stat", "stat"),
-                stat_args,
-                timeout_seconds=self.context.timeout_seconds,
+                self.config.tool_bin("stat", "stat"), stat_args, timeout_seconds=self.context.timeout_seconds
             )
             results["stat"] = stat_cr
             if stat_cr.missing_executable:
@@ -136,10 +121,7 @@ class CapabilitiesModule:
         return result
 
     @staticmethod
-    def _parse_getcap(
-        results: dict[str, CommandResult],
-        warnings: list[str],
-    ) -> list[CapabilityEntry]:
+    def _parse_getcap(results: dict[str, CommandResult], warnings: list[str]) -> list[CapabilityEntry]:
         """Parse ``getcap -r /`` output into CapabilityEntry objects.
 
         Format: <path> = <capability1>,<capability2>+<flags>
@@ -164,23 +146,13 @@ class CapabilitiesModule:
                     cap = cap.strip()
                     if cap:
                         parsed_caps.append(cap)
-                entries.append(
-                    CapabilityEntry(
-                        path=path,
-                        capabilities=parsed_caps,
-                        source_command="getcap",
-                    )
-                )
+                entries.append(CapabilityEntry(path=path, capabilities=parsed_caps, source_command="getcap"))
             except (IndexError, ValueError):
                 warnings.append(f"Failed to parse getcap line: {line}")
         return entries
 
     @staticmethod
-    def _enrich_with_stat(
-        entries: list[CapabilityEntry],
-        stat_cr: CommandResult | None,
-        warnings: list[str],
-    ) -> None:
+    def _enrich_with_stat(entries: list[CapabilityEntry], stat_cr: CommandResult | None, warnings: list[str]) -> None:
         """Enrich capability entries with owner, group, permissions from stat."""
         if stat_cr is None or not stat_cr.succeeded or not stat_cr.stdout.strip():
             return

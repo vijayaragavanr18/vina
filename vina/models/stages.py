@@ -63,10 +63,7 @@ class StageResult:
 # ------------------------------------------------------------------
 
 
-def determine_stage_status(
-    cr: CommandResult,
-    record_count: int,
-) -> StageState:
+def determine_stage_status(cr: CommandResult, record_count: int) -> StageState:
     """Determine the appropriate stage state from execution results.
 
     Rules:
@@ -164,14 +161,7 @@ def build_stage_result(
 
 def build_skipped_stage(name: str) -> StageResult:
     """Build a skipped :class:`StageResult` (no command was run)."""
-    return StageResult(
-        name=name,
-        status=StageState.SKIPPED,
-        command="",
-        exit_code=None,
-        duration=0.0,
-        record_count=0,
-    )
+    return StageResult(name=name, status=StageState.SKIPPED, command="", exit_code=None, duration=0.0, record_count=0)
 
 
 def build_missing_dependency_stage(name: str, tool: str = "") -> StageResult:
@@ -198,18 +188,10 @@ def build_missing_dependency_stage(name: str, tool: str = "") -> StageResult:
 
 
 def summary_for_stages(
-    pipeline_name: str,
-    target_display: str,
-    stage_results: list[StageResult],
-    total_duration: float,
+    pipeline_name: str, target_display: str, stage_results: list[StageResult], total_duration: float
 ) -> str:
     """Build a concise summary string from a list of stage results."""
-    lines = [
-        "=" * 41,
-        f"VINA {pipeline_name}",
-        "=" * 41,
-        f"Target:          {target_display}",
-    ]
+    lines = ["=" * 41, f"VINA {pipeline_name}", "=" * 41, f"Target:          {target_display}"]
     for sr in stage_results:
         lines.append(f"  {sr.name:<18} {sr.status.value:<18} {sr.record_count}")
     lines.append(f"Total Duration:  {total_duration:.2f}s")

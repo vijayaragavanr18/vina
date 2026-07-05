@@ -7,9 +7,7 @@ from collections import defaultdict
 from collections.abc import Callable
 from typing import Any
 
-from .exceptions import (
-    PluginNotFoundError,
-)
+from .exceptions import PluginNotFoundError
 from .hooks import HookEvent, HookRegistration, is_valid_hook_point
 from .plugin import Plugin
 
@@ -98,14 +96,7 @@ class PluginRegistry:
 
     # -- Hook management ---------------------------------------------------
 
-    def add_hook(
-        self,
-        hook_point: str,
-        handler: Callable,
-        *,
-        priority: int = 0,
-        plugin_id: str = "",
-    ) -> None:
+    def add_hook(self, hook_point: str, handler: Callable, *, priority: int = 0, plugin_id: str = "") -> None:
         if not is_valid_hook_point(hook_point):
             logger.warning("Unknown hook point '%s'", hook_point)
         reg = HookRegistration(handler=handler, priority=priority, plugin_id=plugin_id)
@@ -139,11 +130,7 @@ class PluginRegistry:
                 event.results.append(result)
             except Exception as exc:
                 logger.error(
-                    "Hook '%s' handler from '%s' failed: %s",
-                    hook_point,
-                    reg.plugin_id or "?",
-                    exc,
-                    exc_info=True,
+                    "Hook '%s' handler from '%s' failed: %s", hook_point, reg.plugin_id or "?", exc, exc_info=True
                 )
                 event.errors.append((reg.plugin_id or "?", exc))
         return event
@@ -240,8 +227,4 @@ def reset_registry() -> None:
     _REGISTRY = PluginRegistry()
 
 
-__all__ = [
-    "PluginRegistry",
-    "get_registry",
-    "reset_registry",
-]
+__all__ = ["PluginRegistry", "get_registry", "reset_registry"]

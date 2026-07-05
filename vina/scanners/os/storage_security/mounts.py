@@ -60,17 +60,19 @@ class MountsModule:
                         if "nosuid" not in opts:
                             missing.append("nosuid")
                         if missing:
-                            findings.append(make_finding(
-                                title=f"Insecure mount options on /tmp: missing {', '.join(missing)}",
-                                description="The /tmp directory partition is mounted without critical restrictive mount options. Without noexec, nodev, or nosuid, users can run malicious binaries, access raw devices, or run SUID binaries directly from /tmp.",
-                                severity="medium",
-                                category="misconfiguration",
-                                source_stage="storage_security",
-                                target=target_str,
-                                evidence=f"Mount options on /tmp: {parts[3]}",
-                                recommendation="Update /etc/fstab to mount /tmp with 'defaults,noexec,nodev,nosuid'.",
-                                confidence=0.9,
-                            ))
+                            findings.append(
+                                make_finding(
+                                    title=f"Insecure mount options on /tmp: missing {', '.join(missing)}",
+                                    description="The /tmp directory partition is mounted without critical restrictive mount options. Without noexec, nodev, or nosuid, users can run malicious binaries, access raw devices, or run SUID binaries directly from /tmp.",
+                                    severity="medium",
+                                    category="misconfiguration",
+                                    source_stage="storage_security",
+                                    target=target_str,
+                                    evidence=f"Mount options on /tmp: {parts[3]}",
+                                    recommendation="Update /etc/fstab to mount /tmp with 'defaults,noexec,nodev,nosuid'.",
+                                    confidence=0.9,
+                                )
+                            )
 
                     elif mp == "/dev/shm":
                         missing = []
@@ -81,17 +83,19 @@ class MountsModule:
                         if "nosuid" not in opts:
                             missing.append("nosuid")
                         if missing:
-                            findings.append(make_finding(
-                                title=f"Insecure mount options on /dev/shm: missing {', '.join(missing)}",
-                                description="The shared memory directory /dev/shm is mounted with loose options, allowing binary execution or SUID escalation.",
-                                severity="medium",
-                                category="misconfiguration",
-                                source_stage="storage_security",
-                                target=target_str,
-                                evidence=f"Mount options on /dev/shm: {parts[3]}",
-                                recommendation="Update /etc/fstab to mount /dev/shm with 'defaults,noexec,nodev,nosuid'.",
-                                confidence=0.9,
-                            ))
+                            findings.append(
+                                make_finding(
+                                    title=f"Insecure mount options on /dev/shm: missing {', '.join(missing)}",
+                                    description="The shared memory directory /dev/shm is mounted with loose options, allowing binary execution or SUID escalation.",
+                                    severity="medium",
+                                    category="misconfiguration",
+                                    source_stage="storage_security",
+                                    target=target_str,
+                                    evidence=f"Mount options on /dev/shm: {parts[3]}",
+                                    recommendation="Update /etc/fstab to mount /dev/shm with 'defaults,noexec,nodev,nosuid'.",
+                                    confidence=0.9,
+                                )
+                            )
 
         exports_file = "/etc/exports"
         cr_nfs = await self.context.runner.run(cat_cmd, [exports_file], timeout_seconds=5)
@@ -104,17 +108,19 @@ class MountsModule:
                     insecure_exports.append(line.strip())
 
             if insecure_exports:
-                findings.append(make_finding(
-                    title="NFS exports configured with no_root_squash",
-                    description="One or more NFS exports are configured with 'no_root_squash'. This configuration allows root users on NFS clients to read and write files on the server as root, leading to potential privilege escalation.",
-                    severity="high",
-                    category="vulnerability",
-                    source_stage="storage_security",
-                    target=target_str,
-                    evidence="\n".join(insecure_exports),
-                    recommendation="Remove 'no_root_squash' or change it to 'root_squash' in /etc/exports.",
-                    confidence=0.95,
-                ))
+                findings.append(
+                    make_finding(
+                        title="NFS exports configured with no_root_squash",
+                        description="One or more NFS exports are configured with 'no_root_squash'. This configuration allows root users on NFS clients to read and write files on the server as root, leading to potential privilege escalation.",
+                        severity="high",
+                        category="vulnerability",
+                        source_stage="storage_security",
+                        target=target_str,
+                        evidence="\n".join(insecure_exports),
+                        recommendation="Remove 'no_root_squash' or change it to 'root_squash' in /etc/exports.",
+                        confidence=0.95,
+                    )
+                )
 
         smb_conf = "/etc/samba/smb.conf"
         cr_smb = await self.context.runner.run(cat_cmd, [smb_conf], timeout_seconds=5)
@@ -122,17 +128,19 @@ class MountsModule:
         if cr_smb.succeeded and cr_smb.stdout.strip():
             content = cr_smb.stdout
             if "guest ok = yes" in content.lower() or "public = yes" in content.lower():
-                findings.append(make_finding(
-                    title="Samba public/guest share access enabled",
-                    description="The Samba configuration file allows unauthenticated guest access to shared resources, exposing files to anonymous network users.",
-                    severity="medium",
-                    category="misconfiguration",
-                    source_stage="storage_security",
-                    target=target_str,
-                    evidence="guest ok = yes or public = yes configured in smb.conf",
-                    recommendation="Disable guest access by setting 'guest ok = no' and 'public = no' on sensitive Samba shares.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title="Samba public/guest share access enabled",
+                        description="The Samba configuration file allows unauthenticated guest access to shared resources, exposing files to anonymous network users.",
+                        severity="medium",
+                        category="misconfiguration",
+                        source_stage="storage_security",
+                        target=target_str,
+                        evidence="guest ok = yes or public = yes configured in smb.conf",
+                        recommendation="Disable guest access by setting 'guest ok = no' and 'public = no' on sensitive Samba shares.",
+                        confidence=0.9,
+                    )
+                )
 
         primary = cr_mounts or cr_nfs or self._empty_command_result()
 

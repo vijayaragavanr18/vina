@@ -14,9 +14,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from .datasets import (
-    MOCK_CVES,
-)
+from .datasets import MOCK_CVES
 from .fixtures import MockFindingFactory
 from .metrics import BenchmarkMetrics, compare_cves, compute_metrics
 from .runner import TestPipelineRunner, TestResult
@@ -192,9 +190,7 @@ def _register_builtin_profiles() -> None:
                 {"title_contains": "Docker socket", "severity": "critical"},
             ],
             expected_cves=["CVE-2024-0001", "CVE-2024-0002"],
-            expected_attack_paths=[
-                {"title_contains": "Passwordless sudo", "severity": "critical"},
-            ],
+            expected_attack_paths=[{"title_contains": "Passwordless sudo", "severity": "critical"}],
             expected_exploitability_min_score=40.0,
             min_findings=10,
             max_runtime_seconds=30.0,
@@ -217,9 +213,7 @@ def _register_builtin_profiles() -> None:
             description="Mock web pipeline scan",
             target="http://localhost:4280",
             pipeline="web",
-            expected_findings=[
-                {"title_contains": "Service", "severity": "info"},
-            ],
+            expected_findings=[{"title_contains": "Service", "severity": "info"}],
             min_findings=0,
             max_runtime_seconds=30.0,
             mock_findings=MockFindingFactory.exposed_service(),
@@ -254,11 +248,7 @@ class BenchmarkRunner:
         self.output_dir = (output_dir or Path.cwd() / "benchmark_output").resolve()
         self._runner = TestPipelineRunner(output_dir=self.output_dir)
 
-    def run_profile(
-        self,
-        profile: BenchmarkProfile,
-        _force: bool = False,
-    ) -> BenchmarkResult:
+    def run_profile(self, profile: BenchmarkProfile, _force: bool = False) -> BenchmarkResult:
         """Execute a single benchmark profile.
 
         If the profile provides ``mock_findings``, the pipeline runs in
@@ -337,11 +327,7 @@ class BenchmarkRunner:
         return self._runner.run_os_pipeline(target=profile.target)
 
     @staticmethod
-    def _evaluate(
-        profile: BenchmarkProfile,
-        test_result: TestResult,
-        metrics: BenchmarkMetrics,
-    ) -> bool:
+    def _evaluate(profile: BenchmarkProfile, test_result: TestResult, metrics: BenchmarkMetrics) -> bool:
         """Check if the benchmark result meets all pass criteria."""
         checks = []
 

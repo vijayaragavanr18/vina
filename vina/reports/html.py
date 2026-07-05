@@ -22,13 +22,7 @@ def _esc(value: str | int | float | None) -> str:
 
 
 def _severity_color(sev: str) -> str:
-    colors = {
-        "critical": "#e11d48",
-        "high": "#f97316",
-        "medium": "#eab308",
-        "low": "#3b82f6",
-        "info": "#6b7280",
-    }
+    colors = {"critical": "#e11d48", "high": "#f97316", "medium": "#eab308", "low": "#3b82f6", "info": "#6b7280"}
     return colors.get(sev.lower(), "#6b7280")
 
 
@@ -297,10 +291,7 @@ def _vuln_feed_status(vs: VulnStats | None) -> str:
     )
 
 
-def _exploitability_section(
-    assessments: list[ExploitabilityAssessment],
-    summary: ExploitabilitySummary | None,
-) -> str:
+def _exploitability_section(assessments: list[ExploitabilityAssessment], summary: ExploitabilitySummary | None) -> str:
     if not assessments:
         return _collapse_section(
             "exploitability",
@@ -355,10 +346,7 @@ def _attack_path_stat_cards(stats: AggregatorStats) -> str:
     return "<p class='empty'>No attack paths identified.</p>"
 
 
-def _vulnerability_stat_cards(
-    vmatches: list[VulnerabilityMatch],
-    vuln_stats: VulnStats | None,
-) -> str:
+def _vulnerability_stat_cards(vmatches: list[VulnerabilityMatch], vuln_stats: VulnStats | None) -> str:
     if vmatches:
         vs = vuln_stats
         if vs:

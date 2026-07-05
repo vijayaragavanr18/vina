@@ -60,22 +60,28 @@ class BrowsersModule:
                 policies = data.get("policies", {})
 
                 if "DisableSecurityBypasses" in policies and policies["DisableSecurityBypasses"] is False:
-                    findings.append(make_finding(
-                        title="Firefox security bypasses are allowed in policy",
-                        description=f"Firefox configuration in '{ff_policy_file}' explicitly allows bypassing certificate warnings or other security warnings.",
-                        severity="medium",
-                        category="misconfiguration",
-                        source_stage="gui_security",
-                        target=target_str,
-                        evidence="DisableSecurityBypasses=false",
-                        recommendation="Configure 'DisableSecurityBypasses': true in Firefox policy.",
-                        confidence=0.9,
-                    ))
+                    findings.append(
+                        make_finding(
+                            title="Firefox security bypasses are allowed in policy",
+                            description=f"Firefox configuration in '{ff_policy_file}' explicitly allows bypassing certificate warnings or other security warnings.",
+                            severity="medium",
+                            category="misconfiguration",
+                            source_stage="gui_security",
+                            target=target_str,
+                            evidence="DisableSecurityBypasses=false",
+                            recommendation="Configure 'DisableSecurityBypasses': true in Firefox policy.",
+                            confidence=0.9,
+                        )
+                    )
             except json.JSONDecodeError:
                 warnings.append(f"Failed to parse Firefox policy file: {ff_policy_file}")
 
         find_cmd = self.config.tool_bin("find", "find")
-        cr_chrom = await self.context.runner.run(find_cmd, ["/etc/chromium/policies/managed/", "/etc/opt/chrome/policies/managed/", "-name", "*.json"], timeout_seconds=5)
+        cr_chrom = await self.context.runner.run(
+            find_cmd,
+            ["/etc/chromium/policies/managed/", "/etc/opt/chrome/policies/managed/", "-name", "*.json"],
+            timeout_seconds=5,
+        )
 
         chrom_files = []
         if cr_chrom.succeeded and cr_chrom.stdout.strip():

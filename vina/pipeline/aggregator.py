@@ -224,10 +224,7 @@ class Aggregator:
         return result
 
     @staticmethod
-    def _merge_services(
-        naabu: NaabuResult,
-        nmap: NmapResult,
-    ) -> list[AggregatedService]:
+    def _merge_services(naabu: NaabuResult, nmap: NmapResult) -> list[AggregatedService]:
         """Merge services from Naabu (port/protocol) and Nmap (with versions)."""
         seen: set[tuple[str, int, str]] = set()
         services: list[AggregatedService] = []
@@ -284,21 +281,13 @@ class Aggregator:
             if key not in seen:
                 seen.add(key)
                 endpoints.append(
-                    AggregatedEndpoint(
-                        url=ep.url,
-                        host=ep.host,
-                        method=ep.method,
-                        status_code=ep.status_code,
-                    )
+                    AggregatedEndpoint(url=ep.url, host=ep.host, method=ep.method, status_code=ep.status_code)
                 )
         endpoints.sort(key=lambda e: e.url.lower())
         return endpoints
 
     @staticmethod
-    def _merge_technologies(
-        whatweb: WhatWebResult,
-        httpx: HttpxResult,
-    ) -> list[AggregatedTechnology]:
+    def _merge_technologies(whatweb: WhatWebResult, httpx: HttpxResult) -> list[AggregatedTechnology]:
         """Merge technology detections from WhatWeb and httpx."""
         seen: set[tuple[str, str]] = set()
         technologies: list[AggregatedTechnology] = []
@@ -312,10 +301,7 @@ class Aggregator:
                     seen.add(key)
                     technologies.append(
                         AggregatedTechnology(
-                            host=host,
-                            name=tech.name,
-                            version=tech.version,
-                            categories=tech.categories,
+                            host=host, name=tech.name, version=tech.version, categories=tech.categories
                         )
                     )
 
@@ -389,12 +375,7 @@ class Aggregator:
 
     @staticmethod
     def _host_to_dict(h: AggregatedHost) -> dict[str, Any]:
-        return {
-            "hostname": h.hostname,
-            "ip": h.ip,
-            "ports": h.ports,
-            "alive_urls": h.alive_urls,
-        }
+        return {"hostname": h.hostname, "ip": h.ip, "ports": h.ports, "alive_urls": h.alive_urls}
 
     @staticmethod
     def _service_to_dict(s: AggregatedService) -> dict[str, Any]:
@@ -409,21 +390,11 @@ class Aggregator:
 
     @staticmethod
     def _endpoint_to_dict(e: AggregatedEndpoint) -> dict[str, Any]:
-        return {
-            "url": e.url,
-            "host": e.host,
-            "method": e.method,
-            "status_code": e.status_code,
-        }
+        return {"url": e.url, "host": e.host, "method": e.method, "status_code": e.status_code}
 
     @staticmethod
     def _technology_to_dict(t: AggregatedTechnology) -> dict[str, Any]:
-        return {
-            "host": t.host,
-            "name": t.name,
-            "version": t.version,
-            "categories": t.categories,
-        }
+        return {"host": t.host, "name": t.name, "version": t.version, "categories": t.categories}
 
     def _print_summary(self, result: AggregatedResult) -> None:
         print("----------------------------------------")

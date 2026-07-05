@@ -53,11 +53,7 @@ class NaabuModule:
         self.config = config
         self.context = context
 
-    async def run(
-        self,
-        alive_hosts: list[str],
-        target: TargetInput,
-    ) -> NaabuResult:
+    async def run(self, alive_hosts: list[str], target: TargetInput) -> NaabuResult:
         """Execute Naabu against alive hosts and return open ports.
 
         Parameters
@@ -173,13 +169,7 @@ class NaabuModule:
 
             protocol = self._normalize_text(payload.get("protocol")) or "tcp"
             records.append(
-                NaabuRecord(
-                    host=host,
-                    port=port,
-                    protocol=protocol,
-                    raw=dict(payload),
-                    line_number=line_number,
-                )
+                NaabuRecord(host=host, port=port, protocol=protocol, raw=dict(payload), line_number=line_number)
             )
         return records
 

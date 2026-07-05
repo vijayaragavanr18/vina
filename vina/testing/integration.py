@@ -189,19 +189,11 @@ def _get_os_tests(runner: TestPipelineRunner, _output_dir: Path | None, timeout:
 
     async def _test_os_with_injected() -> TestResult:
         findings = MockFindingFactory.suid_findings(3) + MockFindingFactory.passwordless_sudo()
-        return runner.run_os_pipeline(
-            target="localhost",
-            inject_findings=findings,
-            timeout=timeout,
-        )
+        return runner.run_os_pipeline(target="localhost", inject_findings=findings, timeout=timeout)
 
     async def _test_os_with_vulns() -> TestResult:
         findings = MockFindingFactory.vulnerable_package()
-        return runner.run_os_pipeline(
-            target="localhost",
-            inject_findings=findings,
-            timeout=timeout,
-        )
+        return runner.run_os_pipeline(target="localhost", inject_findings=findings, timeout=timeout)
 
     return [
         ("os-basic", "Basic OS pipeline execution", _test_os_basic()),
@@ -214,9 +206,7 @@ def _get_web_tests(runner: TestPipelineRunner, _output_dir: Path | None, timeout
     async def _test_web_basic() -> TestResult:
         return runner.run_web_pipeline(target="http://localhost:4280", timeout=timeout)
 
-    return [
-        ("web-basic", "Basic web pipeline execution", _test_web_basic()),
-    ]
+    return [("web-basic", "Basic web pipeline execution", _test_web_basic())]
 
 
 def _get_plugin_tests(
@@ -232,18 +222,14 @@ def _get_plugin_tests(
         p = ExampleScannerPlugin()
         registry.register(p)
         tr = runner.run_os_pipeline(
-            target="localhost",
-            inject_findings=MockFindingFactory.suid_findings(2),
-            timeout=timeout,
+            target="localhost", inject_findings=MockFindingFactory.suid_findings(2), timeout=timeout
         )
         reset_registry()
         return tr
 
     from .fixtures import MockFindingFactory
 
-    return [
-        ("plugin-loading", "Plugin loading and hook execution", _test_plugin_loading()),
-    ]
+    return [("plugin-loading", "Plugin loading and hook execution", _test_plugin_loading())]
 
 
 def _get_feed_tests(
@@ -260,10 +246,7 @@ def _get_feed_tests(
             with patch("vina.core.feed_manager.urlopen") as mock_urlopen:
                 nvd_bytes = __import__("json").dumps(MOCK_NVD_RESPONSE).encode()
                 kev_bytes = __import__("json").dumps(MOCK_CISA_KEV_RESPONSE).encode()
-                responses = {
-                    "nvd.nist": nvd_bytes,
-                    "cisa.gov": kev_bytes,
-                }
+                responses = {"nvd.nist": nvd_bytes, "cisa.gov": kev_bytes}
 
                 def side_effect(req, *_args, **_kwargs):
                     url = req.get_full_url() if hasattr(req, "get_full_url") else str(req)
@@ -287,9 +270,7 @@ def _get_feed_tests(
             tr.errors.append(str(exc))
         return tr
 
-    return [
-        ("feed-update", "Feed update with mocked HTTP", _test_feed_update()),
-    ]
+    return [("feed-update", "Feed update with mocked HTTP", _test_feed_update())]
 
 
 def _get_report_tests(
@@ -338,9 +319,7 @@ def _get_report_tests(
             tr.errors.append(str(exc))
         return tr
 
-    return [
-        ("report-generation", "Report generation (json, markdown, html)", _test_report_generation()),
-    ]
+    return [("report-generation", "Report generation (json, markdown, html)", _test_report_generation())]
 
 
 def _run_assertions(test_result: TestResult) -> dict[str, bool]:
@@ -356,8 +335,4 @@ def _run_assertions(test_result: TestResult) -> dict[str, bool]:
     return assertions
 
 
-__all__ = [
-    "IntegrationTestResult",
-    "IntegrationTestSuite",
-    "run_integration_suite",
-]
+__all__ = ["IntegrationTestResult", "IntegrationTestSuite", "run_integration_suite"]

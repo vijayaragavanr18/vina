@@ -91,11 +91,7 @@ class DependencyChecker:
     @staticmethod
     def print_summary(results: list[DependencyInfo]) -> None:
         """Print a pre-flight dependency summary to the console."""
-        lines = [
-            "-" * 34,
-            "Dependency Check",
-            "-" * 34,
-        ]
+        lines = ["-" * 34, "Dependency Check", "-" * 34]
         for info in results:
             icon = "✓" if info.available else "✗"
             lines.append(f"  {icon} {info.name}")
@@ -130,12 +126,7 @@ class DependencyChecker:
         """
         for flag in ("--version", "-v"):
             try:
-                result = subprocess.run(
-                    [path, flag],
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                )
+                result = subprocess.run([path, flag], capture_output=True, text=True, timeout=5)
                 if result.returncode == 0:
                     line = (result.stdout or result.stderr).splitlines()
                     if line:
@@ -145,7 +136,4 @@ class DependencyChecker:
         return None
 
 
-__all__ = [
-    "DependencyChecker",
-    "DependencyInfo",
-]
+__all__ = ["DependencyChecker", "DependencyInfo"]

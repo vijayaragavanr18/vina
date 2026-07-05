@@ -55,10 +55,7 @@ class UsersModule:
         self.config = config
         self.context = context
 
-    async def run(
-        self,
-        target: TargetInput,
-    ) -> UsersResult:
+    async def run(self, target: TargetInput) -> UsersResult:
         """Execute system commands and return discovered users.
 
         Parameters
@@ -71,35 +68,15 @@ class UsersModule:
         warnings: list[str] = []
 
         commands: list[tuple[str, str, list[str]]] = [
-            (
-                "getent_passwd",
-                self.config.tool_bin("getent", "getent"),
-                ["passwd"],
-            ),
-            (
-                "getent_group",
-                self.config.tool_bin("getent", "getent"),
-                ["group"],
-            ),
-            (
-                "cat_passwd",
-                self.config.tool_bin("cat", "cat"),
-                ["/etc/passwd"],
-            ),
-            (
-                "cat_group",
-                self.config.tool_bin("cat", "cat"),
-                ["/etc/group"],
-            ),
+            ("getent_passwd", self.config.tool_bin("getent", "getent"), ["passwd"]),
+            ("getent_group", self.config.tool_bin("getent", "getent"), ["group"]),
+            ("cat_passwd", self.config.tool_bin("cat", "cat"), ["/etc/passwd"]),
+            ("cat_group", self.config.tool_bin("cat", "cat"), ["/etc/group"]),
         ]
 
         results: dict[str, CommandResult] = {}
         for name, executable, args in commands:
-            cr = await self.context.runner.run(
-                executable,
-                args,
-                timeout_seconds=self.context.timeout_seconds,
-            )
+            cr = await self.context.runner.run(executable, args, timeout_seconds=self.context.timeout_seconds)
             results[name] = cr
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {executable}")
@@ -156,20 +133,12 @@ class UsersModule:
         self._print_summary(result)
         return result
 
-    async def _run_id_commands(
-        self,
-        users: list[UserInfo],
-        warnings: list[str],
-    ) -> dict[str, CommandResult]:
+    async def _run_id_commands(self, users: list[UserInfo], warnings: list[str]) -> dict[str, CommandResult]:
         """Run ``id <username>`` for each discovered user."""
         cmd = self.config.tool_bin("id", "id")
         id_results: dict[str, CommandResult] = {}
         for user in users:
-            cr = await self.context.runner.run(
-                cmd,
-                [user.username],
-                timeout_seconds=self.context.timeout_seconds,
-            )
+            cr = await self.context.runner.run(cmd, [user.username], timeout_seconds=self.context.timeout_seconds)
             id_results[user.username] = cr
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {cmd}")
@@ -185,9 +154,7 @@ class UsersModule:
         return id_results
 
     def _parse_user_data(
-        self,
-        results: dict[str, CommandResult],
-        warnings: list[str],
+        self, results: dict[str, CommandResult], warnings: list[str]
     ) -> tuple[list[UserInfo], dict[str, list[str]]]:
         """Parse passwd and group outputs into users and group memberships."""
         passwd_cr = (
@@ -212,11 +179,7 @@ class UsersModule:
         return users, group_map
 
     @staticmethod
-    def _parse_passwd(
-        stdout: str,
-        source: str,
-        warnings: list[str],
-    ) -> list[UserInfo]:
+    def _parse_passwd(stdout: str, source: str, warnings: list[str]) -> list[UserInfo]:
         """Parse passwd-format output into UserInfo objects.
 
         Format: username:x:uid:gid:gecos:home:shell
@@ -256,10 +219,7 @@ class UsersModule:
         return users
 
     @staticmethod
-    def _parse_groups(
-        stdout: str,
-        warnings: list[str],
-    ) -> dict[str, list[str]]:
+    def _parse_groups(stdout: str, warnings: list[str]) -> dict[str, list[str]]:
         """Parse group-format output into a username-to-group mapping.
 
         Format: groupname:x:gid:user1,user2,...
@@ -288,10 +248,7 @@ class UsersModule:
         return group_map
 
     @staticmethod
-    def _attach_id_groups(
-        users: list[UserInfo],
-        id_results: dict[str, CommandResult],
-    ) -> None:
+    def _attach_id_groups(users: list[UserInfo], id_results: dict[str, CommandResult]) -> None:
         """Attach group memberships from ``id`` output."""
         for user in users:
             cr = id_results.get(user.username)

@@ -167,11 +167,7 @@ class TestSandbox:
         self._feed_thread = None
 
     def set_feed_response(
-        self,
-        path: str,
-        status: int = 200,
-        body: bytes = b"",
-        content_type: str = "application/json",
+        self, path: str, status: int = 200, body: bytes = b"", content_type: str = "application/json"
     ) -> None:
         """Set the response for a specific path on the mock feed server."""
         _MockFeedHandler.responses[path] = (status, {"Content-Type": content_type}, body)
@@ -199,12 +195,7 @@ class TestSandbox:
 
     # -- Subprocess runner -------------------------------------------------
 
-    def run_command(
-        self,
-        cmd: list[str],
-        timeout: float = 60.0,
-        **kwargs: Any,
-    ) -> subprocess.CompletedProcess:
+    def run_command(self, cmd: list[str], timeout: float = 60.0, **kwargs: Any) -> subprocess.CompletedProcess:
         """Run a subprocess inside the sandbox tmpdir."""
         kwargs.setdefault("cwd", str(self.tmpdir))
         kwargs.setdefault("env", self.apply_env())
@@ -213,7 +204,4 @@ class TestSandbox:
         return subprocess.run(cmd, timeout=timeout, **kwargs)
 
 
-__all__ = [
-    "TestSandbox",
-    "_MockFeedHandler",
-]
+__all__ = ["TestSandbox", "_MockFeedHandler"]

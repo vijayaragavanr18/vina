@@ -49,34 +49,38 @@ class KernelCryptoModule:
                 fips_enabled = True
 
         if not fips_enabled:
-            findings.append(make_finding(
-                title="Kernel FIPS mode is disabled",
-                description="The kernel cryptographical modules are not operating in FIPS-140 compliance mode. This may violate federal or enterprise compliance regulations.",
-                severity="info",
-                category="compliance",
-                source_stage="crypto_security",
-                target=target_str,
-                evidence="fips_enabled set to 0 or missing",
-                recommendation="Enable FIPS mode in the bootloader kernel parameters ('fips=1').",
-                confidence=0.85,
-            ))
+            findings.append(
+                make_finding(
+                    title="Kernel FIPS mode is disabled",
+                    description="The kernel cryptographical modules are not operating in FIPS-140 compliance mode. This may violate federal or enterprise compliance regulations.",
+                    severity="info",
+                    category="compliance",
+                    source_stage="crypto_security",
+                    target=target_str,
+                    evidence="fips_enabled set to 0 or missing",
+                    recommendation="Enable FIPS mode in the bootloader kernel parameters ('fips=1').",
+                    confidence=0.85,
+                )
+            )
 
         cr_ent = await self.context.runner.run(cat_cmd, ["/proc/sys/kernel/random/entropy_avail"], timeout_seconds=5)
         if cr_ent.succeeded and cr_ent.stdout.strip():
             try:
                 entropy_val = int(cr_ent.stdout.strip())
                 if entropy_val < 1000:
-                    findings.append(make_finding(
-                        title=f"Low available kernel entropy: {entropy_val}",
-                        description="The system available random entropy pool size is less than 1000. Low entropy can lead to blocking or weak cryptographic key generation for SSH, TLS, or system secrets.",
-                        severity="medium",
-                        category="misconfiguration",
-                        source_stage="crypto_security",
-                        target=target_str,
-                        evidence=f"entropy_avail = {entropy_val}",
-                        recommendation="Install haveged or enable virtio-rng to feed the kernel entropy pool.",
-                        confidence=0.9,
-                    ))
+                    findings.append(
+                        make_finding(
+                            title=f"Low available kernel entropy: {entropy_val}",
+                            description="The system available random entropy pool size is less than 1000. Low entropy can lead to blocking or weak cryptographic key generation for SSH, TLS, or system secrets.",
+                            severity="medium",
+                            category="misconfiguration",
+                            source_stage="crypto_security",
+                            target=target_str,
+                            evidence=f"entropy_avail = {entropy_val}",
+                            recommendation="Install haveged or enable virtio-rng to feed the kernel entropy pool.",
+                            confidence=0.9,
+                        )
+                    )
             except ValueError:
                 warnings.append(f"Failed to parse available entropy count: {cr_ent.stdout}")
 

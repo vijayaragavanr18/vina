@@ -129,7 +129,4 @@ class BootSecurityModule:
         )
 
 
-__all__ = [
-    "BootSecurityModule",
-    "BootSecurityResult",
-]
+__all__ = ["BootSecurityModule", "BootSecurityResult"]

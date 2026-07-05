@@ -46,11 +46,7 @@ class NetworkSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
         self.config = AppConfig()
         self.runner = AsyncMock()
         self.store = MagicMock()
-        self.context = ModuleContext(
-            runner=self.runner,
-            store=self.store,
-            timeout_seconds=10,
-        )
+        self.context = ModuleContext(runner=self.runner, store=self.store, timeout_seconds=10)
         self.target = TargetInput.from_raw("localhost")
 
     async def test_firewall_scanner(self) -> None:
@@ -88,9 +84,7 @@ class NetworkSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
         def run_mock(executable: str, args: list[str], **_kwargs: Any) -> CommandResult:
             if "sysctl" in executable:
                 stdout_data = (
-                    "net.ipv4.ip_forward = 1\n"
-                    "net.ipv4.tcp_syncookies = 0\n"
-                    "net.ipv4.conf.all.rp_filter = 0\n"
+                    "net.ipv4.ip_forward = 1\n" "net.ipv4.tcp_syncookies = 0\n" "net.ipv4.conf.all.rp_filter = 0\n"
                 )
                 return CommandResult(
                     command=executable,
@@ -125,10 +119,7 @@ class NetworkSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
     async def test_dns_scanner(self) -> None:
         def run_mock(executable: str, args: list[str], **_kwargs: Any) -> CommandResult:
             if "cat" in executable and "/etc/resolv.conf" in args:
-                stdout_data = (
-                    "nameserver 8.8.8.8\n"
-                    "nameserver 1.1.1.1\n"
-                )
+                stdout_data = "nameserver 8.8.8.8\n" "nameserver 1.1.1.1\n"
                 return CommandResult(
                     command=executable,
                     args=tuple(args),
@@ -162,8 +153,8 @@ class NetworkSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
         def run_mock(executable: str, args: list[str], **_kwargs: Any) -> CommandResult:
             if "ss" in executable:
                 stdout_data = (
-                    "tcp   LISTEN 0      128          0.0.0.0:3306       0.0.0.0:*      users:((\"mysqld\",pid=1234,fd=10))\n"
-                    "tcp   LISTEN 0      128             :::22              :::*      users:((\"sshd\",pid=5678,fd=3))\n"
+                    'tcp   LISTEN 0      128          0.0.0.0:3306       0.0.0.0:*      users:(("mysqld",pid=1234,fd=10))\n'
+                    'tcp   LISTEN 0      128             :::22              :::*      users:(("sshd",pid=5678,fd=3))\n'
                 )
                 return CommandResult(
                     command=executable,

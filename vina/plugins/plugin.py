@@ -114,7 +114,4 @@ class Plugin:
         return None
 
 
-__all__ = [
-    "Plugin",
-    "PluginMetadata",
-]
+__all__ = ["Plugin", "PluginMetadata"]

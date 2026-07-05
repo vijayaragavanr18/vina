@@ -65,11 +65,7 @@ class KatanaModule:
         self.config = config
         self.context = context
 
-    async def run(
-        self,
-        alive_hosts: list[str],
-        target: TargetInput,
-    ) -> KatanaResult:
+    async def run(self, alive_hosts: list[str], target: TargetInput) -> KatanaResult:
         """Execute Katana against alive hosts and return discovered endpoints.
 
         Parameters
@@ -134,11 +130,7 @@ class KatanaModule:
         self._print_summary(result)
         return result
 
-    def _parse_output(
-        self,
-        output: str,
-        warnings: list[str],
-    ) -> list[KatanaEndpoint]:
+    def _parse_output(self, output: str, warnings: list[str]) -> list[KatanaEndpoint]:
         """Parse Katana JSON lines into typed records."""
         endpoints: list[KatanaEndpoint] = []
 
@@ -168,10 +160,7 @@ class KatanaModule:
         return endpoints
 
     def _parse_endpoint(
-        self,
-        payload: Mapping[str, Any],
-        line_number: int,
-        warnings: list[str],
+        self, payload: Mapping[str, Any], line_number: int, warnings: list[str]
     ) -> KatanaEndpoint | None:
         """Parse a single Katana JSON line into a KatanaEndpoint."""
         url = payload.get("url") or payload.get("request")
@@ -191,18 +180,8 @@ class KatanaModule:
         method = self._normalize_text(payload.get("method"))
         source = self._normalize_text(payload.get("source"))
         depth = self._parse_int(payload.get("depth"))
-        content_type = self._normalize_text(
-            payload.get(
-                "content_type",
-                payload.get("content-type"),
-            )
-        )
-        status_code = self._parse_int(
-            payload.get(
-                "status_code",
-                payload.get("status-code"),
-            )
-        )
+        content_type = self._normalize_text(payload.get("content_type", payload.get("content-type")))
+        status_code = self._parse_int(payload.get("status_code", payload.get("status-code")))
 
         inputs_raw = payload.get("inputs") or payload.get("params") or []
         parameters = self._extract_strings(inputs_raw)
@@ -314,9 +293,7 @@ class KatanaModule:
         return sum(1 for ep in endpoints if ep.forms)
 
     @staticmethod
-    def _deduplicate(
-        endpoints: list[KatanaEndpoint],
-    ) -> list[KatanaEndpoint]:
+    def _deduplicate(endpoints: list[KatanaEndpoint]) -> list[KatanaEndpoint]:
         """Deduplicate endpoints by URL."""
         seen: set[str] = set()
         deduped: list[KatanaEndpoint] = []
@@ -403,8 +380,4 @@ class KatanaModule:
         return None
 
 
-__all__ = [
-    "KatanaEndpoint",
-    "KatanaModule",
-    "KatanaResult",
-]
+__all__ = ["KatanaEndpoint", "KatanaModule", "KatanaResult"]

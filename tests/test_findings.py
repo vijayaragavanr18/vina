@@ -4,13 +4,7 @@ from __future__ import annotations
 
 import unittest
 
-from vina.models.findings import (
-    Finding,
-    FindingCategory,
-    Severity,
-    make_finding,
-    severity_key,
-)
+from vina.models.findings import Finding, FindingCategory, Severity, make_finding, severity_key
 
 
 class SeverityTests(unittest.TestCase):
@@ -127,11 +121,7 @@ class MakeFindingTests(unittest.TestCase):
         self.assertEqual(f.references, ["https://docs.example.com"])
 
     def test_make_generates_id(self) -> None:
-        f = make_finding(
-            title="Test",
-            source_stage="subfinder",
-            target="example.com",
-        )
+        f = make_finding(title="Test", source_stage="subfinder", target="example.com")
         self.assertEqual(f.id, "subfinder/example.com/Test")
 
     def test_make_empty_fields_default(self) -> None:

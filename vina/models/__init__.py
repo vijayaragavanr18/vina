@@ -14,15 +14,7 @@ from .common import (
     TechnologyEntry,
     extract_query_parameters,
 )
-from .findings import (
-    SEVERITY_LABELS,
-    SEVERITY_ORDER,
-    Finding,
-    FindingCategory,
-    Severity,
-    make_finding,
-    severity_key,
-)
+from .findings import SEVERITY_LABELS, SEVERITY_ORDER, Finding, FindingCategory, Severity, make_finding, severity_key
 
 __all__ = [
     "SEVERITY_LABELS",

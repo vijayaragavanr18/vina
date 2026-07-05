@@ -53,75 +53,91 @@ class KernelParamsModule:
                 if param.startswith("init="):
                     val = param.partition("=")[2]
                     if val in ("/bin/sh", "/bin/bash", "/bin/dash", "/bin/zsh"):
-                        findings.append(make_finding(
-                            title=f"Vulnerable kernel boot parameter: {param}",
-                            description=f"Kernel is configured to boot directly into an unauthenticated shell: {param}. This bypasses standard systemd/sysvinit login controls.",
-                            severity="critical",
-                            category="vulnerability",
-                            source_stage="boot_security",
-                            target=target_str,
-                            evidence=f"Kernel cmdline: {cmdline}",
-                            recommendation="Remove the custom init parameter from GRUB configuration /etc/default/grub.",
-                            confidence=0.95,
-                        ))
+                        findings.append(
+                            make_finding(
+                                title=f"Vulnerable kernel boot parameter: {param}",
+                                description=f"Kernel is configured to boot directly into an unauthenticated shell: {param}. This bypasses standard systemd/sysvinit login controls.",
+                                severity="critical",
+                                category="vulnerability",
+                                source_stage="boot_security",
+                                target=target_str,
+                                evidence=f"Kernel cmdline: {cmdline}",
+                                recommendation="Remove the custom init parameter from GRUB configuration /etc/default/grub.",
+                                confidence=0.95,
+                            )
+                        )
 
             if "mitigations=off" in cmdline:
-                findings.append(make_finding(
-                    title="Kernel speculative execution mitigations are disabled",
-                    description="Kernel is booted with 'mitigations=off', disabling protections against CPU side-channel attacks (Meltdown, Spectre, MDS, L1TF).",
-                    severity="high",
-                    category="vulnerability",
-                    source_stage="boot_security",
-                    target=target_str,
-                    evidence=f"Kernel cmdline: {cmdline}",
-                    recommendation="Remove 'mitigations=off' from kernel boot arguments in /etc/default/grub.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title="Kernel speculative execution mitigations are disabled",
+                        description="Kernel is booted with 'mitigations=off', disabling protections against CPU side-channel attacks (Meltdown, Spectre, MDS, L1TF).",
+                        severity="high",
+                        category="vulnerability",
+                        source_stage="boot_security",
+                        target=target_str,
+                        evidence=f"Kernel cmdline: {cmdline}",
+                        recommendation="Remove 'mitigations=off' from kernel boot arguments in /etc/default/grub.",
+                        confidence=0.9,
+                    )
+                )
 
             if "selinux=0" in cmdline:
-                findings.append(make_finding(
-                    title="SELinux disabled in kernel boot parameters",
-                    description="SELinux is explicitly disabled via boot parameter 'selinux=0'.",
-                    severity="high",
-                    category="misconfiguration",
-                    source_stage="boot_security",
-                    target=target_str,
-                    evidence=f"Kernel cmdline: {cmdline}",
-                    recommendation="Enable SELinux in boot configuration.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title="SELinux disabled in kernel boot parameters",
+                        description="SELinux is explicitly disabled via boot parameter 'selinux=0'.",
+                        severity="high",
+                        category="misconfiguration",
+                        source_stage="boot_security",
+                        target=target_str,
+                        evidence=f"Kernel cmdline: {cmdline}",
+                        recommendation="Enable SELinux in boot configuration.",
+                        confidence=0.9,
+                    )
+                )
             if "apparmor=0" in cmdline:
-                findings.append(make_finding(
-                    title="AppArmor disabled in kernel boot parameters",
-                    description="AppArmor is explicitly disabled via boot parameter 'apparmor=0'.",
-                    severity="high",
-                    category="misconfiguration",
-                    source_stage="boot_security",
-                    target=target_str,
-                    evidence=f"Kernel cmdline: {cmdline}",
-                    recommendation="Enable AppArmor in boot configuration.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title="AppArmor disabled in kernel boot parameters",
+                        description="AppArmor is explicitly disabled via boot parameter 'apparmor=0'.",
+                        severity="high",
+                        category="misconfiguration",
+                        source_stage="boot_security",
+                        target=target_str,
+                        evidence=f"Kernel cmdline: {cmdline}",
+                        recommendation="Enable AppArmor in boot configuration.",
+                        confidence=0.9,
+                    )
+                )
 
         grep_cmd = self.config.tool_bin("grep", "grep")
-        cr_emerg = await self.context.runner.run(grep_cmd, ["-r", "sulogin", "/lib/systemd/system/emergency.service", "/lib/systemd/system/rescue.service"], timeout_seconds=5)
+        cr_emerg = await self.context.runner.run(
+            grep_cmd,
+            ["-r", "sulogin", "/lib/systemd/system/emergency.service", "/lib/systemd/system/rescue.service"],
+            timeout_seconds=5,
+        )
 
-        cr_files = await self.context.runner.run(cat_cmd, ["/lib/systemd/system/emergency.service", "/lib/systemd/system/rescue.service"], timeout_seconds=5)
+        cr_files = await self.context.runner.run(
+            cat_cmd, ["/lib/systemd/system/emergency.service", "/lib/systemd/system/rescue.service"], timeout_seconds=5
+        )
 
         if cr_files.succeeded and cr_files.stdout.strip():
             content = cr_files.stdout
             if "ExecStart=-/bin/bash" in content or "ExecStart=-/bin/sh" in content:
-                findings.append(make_finding(
-                    title="Root shell spawned on systemd emergency/rescue mode without password",
-                    description="Emergency or rescue systemd unit files are configured to spawn a shell directly without requiring the root password via sulogin.",
-                    severity="critical",
-                    category="vulnerability",
-                    source_stage="boot_security",
-                    target=target_str,
-                    evidence="ExecStart directive runs shell directly without sulogin wrapper.",
-                    recommendation="Modify systemd emergency/rescue service files to enforce sulogin root authentication.",
-                    confidence=0.85,
-                ))
+                findings.append(
+                    make_finding(
+                        title="Root shell spawned on systemd emergency/rescue mode without password",
+                        description="Emergency or rescue systemd unit files are configured to spawn a shell directly without requiring the root password via sulogin.",
+                        severity="critical",
+                        category="vulnerability",
+                        source_stage="boot_security",
+                        target=target_str,
+                        evidence="ExecStart directive runs shell directly without sulogin wrapper.",
+                        recommendation="Modify systemd emergency/rescue service files to enforce sulogin root authentication.",
+                        confidence=0.85,
+                    )
+                )
 
         primary = cr_cmd or cr_emerg or self._empty_command_result()
 

@@ -56,7 +56,9 @@ class FirewallModule:
         ipt_active = False
         if cr_ipt.succeeded and cr_ipt.stdout.strip():
             lines = cr_ipt.stdout.splitlines()
-            rule_count = sum(1 for line in lines if line.strip() and not line.startswith("Chain") and not line.startswith("target"))
+            rule_count = sum(
+                1 for line in lines if line.strip() and not line.startswith("Chain") and not line.startswith("target")
+            )
             if rule_count > 0:
                 ipt_active = True
 
@@ -66,17 +68,19 @@ class FirewallModule:
             nft_active = True
 
         if not (ufw_active or fwd_active or ipt_active or nft_active):
-            findings.append(make_finding(
-                title="Firewall is disabled or has no rules",
-                description="No active firewall configuration (UFW, Firewalld, iptables, or nftables) was detected on the host.",
-                severity="high",
-                category="misconfiguration",
-                source_stage="network_security",
-                target=target.normalized,
-                evidence="No active firewall rules detected in UFW, Firewalld, iptables, or nftables.",
-                recommendation="Enable a firewall service (e.g. 'ufw enable' or 'systemctl enable --now firewalld') and configure inbound/outbound rules.",
-                confidence=0.9,
-            ))
+            findings.append(
+                make_finding(
+                    title="Firewall is disabled or has no rules",
+                    description="No active firewall configuration (UFW, Firewalld, iptables, or nftables) was detected on the host.",
+                    severity="high",
+                    category="misconfiguration",
+                    source_stage="network_security",
+                    target=target.normalized,
+                    evidence="No active firewall rules detected in UFW, Firewalld, iptables, or nftables.",
+                    recommendation="Enable a firewall service (e.g. 'ufw enable' or 'systemctl enable --now firewalld') and configure inbound/outbound rules.",
+                    confidence=0.9,
+                )
+            )
         else:
             evidence_parts = []
             if ufw_active:
@@ -87,16 +91,18 @@ class FirewallModule:
                 evidence_parts.append("iptables (active rules)")
             if nft_active:
                 evidence_parts.append("nftables (active rules)")
-            findings.append(make_finding(
-                title="Firewall is enabled",
-                description=f"Active firewall configuration detected: {', '.join(evidence_parts)}.",
-                severity="info",
-                category="security_control",
-                source_stage="network_security",
-                target=target.normalized,
-                evidence=f"Active firewalls: {', '.join(evidence_parts)}",
-                confidence=0.9,
-            ))
+            findings.append(
+                make_finding(
+                    title="Firewall is enabled",
+                    description=f"Active firewall configuration detected: {', '.join(evidence_parts)}.",
+                    severity="info",
+                    category="security_control",
+                    source_stage="network_security",
+                    target=target.normalized,
+                    evidence=f"Active firewalls: {', '.join(evidence_parts)}",
+                    confidence=0.9,
+                )
+            )
 
         primary = cr_ufw or cr_fwd or cr_ipt or cr_nft or self._empty_command_result()
 

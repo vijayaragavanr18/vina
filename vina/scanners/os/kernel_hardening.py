@@ -85,14 +85,30 @@ _SYSCTL_CHECKS: list[dict[str, str]] = [
 ]
 
 _SUSPICIOUS_MODULES = [
-    "bluetooth", "btusb", "firewire", "firewire_ohci", "firewire_sbp2",
-    "pcan", "uvcvideo", "pcspkr", "snd_pcsp",
+    "bluetooth",
+    "btusb",
+    "firewire",
+    "firewire_ohci",
+    "firewire_sbp2",
+    "pcan",
+    "uvcvideo",
+    "pcspkr",
+    "snd_pcsp",
 ]
 
 _MITIGATION_FILES = [
-    "spectre_v1", "spectre_v2", "meltdown", "mds", "tsx_async_abort",
-    "itlb_multihit", "mmio_stale_data", "retbleed", "srso",
-    "gather_data_sampling", "l1tf", "srbds",
+    "spectre_v1",
+    "spectre_v2",
+    "meltdown",
+    "mds",
+    "tsx_async_abort",
+    "itlb_multihit",
+    "mmio_stale_data",
+    "retbleed",
+    "srso",
+    "gather_data_sampling",
+    "l1tf",
+    "srbds",
 ]
 
 
@@ -155,26 +171,24 @@ class KernelHardeningModule:
 
     def _build_commands(self) -> list[tuple[str, str, list[str]]]:
         sysctl_keys = [c["key"] for c in _SYSCTL_CHECKS]
-        commands: list[tuple[str, str, list[str]]] = [
-            ("uname_r", self.config.tool_bin("uname", "uname"), ["-r"]),
-        ]
+        commands: list[tuple[str, str, list[str]]] = [("uname_r", self.config.tool_bin("uname", "uname"), ["-r"])]
         for key in sysctl_keys:
             safe = key.replace(".", "_").replace("/", "_")
             commands.append((f"sysctl_{safe}", self.config.tool_bin("sysctl", "sysctl"), ["-n", key]))
-        commands.extend([
-            ("mokutil", self.config.tool_bin("mokutil", "mokutil"), ["--sb-state"]),
-            ("sestatus", self.config.tool_bin("sestatus", "sestatus"), []),
-            ("getenforce", self.config.tool_bin("getenforce", "getenforce"), []),
-            ("aa_status", self.config.tool_bin("aa-status", "aa-status"), []),
-            ("apparmor_enabled", self.config.tool_bin("cat", "cat"), ["/sys/module/apparmor/parameters/enabled"]),
-            ("lsmod", self.config.tool_bin("lsmod", "lsmod"), []),
-        ])
+        commands.extend(
+            [
+                ("mokutil", self.config.tool_bin("mokutil", "mokutil"), ["--sb-state"]),
+                ("sestatus", self.config.tool_bin("sestatus", "sestatus"), []),
+                ("getenforce", self.config.tool_bin("getenforce", "getenforce"), []),
+                ("aa_status", self.config.tool_bin("aa-status", "aa-status"), []),
+                ("apparmor_enabled", self.config.tool_bin("cat", "cat"), ["/sys/module/apparmor/parameters/enabled"]),
+                ("lsmod", self.config.tool_bin("lsmod", "lsmod"), []),
+            ]
+        )
         for vuln in _MITIGATION_FILES:
             path = f"/sys/devices/system/cpu/vulnerabilities/{vuln}"
             commands.append((f"mit_{vuln}", self.config.tool_bin("cat", "cat"), [path]))
-        commands.append(
-            ("boot_config", self.config.tool_bin("cat", "cat"), ["/proc/config.gz"])
-        )
+        commands.append(("boot_config", self.config.tool_bin("cat", "cat"), ["/proc/config.gz"]))
         return commands
 
     def _check_sysctl(
@@ -191,11 +205,16 @@ class KernelHardeningModule:
                 continue
             value = cr.stdout.strip()
             secure = value == expected
-            settings.append(SysctlSecuritySetting(key=key, value=value, expected=expected, description=label, secure=secure))
+            settings.append(
+                SysctlSecuritySetting(key=key, value=value, expected=expected, description=label, secure=secure)
+            )
             if not secure:
                 severity = "medium"
                 rec = f"Set sysctl {key}={expected}: sysctl -w {key}={expected}"
-                if key in ("kernel.randomize_va_space", "kernel.kptr_restrict", "kernel.dmesg_restrict") or key in ("kernel.kexec_load_disabled", "kernel.unprivileged_bpf_disabled"):
+                if key in ("kernel.randomize_va_space", "kernel.kptr_restrict", "kernel.dmesg_restrict") or key in (
+                    "kernel.kexec_load_disabled",
+                    "kernel.unprivileged_bpf_disabled",
+                ):
                     severity = "high"
                 findings.append(
                     make_finding(
@@ -307,6 +326,7 @@ class KernelHardeningModule:
                 for line in cr_status.stdout.splitlines():
                     if "profiles are loaded" in line or "profiles are in" in line:
                         import contextlib
+
                         with contextlib.suppress(ValueError, IndexError):
                             profiles = int(line.split()[0])
                         break
@@ -394,7 +414,10 @@ class KernelHardeningModule:
         return bool(text and not text[:1024].isprintable())
 
     def _check_ebpf(
-        self, _results: dict[str, CommandResult], findings: list[Finding], target_str: str,
+        self,
+        _results: dict[str, CommandResult],
+        findings: list[Finding],
+        target_str: str,
         sysctl_settings: list[SysctlSecuritySetting],
     ) -> bool | None:
         for s in sysctl_settings:
@@ -429,7 +452,10 @@ class KernelHardeningModule:
         return None
 
     def _check_user_namespaces(
-        self, _results: dict[str, CommandResult], findings: list[Finding], target_str: str,
+        self,
+        _results: dict[str, CommandResult],
+        findings: list[Finding],
+        target_str: str,
         sysctl_settings: list[SysctlSecuritySetting],
     ) -> bool | None:
         for s in sysctl_settings:
@@ -556,7 +582,11 @@ class KernelHardeningModule:
         print("Kernel Hardening Audit")
         print("----------------------------------------")
         sb = "enabled" if result.secure_boot_active else "disabled" if result.secure_boot_active is False else "unknown"
-        se = "enforcing" if result.selinux_enforcing else "permissive/disabled" if result.selinux_enforcing is False else "unknown"
+        se = (
+            "enforcing"
+            if result.selinux_enforcing
+            else "permissive/disabled" if result.selinux_enforcing is False else "unknown"
+        )
         aa = "enabled" if result.apparmor_enabled else "disabled" if result.apparmor_enabled is False else "unknown"
         print(f"Secure Boot   : {sb}")
         print(f"SELinux       : {se}")
@@ -580,9 +610,4 @@ class KernelHardeningModule:
         )
 
 
-__all__ = [
-    "CpuMitigation",
-    "KernelHardeningModule",
-    "KernelHardeningResult",
-    "SysctlSecuritySetting",
-]
+__all__ = ["CpuMitigation", "KernelHardeningModule", "KernelHardeningResult", "SysctlSecuritySetting"]

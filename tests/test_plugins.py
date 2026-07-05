@@ -151,10 +151,7 @@ class TestPluginContext:
         assert ctx.config is None
 
     def test_create_with_args(self):
-        ctx = PluginContext.create(
-            output_dir=Path("/tmp/test"),
-            custom_key="custom_val",
-        )
+        ctx = PluginContext.create(output_dir=Path("/tmp/test"), custom_key="custom_val")
         assert ctx.output_dir == Path("/tmp/test")
         assert ctx.extra["custom_key"] == "custom_val"
 
@@ -217,9 +214,7 @@ class _PluginWithHooks(Plugin):
     metadata = PluginMetadata(id="hooks_p", name="Hooks Plugin", version="1.0.0")
 
     def register_hooks(self):
-        return {
-            HookPoint.BEFORE_PIPELINE: [self._handler],
-        }
+        return {HookPoint.BEFORE_PIPELINE: [self._handler]}
 
     @staticmethod
     def _handler(event):
@@ -231,9 +226,7 @@ class _FailingHookPlugin(Plugin):
     metadata = PluginMetadata(id="fail_p", name="Fail Plugin", version="1.0.0")
 
     def register_hooks(self):
-        return {
-            HookPoint.BEFORE_PIPELINE: [self._fail_handler],
-        }
+        return {HookPoint.BEFORE_PIPELINE: [self._fail_handler]}
 
     @staticmethod
     def _fail_handler(_event):

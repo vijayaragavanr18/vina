@@ -62,10 +62,7 @@ class UrlAggregatorModule:
         self.context = context
 
     async def run(
-        self,
-        katana_result: KatanaResult,
-        gau_result: GauResult,
-        wayback_result: WaybackurlsResult,
+        self, katana_result: KatanaResult, gau_result: GauResult, wayback_result: WaybackurlsResult
     ) -> UrlAggregatorResult:
         """Merge URLs from Katana, GAU, and Waybackurls into one dataset.
 
@@ -132,10 +129,7 @@ class UrlAggregatorModule:
         self._print_summary(result)
         return result
 
-    def _merge(
-        self,
-        raw_urls: list[tuple[str, str]],
-    ) -> dict[str, AggregatedUrl]:
+    def _merge(self, raw_urls: list[tuple[str, str]]) -> dict[str, AggregatedUrl]:
         """Normalize and deduplicate URLs, merging source attribution."""
         merged: dict[str, AggregatedUrl] = {}
 
@@ -257,8 +251,4 @@ class UrlAggregatorModule:
         print(f"Duplicates Removed: {result.duplicates_removed}")
 
 
-__all__ = [
-    "AggregatedUrl",
-    "UrlAggregatorModule",
-    "UrlAggregatorResult",
-]
+__all__ = ["AggregatedUrl", "UrlAggregatorModule", "UrlAggregatorResult"]

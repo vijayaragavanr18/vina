@@ -69,11 +69,4 @@ def get_all_hook_points() -> list[str]:
     return sorted(_ALL_HOOK_POINTS)
 
 
-__all__ = [
-    "HookEvent",
-    "HookHandler",
-    "HookPoint",
-    "HookRegistration",
-    "get_all_hook_points",
-    "is_valid_hook_point",
-]
+__all__ = ["HookEvent", "HookHandler", "HookPoint", "HookRegistration", "get_all_hook_points", "is_valid_hook_point"]

@@ -51,10 +51,7 @@ class SudoModule:
         self.config = config
         self.context = context
 
-    async def run(
-        self,
-        target: TargetInput,
-    ) -> SudoResult:
+    async def run(self, target: TargetInput) -> SudoResult:
         """Execute system commands and return discovered sudo rules.
 
         Parameters
@@ -67,30 +64,14 @@ class SudoModule:
         warnings: list[str] = []
 
         commands: list[tuple[str, str, list[str]]] = [
-            (
-                "sudo_l",
-                self.config.tool_bin("sudo", "sudo"),
-                ["-n", "-l"],
-            ),
-            (
-                "cat_sudoers",
-                self.config.tool_bin("cat", "cat"),
-                ["/etc/sudoers"],
-            ),
-            (
-                "ls_sudoers_d",
-                self.config.tool_bin("ls", "ls"),
-                ["/etc/sudoers.d"],
-            ),
+            ("sudo_l", self.config.tool_bin("sudo", "sudo"), ["-n", "-l"]),
+            ("cat_sudoers", self.config.tool_bin("cat", "cat"), ["/etc/sudoers"]),
+            ("ls_sudoers_d", self.config.tool_bin("ls", "ls"), ["/etc/sudoers.d"]),
         ]
 
         results: dict[str, CommandResult] = {}
         for name, executable, args in commands:
-            cr = await self.context.runner.run(
-                executable,
-                args,
-                timeout_seconds=self.context.timeout_seconds,
-            )
+            cr = await self.context.runner.run(executable, args, timeout_seconds=self.context.timeout_seconds)
             results[name] = cr
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {executable}")
@@ -110,9 +91,7 @@ class SudoModule:
         if sudoers_d_files and not entries:
             for fpath in sudoers_d_files:
                 cr = await self.context.runner.run(
-                    self.config.tool_bin("cat", "cat"),
-                    [fpath],
-                    timeout_seconds=self.context.timeout_seconds,
+                    self.config.tool_bin("cat", "cat"), [fpath], timeout_seconds=self.context.timeout_seconds
                 )
                 results[f"cat_{fpath}"] = cr
                 if cr.missing_executable:
@@ -123,11 +102,7 @@ class SudoModule:
                     _, msg = classify_command_error(f"cat {fpath}", cr)
                     warnings.append(msg)
                 if cr.succeeded and cr.stdout.strip():
-                    parsed = SudoModule._parse_sudoers_content(
-                        cr.stdout,
-                        fpath,
-                        warnings,
-                    )
+                    parsed = SudoModule._parse_sudoers_content(cr.stdout, fpath, warnings)
                     entries.extend(parsed)
 
         entries = self._deduplicate(entries)
@@ -155,10 +130,7 @@ class SudoModule:
         return result
 
     @staticmethod
-    def _parse_sudo_l(
-        results: dict[str, CommandResult],
-        warnings: list[str],
-    ) -> list[SudoEntry]:
+    def _parse_sudo_l(results: dict[str, CommandResult], warnings: list[str]) -> list[SudoEntry]:
         """Parse ``sudo -n -l`` output into SudoEntry objects."""
         entries: list[SudoEntry] = []
         cr = results.get("sudo_l")
@@ -226,26 +198,16 @@ class SudoModule:
         return entries
 
     @staticmethod
-    def _parse_fallback(
-        results: dict[str, CommandResult],
-        warnings: list[str],
-    ) -> list[SudoEntry]:
+    def _parse_fallback(results: dict[str, CommandResult], warnings: list[str]) -> list[SudoEntry]:
         """Parse ``/etc/sudoers`` as fallback."""
         entries: list[SudoEntry] = []
         cr = results.get("cat_sudoers")
         if cr is None or not cr.succeeded or not cr.stdout.strip():
             return entries
-        return SudoModule._parse_sudoers_content(
-            cr.stdout,
-            "/etc/sudoers",
-            warnings,
-        )
+        return SudoModule._parse_sudoers_content(cr.stdout, "/etc/sudoers", warnings)
 
     @staticmethod
-    def _collect_sudoers_d_files(
-        results: dict[str, CommandResult],
-        _warnings: list[str],
-    ) -> list[str]:
+    def _collect_sudoers_d_files(results: dict[str, CommandResult], _warnings: list[str]) -> list[str]:
         """Collect file paths from ``ls /etc/sudoers.d`` output."""
         cr = results.get("ls_sudoers_d")
         if cr is None or not cr.succeeded or not cr.stdout.strip():
@@ -258,11 +220,7 @@ class SudoModule:
         return files
 
     @staticmethod
-    def _parse_sudoers_content(
-        content: str,
-        source: str,
-        warnings: list[str],
-    ) -> list[SudoEntry]:
+    def _parse_sudoers_content(content: str, source: str, warnings: list[str]) -> list[SudoEntry]:
         """Parse sudoers-format content into SudoEntry objects.
 
         Format: <user> <hosts>=<runas> <tags>: <commands>
@@ -293,13 +251,7 @@ class SudoModule:
                 rule = line
                 for cmd in commands_list:
                     entries.append(
-                        SudoEntry(
-                            username=username,
-                            rule=rule,
-                            nopasswd=nopasswd,
-                            command=cmd,
-                            source_command=source,
-                        )
+                        SudoEntry(username=username, rule=rule, nopasswd=nopasswd, command=cmd, source_command=source)
                     )
             except (IndexError, ValueError):
                 warnings.append(f"Failed to parse sudoers line: {line}")

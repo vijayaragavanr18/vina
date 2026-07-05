@@ -63,9 +63,7 @@ class PamModule:
         for d in _PAM_DIRS:
             name = f"ls_{d.replace('/', '_')}"
             cr = await self.context.runner.run(
-                self.config.tool_bin("ls", "ls"),
-                ["-la", d],
-                timeout_seconds=self.context.timeout_seconds,
+                self.config.tool_bin("ls", "ls"), ["-la", d], timeout_seconds=self.context.timeout_seconds
             )
             results[name] = cr
 
@@ -74,15 +72,14 @@ class PamModule:
             if cr_ls is None or not cr_ls.stdout.strip():
                 continue
             files = [
-                line.split()[-1] for line in cr_ls.stdout.splitlines()
+                line.split()[-1]
+                for line in cr_ls.stdout.splitlines()
                 if line.strip() and not line.startswith("total") and not line.startswith("d")
             ]
             for fname in files:
                 fpath = f"{d}/{fname}"
                 cr = await self.context.runner.run(
-                    self.config.tool_bin("cat", "cat"),
-                    [fpath],
-                    timeout_seconds=self.context.timeout_seconds,
+                    self.config.tool_bin("cat", "cat"), [fpath], timeout_seconds=self.context.timeout_seconds
                 )
                 results[f"cat_{d}_{fname}"] = cr
 
@@ -91,7 +88,8 @@ class PamModule:
             if cr_ls is None or not cr_ls.stdout.strip():
                 continue
             files = [
-                line.split()[-1] for line in cr_ls.stdout.splitlines()
+                line.split()[-1]
+                for line in cr_ls.stdout.splitlines()
                 if line.strip() and not line.startswith("total") and not line.startswith("d")
             ]
             for fname in files:
@@ -102,10 +100,7 @@ class PamModule:
                 rules = self._parse_pam_file(fname, cat_cr.stdout)
                 self._audit_pam(rules, findings, target_input.normalized)
 
-        primary = next(
-            (cr for cr in results.values() if cr.succeeded),
-            self._empty_command_result(),
-        )
+        primary = next((cr for cr in results.values() if cr.succeeded), self._empty_command_result())
 
         result = PamResult(
             target=target_input,
@@ -186,139 +181,157 @@ class PamModule:
                 unix_yescrypt = "yescrypt" in r.args
 
         if not has_pwquality:
-            findings.append(make_finding(
-                title="PAM password quality module not configured",
-                description="pam_pwquality.so or pam_cracklib.so is not configured in PAM. "
-                "Password complexity requirements are not enforced.",
-                severity="medium",
-                category="misconfiguration",
-                source_stage="auth_security",
-                target=target,
-                evidence="No pam_pwquality or pam_cracklib module found in PAM configuration",
-                recommendation="Add 'password requisite pam_pwquality.so retry=3 minlen=14 dcredit=-1 ucredit=-1' to /etc/pam.d/common-password",
-                confidence=0.85,
-            ))
+            findings.append(
+                make_finding(
+                    title="PAM password quality module not configured",
+                    description="pam_pwquality.so or pam_cracklib.so is not configured in PAM. "
+                    "Password complexity requirements are not enforced.",
+                    severity="medium",
+                    category="misconfiguration",
+                    source_stage="auth_security",
+                    target=target,
+                    evidence="No pam_pwquality or pam_cracklib module found in PAM configuration",
+                    recommendation="Add 'password requisite pam_pwquality.so retry=3 minlen=14 dcredit=-1 ucredit=-1' to /etc/pam.d/common-password",
+                    confidence=0.85,
+                )
+            )
 
         if has_pwquality and pwquality_minlen and int(pwquality_minlen) < 14:
-            findings.append(make_finding(
-                title="PAM password minimum length too short",
-                description=f"pam_pwquality minlen is set to {pwquality_minlen}, which is below the "
-                "recommended minimum of 14 characters.",
-                severity="medium",
-                category="misconfiguration",
-                source_stage="auth_security",
-                target=target,
-                evidence=f"pam_pwquality minlen={pwquality_minlen}",
-                recommendation="Set minlen=14 in pam_pwquality configuration",
-                confidence=0.8,
-            ))
+            findings.append(
+                make_finding(
+                    title="PAM password minimum length too short",
+                    description=f"pam_pwquality minlen is set to {pwquality_minlen}, which is below the "
+                    "recommended minimum of 14 characters.",
+                    severity="medium",
+                    category="misconfiguration",
+                    source_stage="auth_security",
+                    target=target,
+                    evidence=f"pam_pwquality minlen={pwquality_minlen}",
+                    recommendation="Set minlen=14 in pam_pwquality configuration",
+                    confidence=0.8,
+                )
+            )
 
         if not has_faillock:
-            findings.append(make_finding(
-                title="PAM account lockout not configured",
-                description="pam_faillock.so or pam_tally2.so is not configured. "
-                "There is no account lockout policy for failed login attempts.",
-                severity="medium",
-                category="misconfiguration",
-                source_stage="auth_security",
-                target=target,
-                evidence="No pam_faillock or pam_tally2 module found",
-                recommendation="Add pam_faillock.so configuration to /etc/pam.d/common-auth "
-                "with deny=5 unlock_time=900",
-                confidence=0.85,
-            ))
+            findings.append(
+                make_finding(
+                    title="PAM account lockout not configured",
+                    description="pam_faillock.so or pam_tally2.so is not configured. "
+                    "There is no account lockout policy for failed login attempts.",
+                    severity="medium",
+                    category="misconfiguration",
+                    source_stage="auth_security",
+                    target=target,
+                    evidence="No pam_faillock or pam_tally2 module found",
+                    recommendation="Add pam_faillock.so configuration to /etc/pam.d/common-auth "
+                    "with deny=5 unlock_time=900",
+                    confidence=0.85,
+                )
+            )
 
         if not has_pwhistory:
-            findings.append(make_finding(
-                title="PAM password history not configured",
-                description="pam_pwhistory.so is not configured. Password reuse is not restricted.",
-                severity="low",
-                category="misconfiguration",
-                source_stage="auth_security",
-                target=target,
-                evidence="No pam_pwhistory module found",
-                recommendation="Add 'password requisite pam_pwhistory.so remember=5' to /etc/pam.d/common-password",
-                confidence=0.7,
-            ))
+            findings.append(
+                make_finding(
+                    title="PAM password history not configured",
+                    description="pam_pwhistory.so is not configured. Password reuse is not restricted.",
+                    severity="low",
+                    category="misconfiguration",
+                    source_stage="auth_security",
+                    target=target,
+                    evidence="No pam_pwhistory module found",
+                    recommendation="Add 'password requisite pam_pwhistory.so remember=5' to /etc/pam.d/common-password",
+                    confidence=0.7,
+                )
+            )
 
         if has_unix and not unix_sha512 and not unix_yescrypt:
-            findings.append(make_finding(
-                title="PAM password hashing algorithm is weak",
-                description="pam_unix.so is configured without sha512 or yescrypt. Passwords may be hashed with a weak algorithm.",
-                severity="high",
-                category="misconfiguration",
-                source_stage="auth_security",
-                target=target,
-                evidence="pam_unix.so without sha512/yescrypt",
-                recommendation="Add sha512 to pam_unix.so arguments in /etc/pam.d/common-password",
-                confidence=0.85,
-            ))
+            findings.append(
+                make_finding(
+                    title="PAM password hashing algorithm is weak",
+                    description="pam_unix.so is configured without sha512 or yescrypt. Passwords may be hashed with a weak algorithm.",
+                    severity="high",
+                    category="misconfiguration",
+                    source_stage="auth_security",
+                    target=target,
+                    evidence="pam_unix.so without sha512/yescrypt",
+                    recommendation="Add sha512 to pam_unix.so arguments in /etc/pam.d/common-password",
+                    confidence=0.85,
+                )
+            )
 
         if has_faillock and faillock_deny:
             try:
                 if int(faillock_deny) > 5:
-                    findings.append(make_finding(
-                        title="PAM account lockout attempts threshold is too high",
-                        description=f"PAM account lockout deny parameter is set to {faillock_deny} (recommended: <= 5).",
-                        severity="medium",
-                        category="misconfiguration",
-                        source_stage="auth_security",
-                        target=target,
-                        evidence=f"deny={faillock_deny}",
-                        recommendation="Set deny=5 or fewer in pam_faillock.so configuration",
-                        confidence=0.8,
-                    ))
+                    findings.append(
+                        make_finding(
+                            title="PAM account lockout attempts threshold is too high",
+                            description=f"PAM account lockout deny parameter is set to {faillock_deny} (recommended: <= 5).",
+                            severity="medium",
+                            category="misconfiguration",
+                            source_stage="auth_security",
+                            target=target,
+                            evidence=f"deny={faillock_deny}",
+                            recommendation="Set deny=5 or fewer in pam_faillock.so configuration",
+                            confidence=0.8,
+                        )
+                    )
             except ValueError:
                 pass
 
         if has_faillock and faillock_unlock_time:
             try:
                 if int(faillock_unlock_time) < 900:
-                    findings.append(make_finding(
-                        title="PAM account lockout unlock time is too short",
-                        description=f"PAM account lockout unlock_time parameter is set to {faillock_unlock_time} seconds (recommended: >= 900).",
-                        severity="low",
-                        category="misconfiguration",
-                        source_stage="auth_security",
-                        target=target,
-                        evidence=f"unlock_time={faillock_unlock_time}",
-                        recommendation="Set unlock_time=900 or more in pam_faillock.so configuration",
-                        confidence=0.8,
-                    ))
+                    findings.append(
+                        make_finding(
+                            title="PAM account lockout unlock time is too short",
+                            description=f"PAM account lockout unlock_time parameter is set to {faillock_unlock_time} seconds (recommended: >= 900).",
+                            severity="low",
+                            category="misconfiguration",
+                            source_stage="auth_security",
+                            target=target,
+                            evidence=f"unlock_time={faillock_unlock_time}",
+                            recommendation="Set unlock_time=900 or more in pam_faillock.so configuration",
+                            confidence=0.8,
+                        )
+                    )
             except ValueError:
                 pass
 
         if has_pwhistory and pwhistory_remember:
             try:
                 if int(pwhistory_remember) < 5:
-                    findings.append(make_finding(
-                        title="PAM password history size is too small",
-                        description=f"PAM password history remember parameter is set to {pwhistory_remember} (recommended: >= 5).",
-                        severity="low",
-                        category="misconfiguration",
-                        source_stage="auth_security",
-                        target=target,
-                        evidence=f"remember={pwhistory_remember}",
-                        recommendation="Set remember=5 or more in pam_pwhistory.so configuration",
-                        confidence=0.8,
-                    ))
+                    findings.append(
+                        make_finding(
+                            title="PAM password history size is too small",
+                            description=f"PAM password history remember parameter is set to {pwhistory_remember} (recommended: >= 5).",
+                            severity="low",
+                            category="misconfiguration",
+                            source_stage="auth_security",
+                            target=target,
+                            evidence=f"remember={pwhistory_remember}",
+                            recommendation="Set remember=5 or more in pam_pwhistory.so configuration",
+                            confidence=0.8,
+                        )
+                    )
             except ValueError:
                 pass
 
         if has_pwquality and pwquality_retry:
             try:
                 if int(pwquality_retry) > 3:
-                    findings.append(make_finding(
-                        title="PAM password quality retry limit is too high",
-                        description=f"PAM password quality retry parameter is set to {pwquality_retry} (recommended: <= 3).",
-                        severity="low",
-                        category="misconfiguration",
-                        source_stage="auth_security",
-                        target=target,
-                        evidence=f"retry={pwquality_retry}",
-                        recommendation="Set retry=3 or fewer in pam_pwquality.so configuration",
-                        confidence=0.8,
-                    ))
+                    findings.append(
+                        make_finding(
+                            title="PAM password quality retry limit is too high",
+                            description=f"PAM password quality retry parameter is set to {pwquality_retry} (recommended: <= 3).",
+                            severity="low",
+                            category="misconfiguration",
+                            source_stage="auth_security",
+                            target=target,
+                            evidence=f"retry={pwquality_retry}",
+                            recommendation="Set retry=3 or fewer in pam_pwquality.so configuration",
+                            confidence=0.8,
+                        )
+                    )
             except ValueError:
                 pass
 
@@ -327,17 +340,19 @@ class PamModule:
                 if cred_val is not None:
                     try:
                         if int(cred_val) >= 0:
-                            findings.append(make_finding(
-                                title=f"PAM password complexity requirement ({cred_name}) is weak",
-                                description=f"PAM password quality {cred_name} parameter is set to {cred_val} (recommended: <= -1 to enforce complexity).",
-                                severity="medium",
-                                category="misconfiguration",
-                                source_stage="auth_security",
-                                target=target,
-                                evidence=f"{cred_name}={cred_val}",
-                                recommendation=f"Set {cred_name}=-1 in pam_pwquality.so configuration",
-                                confidence=0.8,
-                            ))
+                            findings.append(
+                                make_finding(
+                                    title=f"PAM password complexity requirement ({cred_name}) is weak",
+                                    description=f"PAM password quality {cred_name} parameter is set to {cred_val} (recommended: <= -1 to enforce complexity).",
+                                    severity="medium",
+                                    category="misconfiguration",
+                                    source_stage="auth_security",
+                                    target=target,
+                                    evidence=f"{cred_name}={cred_val}",
+                                    recommendation=f"Set {cred_name}=-1 in pam_pwquality.so configuration",
+                                    confidence=0.8,
+                                )
+                            )
                     except ValueError:
                         pass
 

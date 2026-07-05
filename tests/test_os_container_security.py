@@ -43,31 +43,42 @@ class ContainerSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
         self.config = AppConfig()
         self.runner = AsyncMock()
         self.store = MagicMock()
-        self.context = ModuleContext(
-            runner=self.runner,
-            store=self.store,
-            timeout_seconds=10,
-        )
+        self.context = ModuleContext(runner=self.runner, store=self.store, timeout_seconds=10)
         self.target = TargetInput.from_raw("localhost")
 
     async def test_runtimes_scanner_docker_no_userns(self) -> None:
         def run_mock(executable: str, args: list[str], **_kwargs: Any) -> CommandResult:
             if "pgrep" in executable and "dockerd" in args:
                 return CommandResult(
-                    command=executable, args=tuple(args), returncode=0,
-                    stdout="1234\n", stderr="", duration_seconds=0.1,
-                    timed_out=False, missing_executable=False,
+                    command=executable,
+                    args=tuple(args),
+                    returncode=0,
+                    stdout="1234\n",
+                    stderr="",
+                    duration_seconds=0.1,
+                    timed_out=False,
+                    missing_executable=False,
                 )
             elif "cat" in executable and "daemon.json" in args[0]:
                 return CommandResult(
-                    command=executable, args=tuple(args), returncode=0,
-                    stdout='{"log-driver": "json-file"}\n', stderr="",
-                    duration_seconds=0.1, timed_out=False, missing_executable=False,
+                    command=executable,
+                    args=tuple(args),
+                    returncode=0,
+                    stdout='{"log-driver": "json-file"}\n',
+                    stderr="",
+                    duration_seconds=0.1,
+                    timed_out=False,
+                    missing_executable=False,
                 )
             return CommandResult(
-                command=executable, args=tuple(args), returncode=1,
-                stdout="", stderr="", duration_seconds=0.01,
-                timed_out=False, missing_executable=False,
+                command=executable,
+                args=tuple(args),
+                returncode=1,
+                stdout="",
+                stderr="",
+                duration_seconds=0.01,
+                timed_out=False,
+                missing_executable=False,
             )
 
         self.runner.run.side_effect = run_mock
@@ -79,26 +90,46 @@ class ContainerSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
         def run_mock(executable: str, args: list[str], **_kwargs: Any) -> CommandResult:
             if "cat" in executable and "apparmor" in args[0]:
                 return CommandResult(
-                    command=executable, args=tuple(args), returncode=0,
-                    stdout="N\n", stderr="", duration_seconds=0.1,
-                    timed_out=False, missing_executable=False,
+                    command=executable,
+                    args=tuple(args),
+                    returncode=0,
+                    stdout="N\n",
+                    stderr="",
+                    duration_seconds=0.1,
+                    timed_out=False,
+                    missing_executable=False,
                 )
             elif "sestatus" in executable:
                 return CommandResult(
-                    command=executable, args=tuple(args), returncode=1,
-                    stdout="", stderr="", duration_seconds=0.1,
-                    timed_out=False, missing_executable=True,
+                    command=executable,
+                    args=tuple(args),
+                    returncode=1,
+                    stdout="",
+                    stderr="",
+                    duration_seconds=0.1,
+                    timed_out=False,
+                    missing_executable=True,
                 )
             elif "cat" in executable and "seccomp" in args[0]:
                 return CommandResult(
-                    command=executable, args=tuple(args), returncode=1,
-                    stdout="", stderr="", duration_seconds=0.1,
-                    timed_out=False, missing_executable=False,
+                    command=executable,
+                    args=tuple(args),
+                    returncode=1,
+                    stdout="",
+                    stderr="",
+                    duration_seconds=0.1,
+                    timed_out=False,
+                    missing_executable=False,
                 )
             return CommandResult(
-                command=executable, args=tuple(args), returncode=1,
-                stdout="", stderr="", duration_seconds=0.01,
-                timed_out=False, missing_executable=False,
+                command=executable,
+                args=tuple(args),
+                returncode=1,
+                stdout="",
+                stderr="",
+                duration_seconds=0.01,
+                timed_out=False,
+                missing_executable=False,
             )
 
         self.runner.run.side_effect = run_mock
@@ -111,15 +142,24 @@ class ContainerSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
         def run_mock(executable: str, args: list[str], **_kwargs: Any) -> CommandResult:
             if "lsmod" in executable:
                 return CommandResult(
-                    command=executable, args=tuple(args), returncode=0,
+                    command=executable,
+                    args=tuple(args),
+                    returncode=0,
                     stdout="kvm_intel  300000  2\nkvm  800000  1 kvm_intel\n",
-                    stderr="", duration_seconds=0.1,
-                    timed_out=False, missing_executable=False,
+                    stderr="",
+                    duration_seconds=0.1,
+                    timed_out=False,
+                    missing_executable=False,
                 )
             return CommandResult(
-                command=executable, args=tuple(args), returncode=1,
-                stdout="", stderr="", duration_seconds=0.01,
-                timed_out=False, missing_executable=False,
+                command=executable,
+                args=tuple(args),
+                returncode=1,
+                stdout="",
+                stderr="",
+                duration_seconds=0.01,
+                timed_out=False,
+                missing_executable=False,
             )
 
         self.runner.run.side_effect = run_mock

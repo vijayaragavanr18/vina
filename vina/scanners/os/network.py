@@ -80,10 +80,7 @@ class NetworkModule:
         self.config = config
         self.context = context
 
-    async def run(
-        self,
-        target: TargetInput,
-    ) -> NetworkResult:
+    async def run(self, target: TargetInput) -> NetworkResult:
         """Execute system commands and return discovered network data.
 
         Parameters
@@ -96,45 +93,17 @@ class NetworkModule:
         warnings: list[str] = []
 
         commands: list[tuple[str, str, list[str]]] = [
-            (
-                "ip_addr",
-                self.config.tool_bin("ip", "ip"),
-                ["addr"],
-            ),
-            (
-                "ifconfig",
-                self.config.tool_bin("ifconfig", "ifconfig"),
-                [],
-            ),
-            (
-                "ip_route",
-                self.config.tool_bin("ip", "ip"),
-                ["route"],
-            ),
-            (
-                "route_n",
-                self.config.tool_bin("route", "route"),
-                ["-n"],
-            ),
-            (
-                "ss",
-                self.config.tool_bin("ss", "ss"),
-                ["-tulpen"],
-            ),
-            (
-                "netstat",
-                self.config.tool_bin("netstat", "netstat"),
-                ["-tulpen"],
-            ),
+            ("ip_addr", self.config.tool_bin("ip", "ip"), ["addr"]),
+            ("ifconfig", self.config.tool_bin("ifconfig", "ifconfig"), []),
+            ("ip_route", self.config.tool_bin("ip", "ip"), ["route"]),
+            ("route_n", self.config.tool_bin("route", "route"), ["-n"]),
+            ("ss", self.config.tool_bin("ss", "ss"), ["-tulpen"]),
+            ("netstat", self.config.tool_bin("netstat", "netstat"), ["-tulpen"]),
         ]
 
         results: dict[str, CommandResult] = {}
         for name, executable, args in commands:
-            cr = await self.context.runner.run(
-                executable,
-                args,
-                timeout_seconds=self.context.timeout_seconds,
-            )
+            cr = await self.context.runner.run(executable, args, timeout_seconds=self.context.timeout_seconds)
             results[name] = cr
             if cr.missing_executable:
                 warnings.append(f"Missing executable: {executable}")
@@ -189,10 +158,7 @@ class NetworkModule:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _parse_interfaces(
-        results: dict[str, CommandResult],
-        warnings: list[str],
-    ) -> list[NetworkInterface]:
+    def _parse_interfaces(results: dict[str, CommandResult], warnings: list[str]) -> list[NetworkInterface]:
         """Parse interface data from ``ip addr`` or fallback ``ifconfig``."""
         cr = results.get("ip_addr")
         if cr and cr.succeeded and cr.stdout.strip():
@@ -221,12 +187,7 @@ class NetworkModule:
                 mtu = int(mtu_m.group(1)) if mtu_m else None
                 state_m = re.search(r"state\s+(\S+)", line)
                 state = state_m.group(1) if state_m else None
-                current = NetworkInterface(
-                    name=name,
-                    state=state,
-                    mtu=mtu,
-                    source_command="ip addr",
-                )
+                current = NetworkInterface(name=name, state=state, mtu=mtu, source_command="ip addr")
                 continue
             if current is None:
                 continue
@@ -273,12 +234,7 @@ class NetworkModule:
                 flags_raw = line.split("flags=", 1)[1] if "flags=" in line else ""
                 inner = flags_raw.split("<", 1)[1].split(">", 1)[0] if "<" in flags_raw else ""
                 state = "UP" if "UP" in inner else "UNKNOWN"
-                current = NetworkInterface(
-                    name=name,
-                    state=state,
-                    mtu=mtu,
-                    source_command="ifconfig",
-                )
+                current = NetworkInterface(name=name, state=state, mtu=mtu, source_command="ifconfig")
                 continue
             if current is None:
                 continue
@@ -305,10 +261,7 @@ class NetworkModule:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _parse_listening_ports(
-        results: dict[str, CommandResult],
-        warnings: list[str],
-    ) -> list[ListeningPort]:
+    def _parse_listening_ports(results: dict[str, CommandResult], warnings: list[str]) -> list[ListeningPort]:
         """Parse port data from ``ss -tulpen`` or fallback ``netstat -tulpen``."""
         cr = results.get("ss")
         if cr and cr.succeeded and cr.stdout.strip():
@@ -417,10 +370,7 @@ class NetworkModule:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _parse_routes(
-        results: dict[str, CommandResult],
-        warnings: list[str],
-    ) -> list[RouteEntry]:
+    def _parse_routes(results: dict[str, CommandResult], warnings: list[str]) -> list[RouteEntry]:
         """Parse route data from ``ip route`` or fallback ``route -n``."""
         cr = results.get("ip_route")
         if cr and cr.succeeded and cr.stdout.strip():
@@ -454,12 +404,7 @@ class NetworkModule:
                 if not dest:
                     continue
                 routes.append(
-                    RouteEntry(
-                        destination=dest,
-                        gateway=gateway,
-                        interface=interface,
-                        source_command="ip route",
-                    )
+                    RouteEntry(destination=dest, gateway=gateway, interface=interface, source_command="ip route")
                 )
             except (IndexError, ValueError):
                 warnings.append(f"Failed to parse ip route line: {line}")
@@ -505,9 +450,7 @@ class NetworkModule:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _deduplicate_interfaces(
-        interfaces: list[NetworkInterface],
-    ) -> list[NetworkInterface]:
+    def _deduplicate_interfaces(interfaces: list[NetworkInterface]) -> list[NetworkInterface]:
         """Deduplicate interfaces by name."""
         seen: dict[str, NetworkInterface] = {}
         for iface in interfaces:
@@ -516,9 +459,7 @@ class NetworkModule:
         return list(seen.values())
 
     @staticmethod
-    def _deduplicate_ports(
-        ports: list[ListeningPort],
-    ) -> list[ListeningPort]:
+    def _deduplicate_ports(ports: list[ListeningPort]) -> list[ListeningPort]:
         """Deduplicate listening ports by (protocol, local_address, port)."""
         seen: set[tuple[str, str, int]] = set()
         deduped: list[ListeningPort] = []
@@ -530,9 +471,7 @@ class NetworkModule:
         return deduped
 
     @staticmethod
-    def _deduplicate_routes(
-        routes: list[RouteEntry],
-    ) -> list[RouteEntry]:
+    def _deduplicate_routes(routes: list[RouteEntry]) -> list[RouteEntry]:
         """Deduplicate routes by (destination, gateway, interface)."""
         seen: set[tuple[str, str | None, str | None]] = set()
         deduped: list[RouteEntry] = []

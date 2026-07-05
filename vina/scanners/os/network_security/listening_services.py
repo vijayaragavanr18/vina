@@ -19,14 +19,7 @@ from ....modules.common import ModuleContext
 
 logger = logging.getLogger(__name__)
 
-DB_PORTS = {
-    3306: "MySQL",
-    33060: "MySQL X",
-    5432: "PostgreSQL",
-    27017: "MongoDB",
-    6379: "Redis",
-    9200: "Elasticsearch",
-}
+DB_PORTS = {3306: "MySQL", 33060: "MySQL X", 5432: "PostgreSQL", 27017: "MongoDB", 6379: "Redis", 9200: "Elasticsearch"}
 
 REMOTE_PORTS = {
     22: "SSH",
@@ -42,22 +35,9 @@ REMOTE_PORTS = {
 
 VNC_PORT_RE = re.compile(r"^590\d$")
 
-WEB_PORTS = {
-    80: "HTTP",
-    443: "HTTPS",
-    8080: "HTTP Alternative",
-    8443: "HTTPS Alternative",
-}
+WEB_PORTS = {80: "HTTP", 443: "HTTPS", 8080: "HTTP Alternative", 8443: "HTTPS Alternative"}
 
-MAIL_PORTS = {
-    25: "SMTP",
-    465: "SMTPS",
-    587: "SMTP Submission",
-    110: "POP3",
-    995: "POP3S",
-    143: "IMAP",
-    993: "IMAPS",
-}
+MAIL_PORTS = {25: "SMTP", 465: "SMTPS", 587: "SMTP Submission", 110: "POP3", 995: "POP3S", 143: "IMAP", 993: "IMAPS"}
 
 
 @dataclass(slots=True)
@@ -125,15 +105,17 @@ class ListeningServicesModule:
                         process = pm.group(1)
                         pid = int(pm.group(2))
 
-                    listening_ports.append(PortInfo(
-                        protocol=netid,
-                        address=addr_part,
-                        port=port,
-                        process=process,
-                        pid=pid,
-                        is_wildcard=is_wildcard,
-                        is_ipv6=is_ipv6,
-                    ))
+                    listening_ports.append(
+                        PortInfo(
+                            protocol=netid,
+                            address=addr_part,
+                            port=port,
+                            process=process,
+                            pid=pid,
+                            is_wildcard=is_wildcard,
+                            is_ipv6=is_ipv6,
+                        )
+                    )
                 except (IndexError, ValueError):
                     pass
 
@@ -141,32 +123,40 @@ class ListeningServicesModule:
 
         for p in listening_ports:
             if p.port < 1024:
-                findings.append(make_finding(
-                    title=f"Privileged port listening: {p.port} ({p.process})",
-                    description=f"Port {p.port} (protocol: {p.protocol}) is a privileged port used by process '{p.process}'. Privileged ports (< 1024) require root permissions to bind.",
-                    severity="info",
-                    category="information",
-                    source_stage="network_security",
-                    target=target_str,
-                    evidence=f"Port: {p.port}, Process: {p.process}",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Privileged port listening: {p.port} ({p.process})",
+                        description=f"Port {p.port} (protocol: {p.protocol}) is a privileged port used by process '{p.process}'. Privileged ports (< 1024) require root permissions to bind.",
+                        severity="info",
+                        category="information",
+                        source_stage="network_security",
+                        target=target_str,
+                        evidence=f"Port: {p.port}, Process: {p.process}",
+                        confidence=0.9,
+                    )
+                )
 
             if p.port in DB_PORTS:
                 db_name = DB_PORTS[p.port]
                 sev = "high" if p.is_wildcard else "low"
-                findings.append(make_finding(
-                    title=f"Exposed database service: {db_name} (port {p.port})",
-                    description=f"The database service '{db_name}' is listening on port {p.port} (process: {p.process})." +
-                                (" It is bound to all interfaces (wildcard bind), exposing it to the network." if p.is_wildcard else " It is bound to local interface."),
-                    severity=sev,
-                    category="vulnerability" if p.is_wildcard else "security_control",
-                    source_stage="network_security",
-                    target=target_str,
-                    evidence=f"Database: {db_name}, Port: {p.port}, Wildcard: {p.is_wildcard}",
-                    recommendation="Restrict database access to localhost or secure VPN subnet. Avoid wildcard binds in production.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Exposed database service: {db_name} (port {p.port})",
+                        description=f"The database service '{db_name}' is listening on port {p.port} (process: {p.process})."
+                        + (
+                            " It is bound to all interfaces (wildcard bind), exposing it to the network."
+                            if p.is_wildcard
+                            else " It is bound to local interface."
+                        ),
+                        severity=sev,
+                        category="vulnerability" if p.is_wildcard else "security_control",
+                        source_stage="network_security",
+                        target=target_str,
+                        evidence=f"Database: {db_name}, Port: {p.port}, Wildcard: {p.is_wildcard}",
+                        recommendation="Restrict database access to localhost or secure VPN subnet. Avoid wildcard binds in production.",
+                        confidence=0.9,
+                    )
+                )
 
             if p.port in REMOTE_PORTS or VNC_PORT_RE.match(str(p.port)):
                 svc_name = REMOTE_PORTS.get(p.port, "VNC")
@@ -176,44 +166,54 @@ class ListeningServicesModule:
                 if p.is_wildcard:
                     sev = "critical" if sev == "high" else "high"
 
-                findings.append(make_finding(
-                    title=f"Exposed remote service: {svc_name} (port {p.port})",
-                    description=f"The remote access service '{svc_name}' is active on port {p.port}." +
-                                (" It is exposed to the wildcard address, allowing network connections." if p.is_wildcard else " It is bound locally."),
-                    severity=sev,
-                    category="vulnerability" if p.is_wildcard else "security_control",
-                    source_stage="network_security",
-                    target=target_str,
-                    evidence=f"Service: {svc_name}, Port: {p.port}, Wildcard: {p.is_wildcard}",
-                    recommendation="Disable insecure services (Telnet/FTP) and restrict SSH/RDP to trusted IPs only.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Exposed remote service: {svc_name} (port {p.port})",
+                        description=f"The remote access service '{svc_name}' is active on port {p.port}."
+                        + (
+                            " It is exposed to the wildcard address, allowing network connections."
+                            if p.is_wildcard
+                            else " It is bound locally."
+                        ),
+                        severity=sev,
+                        category="vulnerability" if p.is_wildcard else "security_control",
+                        source_stage="network_security",
+                        target=target_str,
+                        evidence=f"Service: {svc_name}, Port: {p.port}, Wildcard: {p.is_wildcard}",
+                        recommendation="Disable insecure services (Telnet/FTP) and restrict SSH/RDP to trusted IPs only.",
+                        confidence=0.9,
+                    )
+                )
 
             if p.port in WEB_PORTS:
                 web_name = WEB_PORTS[p.port]
-                findings.append(make_finding(
-                    title=f"Active Web service: {web_name} (port {p.port})",
-                    description=f"Web server '{p.process}' is active on port {p.port}.",
-                    severity="info",
-                    category="information",
-                    source_stage="network_security",
-                    target=target_str,
-                    evidence=f"Web server: {p.process}, Port: {p.port}",
-                    confidence=0.85,
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Active Web service: {web_name} (port {p.port})",
+                        description=f"Web server '{p.process}' is active on port {p.port}.",
+                        severity="info",
+                        category="information",
+                        source_stage="network_security",
+                        target=target_str,
+                        evidence=f"Web server: {p.process}, Port: {p.port}",
+                        confidence=0.85,
+                    )
+                )
 
             if p.port in MAIL_PORTS:
                 mail_name = MAIL_PORTS[p.port]
-                findings.append(make_finding(
-                    title=f"Active Mail service: {mail_name} (port {p.port})",
-                    description=f"Mail handler '{p.process}' is active on port {p.port}.",
-                    severity="info",
-                    category="information",
-                    source_stage="network_security",
-                    target=target_str,
-                    evidence=f"Mail process: {p.process}, Port: {p.port}",
-                    confidence=0.85,
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Active Mail service: {mail_name} (port {p.port})",
+                        description=f"Mail handler '{p.process}' is active on port {p.port}.",
+                        severity="info",
+                        category="information",
+                        source_stage="network_security",
+                        target=target_str,
+                        evidence=f"Mail process: {p.process}, Port: {p.port}",
+                        confidence=0.85,
+                    )
+                )
 
         primary = cr or self._empty_command_result()
 

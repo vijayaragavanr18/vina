@@ -216,9 +216,7 @@ class PipelineScheduler:
         sequential_duration = sum(s.duration for s in results)
 
         return SchedulerResult(
-            stage_results=results,
-            total_duration=total_duration,
-            sequential_duration=sequential_duration,
+            stage_results=results, total_duration=total_duration, sequential_duration=sequential_duration
         )
 
     # ------------------------------------------------------------------
@@ -265,9 +263,4 @@ class PipelineScheduler:
             )
 
 
-__all__ = [
-    "PipelineScheduler",
-    "RetryConfig",
-    "SchedulerResult",
-    "StageDef",
-]
+__all__ = ["PipelineScheduler", "RetryConfig", "SchedulerResult", "StageDef"]

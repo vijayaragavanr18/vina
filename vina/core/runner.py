@@ -73,15 +73,9 @@ def classify_command_error(name: str, cr: CommandResult) -> tuple[str, str]:
     stderr_snippet = cr.stderr.strip()[:120] if cr.stderr.strip() else ""
 
     if "permission denied" in stderr_lower:
-        return (
-            "permission_denied",
-            f"{name}: permission denied (expected when not root)",
-        )
+        return ("permission_denied", f"{name}: permission denied (expected when not root)")
     if "no such file or directory" in stderr_lower or "cannot access" in stderr_lower:
-        return (
-            "not_found",
-            f"{name}: file or directory not found",
-        )
+        return ("not_found", f"{name}: file or directory not found")
     msg = f"{name} exited with code {cr.returncode}"
     if stderr_snippet:
         msg += f": {stderr_snippet}"
@@ -89,9 +83,7 @@ def classify_command_error(name: str, cr: CommandResult) -> tuple[str, str]:
 
 
 async def _collect_stream(
-    stream: asyncio.StreamReader | None,
-    *,
-    byte_limit: int = _STREAM_BYTE_LIMIT,
+    stream: asyncio.StreamReader | None, *, byte_limit: int = _STREAM_BYTE_LIMIT
 ) -> tuple[str, bool]:
     """Read a subprocess stream without allowing unbounded memory growth.
 

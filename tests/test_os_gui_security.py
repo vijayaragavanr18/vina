@@ -46,21 +46,13 @@ class GuiSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
         self.config = AppConfig()
         self.runner = AsyncMock()
         self.store = MagicMock()
-        self.context = ModuleContext(
-            runner=self.runner,
-            store=self.store,
-            timeout_seconds=10,
-        )
+        self.context = ModuleContext(runner=self.runner, store=self.store, timeout_seconds=10)
         self.target = TargetInput.from_raw("localhost")
 
     async def test_desktop_scanner(self) -> None:
         def run_mock(executable: str, args: list[str], **_kwargs: Any) -> CommandResult:
             if "cat" in executable:
-                stdout_data = (
-                    "[daemon]\n"
-                    "AutomaticLoginEnable=true\n"
-                    "AutomaticLogin=user1\n"
-                )
+                stdout_data = "[daemon]\n" "AutomaticLoginEnable=true\n" "AutomaticLogin=user1\n"
                 return CommandResult(
                     command=executable,
                     args=tuple(args),
@@ -137,10 +129,7 @@ class GuiSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
                     missing_executable=False,
                 )
             elif "cat" in executable and "/etc/xrdp/xrdp.ini" in args:
-                stdout_data = (
-                    "security_layer=rdp\n"
-                    "crypt_level=low\n"
-                )
+                stdout_data = "security_layer=rdp\n" "crypt_level=low\n"
                 return CommandResult(
                     command=executable,
                     args=tuple(args),
@@ -230,7 +219,7 @@ class GuiSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
             elif "cat" in executable:
                 stdout_data = (
                     "polkit.addRule(function(action, subject) {\n"
-                    "  if (action.id == \"org.freedesktop.policykit.exec\") {\n"
+                    '  if (action.id == "org.freedesktop.policykit.exec") {\n'
                     "    return polkit.Result.YES;\n"
                     "  }\n"
                     "});\n"

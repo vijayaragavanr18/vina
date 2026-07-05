@@ -58,11 +58,7 @@ class NucleiModule:
         self.config = config
         self.context = context
 
-    async def run(
-        self,
-        urls: list[AggregatedUrl],
-        target: TargetInput,
-    ) -> NucleiResult:
+    async def run(self, urls: list[AggregatedUrl], target: TargetInput) -> NucleiResult:
         """Execute Nuclei against aggregated URLs and return findings.
 
         Parameters
@@ -143,11 +139,7 @@ class NucleiModule:
         self._print_summary(result)
         return result
 
-    def _parse_output(
-        self,
-        output: str,
-        warnings: list[str],
-    ) -> list[NucleiFinding]:
+    def _parse_output(self, output: str, warnings: list[str]) -> list[NucleiFinding]:
         """Parse Nuclei JSON lines into typed records."""
         findings: list[NucleiFinding] = []
 
@@ -176,12 +168,7 @@ class NucleiModule:
 
         return findings
 
-    def _parse_finding(
-        self,
-        payload: Mapping[str, Any],
-        line_number: int,
-        warnings: list[str],
-    ) -> NucleiFinding | None:
+    def _parse_finding(self, payload: Mapping[str, Any], line_number: int, warnings: list[str]) -> NucleiFinding | None:
         """Parse a single Nuclei JSON line into a NucleiFinding."""
         template_id = payload.get("template-id")
         if not template_id or not isinstance(template_id, str):
@@ -242,17 +229,12 @@ class NucleiModule:
         return []
 
     @staticmethod
-    def _deduplicate(
-        findings: list[NucleiFinding],
-    ) -> list[NucleiFinding]:
+    def _deduplicate(findings: list[NucleiFinding]) -> list[NucleiFinding]:
         """Deduplicate findings by (template_id, matched_url)."""
         seen: set[tuple[str, str]] = set()
         deduped: list[NucleiFinding] = []
         for f in findings:
-            key = (
-                f.template_id.lower(),
-                (f.matched_url or "").lower(),
-            )
+            key = (f.template_id.lower(), (f.matched_url or "").lower())
             if key not in seen:
                 seen.add(key)
                 deduped.append(f)
@@ -315,8 +297,4 @@ class NucleiModule:
         return text or None
 
 
-__all__ = [
-    "NucleiFinding",
-    "NucleiModule",
-    "NucleiResult",
-]
+__all__ = ["NucleiFinding", "NucleiModule", "NucleiResult"]

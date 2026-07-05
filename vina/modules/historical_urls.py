@@ -26,14 +26,10 @@ class HistoricalUrlModule:
     async def run(self, target: TargetInput) -> HistoricalUrlResult:
         domain = target.root_domain or target.hostname or target.normalized
         gau = await self.context.runner.run(
-            self.config.tool_bin("gau", "gau"),
-            [domain],
-            timeout_seconds=self.context.timeout_seconds,
+            self.config.tool_bin("gau", "gau"), [domain], timeout_seconds=self.context.timeout_seconds
         )
         wayback = await self.context.runner.run(
-            self.config.tool_bin("waybackurls", "waybackurls"),
-            [domain],
-            timeout_seconds=self.context.timeout_seconds,
+            self.config.tool_bin("waybackurls", "waybackurls"), [domain], timeout_seconds=self.context.timeout_seconds
         )
         collected = unique_lines(f"{gau.stdout}\n{wayback.stdout}")
         urls = [

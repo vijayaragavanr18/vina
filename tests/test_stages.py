@@ -42,64 +42,41 @@ class DetermineStageStatusTests(unittest.TestCase):
     """Tests for :func:`determine_stage_status`."""
 
     def test_success_with_output(self) -> None:
-        self.assertEqual(
-            determine_stage_status(_cr(returncode=0), record_count=5),
-            StageState.SUCCESS,
-        )
+        self.assertEqual(determine_stage_status(_cr(returncode=0), record_count=5), StageState.SUCCESS)
 
     def test_success_with_nonzero_exit_and_output(self) -> None:
         """A non-zero exit code does not cause failure when output exists."""
-        self.assertEqual(
-            determine_stage_status(_cr(returncode=1), record_count=3),
-            StageState.SUCCESS,
-        )
+        self.assertEqual(determine_stage_status(_cr(returncode=1), record_count=3), StageState.SUCCESS)
 
     def test_empty_no_output(self) -> None:
         """Exit 0 with no records -> EMPTY."""
-        self.assertEqual(
-            determine_stage_status(_cr(returncode=0, stdout=""), record_count=0),
-            StageState.EMPTY,
-        )
+        self.assertEqual(determine_stage_status(_cr(returncode=0, stdout=""), record_count=0), StageState.EMPTY)
 
     def test_failed_no_output(self) -> None:
         """Non-zero exit with no records -> FAILED."""
-        self.assertEqual(
-            determine_stage_status(_cr(returncode=2, stdout=""), record_count=0),
-            StageState.FAILED,
-        )
+        self.assertEqual(determine_stage_status(_cr(returncode=2, stdout=""), record_count=0), StageState.FAILED)
 
     def test_missing_dependency(self) -> None:
         """Missing executable -> MISSING_DEPENDENCY regardless of records."""
         self.assertEqual(
-            determine_stage_status(_cr(missing_executable=True), record_count=0),
-            StageState.MISSING_DEPENDENCY,
+            determine_stage_status(_cr(missing_executable=True), record_count=0), StageState.MISSING_DEPENDENCY
         )
 
     def test_missing_dependency_with_records(self) -> None:
         self.assertEqual(
-            determine_stage_status(_cr(missing_executable=True), record_count=5),
-            StageState.MISSING_DEPENDENCY,
+            determine_stage_status(_cr(missing_executable=True), record_count=5), StageState.MISSING_DEPENDENCY
         )
 
     def test_timeout_no_records(self) -> None:
-        self.assertEqual(
-            determine_stage_status(_cr(timed_out=True, stdout=""), record_count=0),
-            StageState.TIMEOUT,
-        )
+        self.assertEqual(determine_stage_status(_cr(timed_out=True, stdout=""), record_count=0), StageState.TIMEOUT)
 
     def test_timeout_with_records(self) -> None:
         """Timed out but with useful data -> SUCCESS."""
-        self.assertEqual(
-            determine_stage_status(_cr(timed_out=True), record_count=2),
-            StageState.SUCCESS,
-        )
+        self.assertEqual(determine_stage_status(_cr(timed_out=True), record_count=2), StageState.SUCCESS)
 
     def test_failed_none_returncode(self) -> None:
         """None returncode (e.g., spawn failure) with no records -> FAILED."""
-        self.assertEqual(
-            determine_stage_status(_cr(returncode=None, stdout=""), record_count=0),
-            StageState.FAILED,
-        )
+        self.assertEqual(determine_stage_status(_cr(returncode=None, stdout=""), record_count=0), StageState.FAILED)
 
 
 class BuildStageResultTests(unittest.TestCase):
@@ -183,12 +160,7 @@ class StageResultDataclassTests(unittest.TestCase):
 
     def test_defaults(self) -> None:
         stage = StageResult(
-            name="test",
-            status=StageState.SUCCESS,
-            command="cmd",
-            exit_code=0,
-            duration=1.0,
-            record_count=0,
+            name="test", status=StageState.SUCCESS, command="cmd", exit_code=0, duration=1.0, record_count=0
         )
         self.assertEqual(stage.warnings, [])
         self.assertFalse(stage.timed_out)

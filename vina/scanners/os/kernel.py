@@ -226,9 +226,11 @@ class KernelModule:
                 findings.append(
                     make_finding(
                         title=f"{label}: {key}={value} (expected {expected})",
-                        description=description.replace("is", "should be").replace("are", "should be")
-                        if not secure
-                        else description,
+                        description=(
+                            description.replace("is", "should be").replace("are", "should be")
+                            if not secure
+                            else description
+                        ),
                         severity="medium" if not secure else "info",
                         category="security_control",
                         source_stage="kernel",

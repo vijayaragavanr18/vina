@@ -61,17 +61,19 @@ class SshCiphersModule:
                         weak_ciphers.append(cipher)
 
             if weak_ciphers:
-                findings.append(make_finding(
-                    title="Insecure SSH Ciphers enabled",
-                    description="The SSH server config enables legacy or weak ciphers (CBC modes, 3DES, or RC4), exposing sessions to decryption or hijacking attacks.",
-                    severity="high",
-                    category="misconfiguration",
-                    source_stage="crypto_security",
-                    target=target_str,
-                    evidence=f"Weak ciphers enabled: {', '.join(weak_ciphers)}",
-                    recommendation="Remove CBC ciphers, 3DES, and RC4 from Ciphers in /etc/ssh/sshd_config. Enforce CTR or AEAD (gcm/chacha20) algorithms.",
-                    confidence=0.95,
-                ))
+                findings.append(
+                    make_finding(
+                        title="Insecure SSH Ciphers enabled",
+                        description="The SSH server config enables legacy or weak ciphers (CBC modes, 3DES, or RC4), exposing sessions to decryption or hijacking attacks.",
+                        severity="high",
+                        category="misconfiguration",
+                        source_stage="crypto_security",
+                        target=target_str,
+                        evidence=f"Weak ciphers enabled: {', '.join(weak_ciphers)}",
+                        recommendation="Remove CBC ciphers, 3DES, and RC4 from Ciphers in /etc/ssh/sshd_config. Enforce CTR or AEAD (gcm/chacha20) algorithms.",
+                        confidence=0.95,
+                    )
+                )
 
             weak_macs = []
             if macs:
@@ -80,17 +82,19 @@ class SshCiphersModule:
                         weak_macs.append(mac)
 
             if weak_macs:
-                findings.append(make_finding(
-                    title="Insecure SSH MAC algorithms enabled",
-                    description="The SSH server config enables weak message authentication codes (MD5 or SHA-1 hashes), which are cryptographically weak.",
-                    severity="medium",
-                    category="misconfiguration",
-                    source_stage="crypto_security",
-                    target=target_str,
-                    evidence=f"Weak MACs enabled: {', '.join(weak_macs)}",
-                    recommendation="Configure secure MACs like hmac-sha2-256 or hmac-sha2-512 in sshd_config.",
-                    confidence=0.95,
-                ))
+                findings.append(
+                    make_finding(
+                        title="Insecure SSH MAC algorithms enabled",
+                        description="The SSH server config enables weak message authentication codes (MD5 or SHA-1 hashes), which are cryptographically weak.",
+                        severity="medium",
+                        category="misconfiguration",
+                        source_stage="crypto_security",
+                        target=target_str,
+                        evidence=f"Weak MACs enabled: {', '.join(weak_macs)}",
+                        recommendation="Configure secure MACs like hmac-sha2-256 or hmac-sha2-512 in sshd_config.",
+                        confidence=0.95,
+                    )
+                )
 
         primary = cr_ssh or self._empty_command_result()
 

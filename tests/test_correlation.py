@@ -248,10 +248,7 @@ class TestCorrelationEngine:
         assert _engine(rules=[]).run([]) == []
 
     def test_single_rule_single_match(self):
-        rule = _simple_rule(
-            rule_id="C-1",
-            required=[FindingMatcher(title_contains="docker", source_stage="docker")],
-        )
+        rule = _simple_rule(rule_id="C-1", required=[FindingMatcher(title_contains="docker", source_stage="docker")])
         f = _make_finding(title="docker socket mounted", source_stage="docker", severity="critical")
         paths = _engine(rules=[rule]).run([f])
         assert len(paths) == 1
@@ -276,22 +273,14 @@ class TestCorrelationEngine:
             gtfo_bins=[{"binary": "find", "url": "https://gtfobins.github.io/gtfobins/find/", "technique": "suid"}],
             confidence_score=0.8,
         )
-        rule = _simple_rule(
-            rule_id="PE-GTFO",
-            required=[FindingMatcher(title_contains="gtfo")],
-            gtfo_bonus=15.0,
-        )
+        rule = _simple_rule(rule_id="PE-GTFO", required=[FindingMatcher(title_contains="gtfo")], gtfo_bonus=15.0)
         paths = _engine(rules=[rule]).run([enriched])
         assert len(paths) == 1
         assert paths[0].score > 50
 
     def test_multiple_required_findings_all_present(self):
         rule = _simple_rule(
-            rule_id="C-MULTI",
-            required=[
-                FindingMatcher(title_contains="req-a"),
-                FindingMatcher(title_contains="req-b"),
-            ],
+            rule_id="C-MULTI", required=[FindingMatcher(title_contains="req-a"), FindingMatcher(title_contains="req-b")]
         )
         paths = _engine(rules=[rule]).run([_make_finding(title="req-a"), _make_finding(title="req-b")])
         assert len(paths) == 1
@@ -299,10 +288,7 @@ class TestCorrelationEngine:
     def test_multiple_required_findings_one_missing(self):
         rule = _simple_rule(
             rule_id="C-MULTI-MISS",
-            required=[
-                FindingMatcher(title_contains="req-a"),
-                FindingMatcher(title_contains="req-b"),
-            ],
+            required=[FindingMatcher(title_contains="req-a"), FindingMatcher(title_contains="req-b")],
         )
         paths = _engine(rules=[rule]).run([_make_finding(title="req-a")])
         assert len(paths) == 0
@@ -311,10 +297,7 @@ class TestCorrelationEngine:
         rule = _simple_rule(
             rule_id="C-CONF",
             required=[FindingMatcher(title_contains="base")],
-            optional=[
-                FindingMatcher(title_contains="extra-a"),
-                FindingMatcher(title_contains="extra-b"),
-            ],
+            optional=[FindingMatcher(title_contains="extra-a"), FindingMatcher(title_contains="extra-b")],
         )
         base = _make_finding(title="base finding")
         extra1 = _make_finding(title="extra-a")
@@ -409,7 +392,7 @@ class TestCorrelationStats:
                 score=90.0,
                 attack_type="pe",
                 findings=[],
-            ),
+            )
         ]
         stats = compute_correlation_stats(paths)
         assert stats.overall_risk_score == pytest.approx(90.0)

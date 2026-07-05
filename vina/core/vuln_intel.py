@@ -764,12 +764,16 @@ class NVDProvider:
     def _to_vuln(item: dict[str, Any]) -> Vulnerability:
         return Vulnerability(
             cve=item.get("id", ""),
-            title=item.get("descriptions", [{}])[0].get("value", "")
-            if isinstance(item.get("descriptions"), list)
-            else item.get("description", ""),
-            description=item.get("descriptions", [{}])[0].get("value", "")
-            if isinstance(item.get("descriptions"), list)
-            else item.get("description", ""),
+            title=(
+                item.get("descriptions", [{}])[0].get("value", "")
+                if isinstance(item.get("descriptions"), list)
+                else item.get("description", "")
+            ),
+            description=(
+                item.get("descriptions", [{}])[0].get("value", "")
+                if isinstance(item.get("descriptions"), list)
+                else item.get("description", "")
+            ),
             severity=item.get("severity", "medium"),
             cvss_v3=float(item.get("cvss_v3", 0)),
             vendor=item.get("vendor", ""),
@@ -886,11 +890,7 @@ def component_from_finding(finding: Finding) -> SoftwareComponent | None:
     if not version:
         version = _extract_version_from_title(finding.title or "")
 
-    return SoftwareComponent(
-        name=name or "unknown",
-        version=version,
-        source_stage=finding.source_stage,
-    )
+    return SoftwareComponent(name=name or "unknown", version=version, source_stage=finding.source_stage)
 
 
 def build_software_inventory(findings: list[Finding]) -> list[SoftwareComponent]:
@@ -924,13 +924,7 @@ def build_software_inventory(findings: list[Finding]) -> list[SoftwareComponent]
 class VulnStats:
     total_vulnerabilities: int = 0
     by_severity: dict[str, int] = field(
-        default_factory=lambda: {
-            "critical": 0,
-            "high": 0,
-            "medium": 0,
-            "low": 0,
-            "info": 0,
-        }
+        default_factory=lambda: {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
     )
     total_components: int = 0
     critical_cves: int = 0
@@ -945,9 +939,7 @@ class VulnStats:
 
 
 def compute_vuln_stats(
-    matches: list[VulnerabilityMatch],
-    components_count: int = 0,
-    feed_metadata: Any = None,
+    matches: list[VulnerabilityMatch], components_count: int = 0, feed_metadata: Any = None
 ) -> VulnStats:
     """Compute aggregate vulnerability statistics from a list of matches."""
     if not matches:

@@ -80,12 +80,7 @@ _STAGE_DEPS: dict[str, list[str]] = {
 
 # Per-stage timeout overrides (seconds).  Stages not listed inherit the
 # global timeout from the configuration.
-_STAGE_TIMEOUTS: dict[str, int] = {
-    "subfinder": 180,
-    "httpx": 120,
-    "naabu": 300,
-    "nuclei": 900,
-}
+_STAGE_TIMEOUTS: dict[str, int] = {"subfinder": 180, "httpx": 120, "naabu": 300, "nuclei": 900}
 
 
 @dataclass(slots=True)
@@ -122,13 +117,7 @@ class WebPipeline:
         self.context = ModuleContext(self.runner, self.store, self.config.timeout_seconds)
         self._dep_checker = DependencyChecker(config)
 
-    async def run(
-        self,
-        target: str,
-        *,
-        resume: bool = False,
-        force: bool = False,
-    ) -> PipelineResult:
+    async def run(self, target: str, *, resume: bool = False, force: bool = False) -> PipelineResult:
         """Run the full web pipeline and return a PipelineResult.
 
         Parameters
@@ -311,9 +300,7 @@ class WebPipeline:
                 return self._finish("url_aggregator", cp, build_skipped_stage("url_aggregator"), _results, _rc)
             mod = UrlAggregatorModule(self.config, self.context)
             res = await mod.run(
-                katana_res,
-                cast(GauResult, _results.get("gau")),
-                cast(WaybackurlsResult, _results.get("waybackurls")),
+                katana_res, cast(GauResult, _results.get("gau")), cast(WaybackurlsResult, _results.get("waybackurls"))
             )
             _results["aggregated"] = res
             _rc["url_aggregator"] = res.unique_count
@@ -405,10 +392,7 @@ class WebPipeline:
         finished_at = datetime.now(UTC)
         total_duration = perf_counter() - started_perf
         summary = summary_for_stages(
-            "Web Pipeline",
-            target_display,
-            scheduler_result.stage_results,
-            scheduler_result.total_duration,
+            "Web Pipeline", target_display, scheduler_result.stage_results, scheduler_result.total_duration
         )
         print(summary)
 
@@ -432,11 +416,7 @@ class WebPipeline:
 
     @staticmethod
     def _finish(
-        name: str,
-        cp: CheckpointManager,
-        stage: StageResult,
-        results: dict[str, Any],
-        _rc: dict[str, int],
+        name: str, cp: CheckpointManager, stage: StageResult, results: dict[str, Any], _rc: dict[str, int]
     ) -> StageResult:
         """Record stage to checkpoint and log.  Returns the stage."""
         outputs = {}
@@ -469,9 +449,4 @@ class WebPipeline:
         return stage
 
 
-__all__ = [
-    "PipelineResult",
-    "StageResult",
-    "StageState",
-    "WebPipeline",
-]
+__all__ = ["PipelineResult", "StageResult", "StageState", "WebPipeline"]

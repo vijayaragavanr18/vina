@@ -138,7 +138,4 @@ class PackagesSecurityModule:
         )
 
 
-__all__ = [
-    "PackagesSecurityModule",
-    "PackagesSecurityResult",
-]
+__all__ = ["PackagesSecurityModule", "PackagesSecurityResult"]

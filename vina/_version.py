@@ -2,13 +2,7 @@
 
 __version__ = "0.1.0"
 
-VERSION_INFO = {
-    "major": 0,
-    "minor": 1,
-    "patch": 0,
-    "pre_release": None,
-    "build": None,
-}
+VERSION_INFO = {"major": 0, "minor": 1, "patch": 0, "pre_release": None, "build": None}
 
 
 def version_str() -> str:
@@ -22,9 +16,4 @@ def version_tuple() -> tuple[int, int, int]:
     return tuple(int(p) for p in parts[:3])  # type: ignore[return-value]
 
 
-__all__ = [
-    "VERSION_INFO",
-    "__version__",
-    "version_str",
-    "version_tuple",
-]
+__all__ = ["VERSION_INFO", "__version__", "version_str", "version_tuple"]

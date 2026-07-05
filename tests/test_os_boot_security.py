@@ -46,11 +46,7 @@ class BootSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
         self.config = AppConfig()
         self.runner = AsyncMock()
         self.store = MagicMock()
-        self.context = ModuleContext(
-            runner=self.runner,
-            store=self.store,
-            timeout_seconds=10,
-        )
+        self.context = ModuleContext(runner=self.runner, store=self.store, timeout_seconds=10)
         self.target = TargetInput.from_raw("localhost")
 
     async def test_grub_scanner(self) -> None:
@@ -67,11 +63,7 @@ class BootSecurityModuleTests(unittest.IsolatedAsyncioTestCase):
                     missing_executable=False,
                 )
             elif "cat" in executable:
-                stdout_data = (
-                    "menuentry 'Ubuntu' --unrestricted {\n"
-                    "  linux /vmlinuz root=/dev/sda1\n"
-                    "}\n"
-                )
+                stdout_data = "menuentry 'Ubuntu' --unrestricted {\n" "  linux /vmlinuz root=/dev/sda1\n" "}\n"
                 return CommandResult(
                     command=executable,
                     args=tuple(args),

@@ -441,7 +441,7 @@ CAPABILITY_RULES = [
         cwe="CWE-732: Incorrect Permission Assignment for Critical Resource",
         tags=["capabilities", "privilege-escalation", "linux-capabilities"],
         confidence_score=0.8,
-    ),
+    )
 ]
 
 # ------------------------------------------------------------------
@@ -1480,8 +1480,7 @@ PACKAGE_RULES = [
         rule_id="PKG-012",
         title_patterns=["Broken or partially installed packages"],
         explanation="Some packages are in broken, half-configured, or uninstalled state.",
-        security_impact="Medium - Leaves package manager in unstable state and might block "
-        "critical updates.",
+        security_impact="Medium - Leaves package manager in unstable state and might block " "critical updates.",
         remediation="Fix package manager using 'apt-get install -f' or 'dpkg --configure -a'.",
         cis_control="CIS Control 2: Inventory and Control of Software Assets",
         tags=["package", "broken"],
@@ -1588,7 +1587,7 @@ CRON_RULES = [
         cwe="CWE-732: Incorrect Permission Assignment for Critical Resource",
         tags=["cron", "writable", "privilege-escalation"],
         confidence_score=0.9,
-    ),
+    )
 ]
 
 # ------------------------------------------------------------------
@@ -1609,7 +1608,7 @@ SUSPICIOUS_BINARY_RULES = [
         cwe="CWE-250: Execution with Unnecessary Privileges",
         tags=["gtfobins", "privilege-escalation", "suid"],
         confidence_score=0.8,
-    ),
+    )
 ]
 
 # ------------------------------------------------------------------
@@ -2660,11 +2659,7 @@ class EnrichmentEngine:
 
         return enriched
 
-    def _merge_rule_enrichment(
-        self,
-        enriched: EnrichedFinding,
-        matched_rules: list[KnowledgeRule],
-    ) -> None:
+    def _merge_rule_enrichment(self, enriched: EnrichedFinding, matched_rules: list[KnowledgeRule]) -> None:
         for rule in matched_rules:
             self._apply_evidence_and_explanation(enriched, rule)
             self._apply_remediation_info(enriched, rule)
@@ -2672,10 +2667,7 @@ class EnrichmentEngine:
             self._apply_confidence_adjustment(enriched, rule)
 
     @staticmethod
-    def _apply_evidence_and_explanation(
-        enriched: EnrichedFinding,
-        rule: KnowledgeRule,
-    ) -> None:
+    def _apply_evidence_and_explanation(enriched: EnrichedFinding, rule: KnowledgeRule) -> None:
         if not enriched.explanation and rule.explanation:
             enriched.explanation = rule.explanation
         if not enriched.security_impact and rule.security_impact:
@@ -2684,10 +2676,7 @@ class EnrichmentEngine:
             enriched.enriched_references = list(set(enriched.enriched_references + rule.references))
 
     @staticmethod
-    def _apply_remediation_info(
-        enriched: EnrichedFinding,
-        rule: KnowledgeRule,
-    ) -> None:
+    def _apply_remediation_info(enriched: EnrichedFinding, rule: KnowledgeRule) -> None:
         if not enriched.remediation and rule.remediation:
             enriched.remediation = rule.remediation
         if not enriched.cis_control and rule.cis_control:
@@ -2703,18 +2692,11 @@ class EnrichmentEngine:
             enriched.enriched_tags = list(set(enriched.enriched_tags + rule.tags))
 
     @staticmethod
-    def _apply_confidence_adjustment(
-        enriched: EnrichedFinding,
-        rule: KnowledgeRule,
-    ) -> None:
+    def _apply_confidence_adjustment(enriched: EnrichedFinding, rule: KnowledgeRule) -> None:
         if rule.confidence_score > enriched.confidence_score:
             enriched.confidence_score = rule.confidence_score
 
-    def _apply_gtfobins_fields(
-        self,
-        enriched: EnrichedFinding,
-        finding: Finding,
-    ) -> None:
+    def _apply_gtfobins_fields(self, enriched: EnrichedFinding, finding: Finding) -> None:
         gtfo_matches = self._check_gtfobins(finding)
         enriched.gtfo_bins = gtfo_matches
         if not gtfo_matches:

@@ -61,6 +61,4 @@ class PluginContext:
         )
 
 
-__all__ = [
-    "PluginContext",
-]
+__all__ = ["PluginContext"]

@@ -72,11 +72,7 @@ class WhatWebModule:
         self.config = config
         self.context = context
 
-    async def run(
-        self,
-        alive_hosts: list[str],
-        target: TargetInput,
-    ) -> WhatWebResult:
+    async def run(self, alive_hosts: list[str], target: TargetInput) -> WhatWebResult:
         """Execute WhatWeb against alive hosts and return detected technologies.
 
         Parameters
@@ -99,9 +95,7 @@ class WhatWebModule:
             host_count = 0
         else:
             command_result = await self.context.runner.run(
-                executable,
-                ["--log-json=-", "--no-errors", *alive_hosts],
-                timeout_seconds=self.context.timeout_seconds,
+                executable, ["--log-json=-", "--no-errors", *alive_hosts], timeout_seconds=self.context.timeout_seconds
             )
             hosts, all_technologies = self._parse_output(command_result.stdout, warnings)
             host_count = len(hosts)
@@ -136,11 +130,7 @@ class WhatWebModule:
         self._print_summary(result)
         return result
 
-    def _parse_output(
-        self,
-        output: str,
-        warnings: list[str],
-    ) -> tuple[list[WhatWebHost], list[str]]:
+    def _parse_output(self, output: str, warnings: list[str]) -> tuple[list[WhatWebHost], list[str]]:
         """Parse WhatWeb JSON lines into typed records.
 
         Returns (hosts, flat_technology_names).
@@ -174,12 +164,7 @@ class WhatWebModule:
 
         return hosts, all_technologies
 
-    def _parse_host(
-        self,
-        payload: Mapping[str, Any],
-        line_number: int,
-        warnings: list[str],
-    ) -> WhatWebHost | None:
+    def _parse_host(self, payload: Mapping[str, Any], line_number: int, warnings: list[str]) -> WhatWebHost | None:
         """Parse a single WhatWeb JSON line into a WhatWebHost."""
         target_url = payload.get("target") or payload.get("url")
         if not target_url or not isinstance(target_url, str):
@@ -217,9 +202,7 @@ class WhatWebModule:
         )
 
     @staticmethod
-    def _categorize_plugins(
-        plugins: dict[str, dict[str, Any]],
-    ) -> dict[str, Any]:
+    def _categorize_plugins(plugins: dict[str, dict[str, Any]]) -> dict[str, Any]:
         """Categorize WhatWeb plugins into structured groups."""
         technologies: list[WhatWebTechnology] = []
         frameworks: list[str] = []
@@ -249,12 +232,7 @@ class WhatWebModule:
                         categories.append(c)
 
             technologies.append(
-                WhatWebTechnology(
-                    name=name,
-                    version=version,
-                    certainty=certainty,
-                    categories=categories,
-                )
+                WhatWebTechnology(name=name, version=version, certainty=certainty, categories=categories)
             )
 
             cat_lower = [c.lower() for c in categories]
@@ -294,9 +272,7 @@ class WhatWebModule:
         }
 
     @staticmethod
-    def _deduplicate_technologies(
-        names: list[str],
-    ) -> list[str]:
+    def _deduplicate_technologies(names: list[str]) -> list[str]:
         """Deduplicate technology names preserving order."""
         seen: set[str] = set()
         deduped: list[str] = []
@@ -380,9 +356,4 @@ class WhatWebModule:
         return None
 
 
-__all__ = [
-    "WhatWebHost",
-    "WhatWebModule",
-    "WhatWebResult",
-    "WhatWebTechnology",
-]
+__all__ = ["WhatWebHost", "WhatWebModule", "WhatWebResult", "WhatWebTechnology"]

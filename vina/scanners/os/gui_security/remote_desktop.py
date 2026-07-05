@@ -43,17 +43,19 @@ class RemoteDesktopModule:
         cr_vnc = await self.context.runner.run(pgrep_cmd, ["-f", "vnc"], timeout_seconds=5)
 
         if cr_vnc.succeeded:
-            findings.append(make_finding(
-                title="Active VNC server session detected",
-                description="A VNC server is currently running. VNC traffic is unencrypted by default, allowing network eavesdroppers to capture keystrokes and session screen buffers.",
-                severity="medium",
-                category="vulnerability",
-                source_stage="gui_security",
-                target=target_str,
-                evidence=f"Running VNC processes found: {cr_vnc.stdout.strip()}",
-                recommendation="Tunnel VNC traffic over SSH ('ssh -L 5901:localhost:5901') or migrate to RDP with TLS encryption.",
-                confidence=0.9,
-            ))
+            findings.append(
+                make_finding(
+                    title="Active VNC server session detected",
+                    description="A VNC server is currently running. VNC traffic is unencrypted by default, allowing network eavesdroppers to capture keystrokes and session screen buffers.",
+                    severity="medium",
+                    category="vulnerability",
+                    source_stage="gui_security",
+                    target=target_str,
+                    evidence=f"Running VNC processes found: {cr_vnc.stdout.strip()}",
+                    recommendation="Tunnel VNC traffic over SSH ('ssh -L 5901:localhost:5901') or migrate to RDP with TLS encryption.",
+                    confidence=0.9,
+                )
+            )
 
         xrdp_ini = "/etc/xrdp/xrdp.ini"
         cat_cmd = self.config.tool_bin("cat", "cat")
@@ -68,17 +70,19 @@ class RemoteDesktopModule:
                     sec_layer = line.partition("=")[2].strip().lower()
 
             if sec_layer == "rdp":
-                findings.append(make_finding(
-                    title="Insecure security layer configured in xrdp",
-                    description="The xrdp server is configured to use the native 'rdp' security layer instead of TLS. This allows MITM attacks and lacks proper endpoint verification.",
-                    severity="high",
-                    category="misconfiguration",
-                    source_stage="gui_security",
-                    target=target_str,
-                    evidence=f"security_layer={sec_layer}",
-                    recommendation="Set 'security_layer=tls' or 'security_layer=negotiate' in /etc/xrdp/xrdp.ini.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title="Insecure security layer configured in xrdp",
+                        description="The xrdp server is configured to use the native 'rdp' security layer instead of TLS. This allows MITM attacks and lacks proper endpoint verification.",
+                        severity="high",
+                        category="misconfiguration",
+                        source_stage="gui_security",
+                        target=target_str,
+                        evidence=f"security_layer={sec_layer}",
+                        recommendation="Set 'security_layer=tls' or 'security_layer=negotiate' in /etc/xrdp/xrdp.ini.",
+                        confidence=0.9,
+                    )
+                )
 
             crypt_level = "high"
             for line in content.splitlines():
@@ -86,17 +90,19 @@ class RemoteDesktopModule:
                     crypt_level = line.partition("=")[2].strip().lower()
 
             if crypt_level in ("low", "none"):
-                findings.append(make_finding(
-                    title="Weak encryption level configured in xrdp",
-                    description=f"The xrdp server encryption level is set to '{crypt_level}', which does not provide strong confidentiality protection.",
-                    severity="high",
-                    category="misconfiguration",
-                    source_stage="gui_security",
-                    target=target_str,
-                    evidence=f"crypt_level={crypt_level}",
-                    recommendation="Set 'crypt_level=high' in /etc/xrdp/xrdp.ini.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title="Weak encryption level configured in xrdp",
+                        description=f"The xrdp server encryption level is set to '{crypt_level}', which does not provide strong confidentiality protection.",
+                        severity="high",
+                        category="misconfiguration",
+                        source_stage="gui_security",
+                        target=target_str,
+                        evidence=f"crypt_level={crypt_level}",
+                        recommendation="Set 'crypt_level=high' in /etc/xrdp/xrdp.ini.",
+                        confidence=0.9,
+                    )
+                )
 
         primary = cr_vnc or cr_xrdp or self._empty_command_result()
 

@@ -129,7 +129,4 @@ class NetworkSecurityModule:
         )
 
 
-__all__ = [
-    "NetworkSecurityModule",
-    "NetworkSecurityResult",
-]
+__all__ = ["NetworkSecurityModule", "NetworkSecurityResult"]

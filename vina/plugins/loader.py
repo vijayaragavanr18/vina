@@ -15,10 +15,7 @@ from .plugin import Plugin, PluginMetadata
 logger = logging.getLogger("vina.plugins.loader")
 
 # Directories checked for local plugin packages
-LOCAL_PLUGIN_DIRS: list[Path] = [
-    Path.cwd() / "plugins",
-    Path.home() / ".vina" / "plugins",
-]
+LOCAL_PLUGIN_DIRS: list[Path] = [Path.cwd() / "plugins", Path.home() / ".vina" / "plugins"]
 
 ENTRY_POINT_GROUP = "vina.plugins"
 
@@ -115,11 +112,7 @@ class PluginLoader:
                 if inspect.isclass(cls) and issubclass(cls, Plugin) and cls is not Plugin:
                     instance = cls()
                     plugins.append(instance)
-                    logger.info(
-                        "Loaded entry-point plugin '%s' from %s",
-                        instance.metadata.id,
-                        ep.module,
-                    )
+                    logger.info("Loaded entry-point plugin '%s' from %s", instance.metadata.id, ep.module)
             except Exception:
                 logger.warning("Failed to load entry-point plugin '%s'", ep.name, exc_info=True)
         return plugins
@@ -158,11 +151,7 @@ class PluginLoader:
     def discover_all(self, extra_dirs: list[Path] | None = None) -> list[Plugin]:
         """Discover plugins from all sources and return them."""
         plugins: list[Plugin] = []
-        for loader in (
-            self.load_builtin,
-            lambda: self.load_local(extra_dirs),
-            self.load_entry_points,
-        ):
+        for loader in (self.load_builtin, lambda: self.load_local(extra_dirs), self.load_entry_points):
             try:
                 plugins.extend(loader())
             except Exception:
@@ -211,8 +200,4 @@ class PluginLoader:
                 sys.path.pop(0)
 
 
-__all__ = [
-    "ENTRY_POINT_GROUP",
-    "LOCAL_PLUGIN_DIRS",
-    "PluginLoader",
-]
+__all__ = ["ENTRY_POINT_GROUP", "LOCAL_PLUGIN_DIRS", "PluginLoader"]

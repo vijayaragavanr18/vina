@@ -19,13 +19,7 @@ def _finding(
     url: str = "",
 ) -> Finding:
     return make_finding(
-        title=title,
-        severity=severity,
-        category=category,
-        source_stage=source_stage,
-        target=target,
-        host=host,
-        url=url,
+        title=title, severity=severity, category=category, source_stage=source_stage, target=target, host=host, url=url
     )
 
 
@@ -217,21 +211,9 @@ class AggregatorStatsDataclassTests(unittest.TestCase):
         from vina.scanners.web.recon import WebReconResult
         from vina.scanners.web.whatweb import WhatWebResult
 
-        cr = CommandResult(
-            command="test",
-            args=(),
-            returncode=0,
-            stdout="",
-            stderr="",
-            duration_seconds=0.0,
-        )
+        cr = CommandResult(command="test", args=(), returncode=0, stdout="", stderr="", duration_seconds=0.0)
         subfinder = WebReconResult(target="example.com", command_result=cr, subdomains=["example.com"])
-        httpx = HttpxResult(
-            target="example.com",
-            command_result=cr,
-            records=[],
-            alive_hosts=["https://example.com"],
-        )
+        httpx = HttpxResult(target="example.com", command_result=cr, records=[], alive_hosts=["https://example.com"])
         naabu = NaabuResult(target="example.com", command_result=cr, open_ports=[])
         nmap = NmapResult(target="example.com", command_result=cr, hosts=[], services=[])
         whatweb = WhatWebResult(target="example.com", command_result=cr, hosts=[])

@@ -67,11 +67,7 @@ class TestDoctor:
         assert (major, minor) >= (3, 12), f"Python {major}.{minor} < 3.12"
 
     def test_doctor_writable_dirs(self):
-        dirs = [
-            Path.home() / ".vina" / "cache",
-            Path.home() / ".vina" / "feeds",
-            Path.home() / ".vina" / "plugins",
-        ]
+        dirs = [Path.home() / ".vina" / "cache", Path.home() / ".vina" / "feeds", Path.home() / ".vina" / "plugins"]
         for d in dirs:
             d.mkdir(parents=True, exist_ok=True)
             test_file = d / ".write_test"

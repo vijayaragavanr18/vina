@@ -60,16 +60,18 @@ class GrubModule:
         target_str = target.normalized
 
         if not grub_file:
-            findings.append(make_finding(
-                title="GRUB configuration file not found",
-                description="Unable to locate active GRUB configuration file under standard paths.",
-                severity="low",
-                category="information",
-                source_stage="boot_security",
-                target=target_str,
-                evidence="Checked paths: " + ", ".join(grub_paths),
-                confidence=0.8,
-            ))
+            findings.append(
+                make_finding(
+                    title="GRUB configuration file not found",
+                    description="Unable to locate active GRUB configuration file under standard paths.",
+                    severity="low",
+                    category="information",
+                    source_stage="boot_security",
+                    target=target_str,
+                    evidence="Checked paths: " + ", ".join(grub_paths),
+                    confidence=0.8,
+                )
+            )
             primary = cr_stat or self._empty_command_result()
         else:
             assert cr_stat is not None
@@ -79,30 +81,34 @@ class GrubModule:
             group = parts[2] if len(parts) >= 3 else ""
 
             if perms and int(perms) > 600:
-                findings.append(make_finding(
-                    title=f"GRUB configuration file permissions are too open: {grub_file} ({perms})",
-                    description=f"The GRUB configuration file '{grub_file}' has permissions '{perms}'. It should be set to 600 or 400 to prevent local users from reading boot configurations, which may contain password hashes.",
-                    severity="medium",
-                    category="permissions",
-                    source_stage="boot_security",
-                    target=target_str,
-                    evidence=f"Path: {grub_file}, Perms: {perms}, Owner: {owner}:{group}",
-                    recommendation=f"Run 'chmod 600 {grub_file}' and 'chown root:root {grub_file}' to secure the configuration.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"GRUB configuration file permissions are too open: {grub_file} ({perms})",
+                        description=f"The GRUB configuration file '{grub_file}' has permissions '{perms}'. It should be set to 600 or 400 to prevent local users from reading boot configurations, which may contain password hashes.",
+                        severity="medium",
+                        category="permissions",
+                        source_stage="boot_security",
+                        target=target_str,
+                        evidence=f"Path: {grub_file}, Perms: {perms}, Owner: {owner}:{group}",
+                        recommendation=f"Run 'chmod 600 {grub_file}' and 'chown root:root {grub_file}' to secure the configuration.",
+                        confidence=0.9,
+                    )
+                )
 
             if owner != "root":
-                findings.append(make_finding(
-                    title=f"GRUB configuration file is not owned by root: {grub_file}",
-                    description=f"The GRUB configuration file '{grub_file}' is owned by '{owner}'. It must be owned by root.",
-                    severity="medium",
-                    category="permissions",
-                    source_stage="boot_security",
-                    target=target_str,
-                    evidence=f"Owner: {owner}",
-                    recommendation=f"Run 'chown root:root {grub_file}'.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"GRUB configuration file is not owned by root: {grub_file}",
+                        description=f"The GRUB configuration file '{grub_file}' is owned by '{owner}'. It must be owned by root.",
+                        severity="medium",
+                        category="permissions",
+                        source_stage="boot_security",
+                        target=target_str,
+                        evidence=f"Owner: {owner}",
+                        recommendation=f"Run 'chown root:root {grub_file}'.",
+                        confidence=0.9,
+                    )
+                )
 
             cr_cat = await self.context.runner.run(cat_cmd, [grub_file], timeout_seconds=10)
             has_password = False
@@ -122,29 +128,33 @@ class GrubModule:
                             unrestricted_entries.append(m)
 
             if not has_password:
-                findings.append(make_finding(
-                    title="GRUB bootloader is not password protected",
-                    description="No password configuration (password or password_pbkdf2) was found in the GRUB configuration. Any user with physical or console access can modify boot options and boot into single-user mode.",
-                    severity="high",
-                    category="misconfiguration",
-                    source_stage="boot_security",
-                    target=target_str,
-                    evidence=f"File: {grub_file}, Password configured: False",
-                    recommendation="Configure a bootloader password using grub-mkpasswd-pbkdf2 and add it to GRUB configuration.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title="GRUB bootloader is not password protected",
+                        description="No password configuration (password or password_pbkdf2) was found in the GRUB configuration. Any user with physical or console access can modify boot options and boot into single-user mode.",
+                        severity="high",
+                        category="misconfiguration",
+                        source_stage="boot_security",
+                        target=target_str,
+                        evidence=f"File: {grub_file}, Password configured: False",
+                        recommendation="Configure a bootloader password using grub-mkpasswd-pbkdf2 and add it to GRUB configuration.",
+                        confidence=0.9,
+                    )
+                )
             elif unrestricted_entries and len(unrestricted_entries) == total_entries:
-                findings.append(make_finding(
-                    title="All GRUB boot entries are unrestricted",
-                    description="GRUB has a password set, but all boot menu entries are marked as '--unrestricted'. This allows anyone to boot them without authentication, reducing the benefit of the password protection.",
-                    severity="medium",
-                    category="misconfiguration",
-                    source_stage="boot_security",
-                    target=target_str,
-                    evidence=f"Total entries: {total_entries}, Unrestricted: {len(unrestricted_entries)}",
-                    recommendation="Remove the '--unrestricted' flag from sensitive boot entries (like recovery or rescue entries) so they require the GRUB password to boot.",
-                    confidence=0.85,
-                ))
+                findings.append(
+                    make_finding(
+                        title="All GRUB boot entries are unrestricted",
+                        description="GRUB has a password set, but all boot menu entries are marked as '--unrestricted'. This allows anyone to boot them without authentication, reducing the benefit of the password protection.",
+                        severity="medium",
+                        category="misconfiguration",
+                        source_stage="boot_security",
+                        target=target_str,
+                        evidence=f"Total entries: {total_entries}, Unrestricted: {len(unrestricted_entries)}",
+                        recommendation="Remove the '--unrestricted' flag from sensitive boot entries (like recovery or rescue entries) so they require the GRUB password to boot.",
+                        confidence=0.85,
+                    )
+                )
 
             primary = cr_cat
 

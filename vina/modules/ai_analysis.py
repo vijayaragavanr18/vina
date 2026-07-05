@@ -28,13 +28,7 @@ class AIAnalysisModule:
         return AnalysisResult(items=items)
 
     def _score_finding(self, finding: Finding) -> AnalysisItem:
-        severity_map = {
-            "critical": 95,
-            "high": 80,
-            "medium": 60,
-            "low": 35,
-            "info": 15,
-        }
+        severity_map = {"critical": 95, "high": 80, "medium": 60, "low": 35, "info": 15}
         score = severity_map.get(finding.severity.lower(), 20)
         rationale = f"{finding.source_stage} reported {finding.title} for {finding.target}. This is a triage signal, not proof of impact."
         return AnalysisItem(
@@ -50,10 +44,7 @@ class AIAnalysisModule:
         )
 
     def _fallback_items(
-        self,
-        ports: list[PortEntry],
-        technologies: list[TechnologyEntry],
-        parameters: list[ParameterCandidate],
+        self, ports: list[PortEntry], technologies: list[TechnologyEntry], parameters: list[ParameterCandidate]
     ) -> list[AnalysisItem]:
         items: list[AnalysisItem] = []
         if parameters:

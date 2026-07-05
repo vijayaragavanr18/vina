@@ -47,30 +47,34 @@ class AgentsModule:
         has_hids = cr_wz.succeeded or cr_ossec.succeeded
 
         if not cr_f2b.succeeded:
-            findings.append(make_finding(
-                title="fail2ban brute-force protection is not running",
-                description="The fail2ban logging monitor daemon is not active. The host lacks automated firewall blocking against persistent ssh or web service brute-force attacks.",
-                severity="medium",
-                category="vulnerability",
-                source_stage="monitoring_security",
-                target=target_str,
-                evidence="fail2ban-server process not running",
-                recommendation="Install and enable fail2ban: 'apt-get install fail2ban && systemctl enable --now fail2ban'.",
-                confidence=0.9,
-            ))
+            findings.append(
+                make_finding(
+                    title="fail2ban brute-force protection is not running",
+                    description="The fail2ban logging monitor daemon is not active. The host lacks automated firewall blocking against persistent ssh or web service brute-force attacks.",
+                    severity="medium",
+                    category="vulnerability",
+                    source_stage="monitoring_security",
+                    target=target_str,
+                    evidence="fail2ban-server process not running",
+                    recommendation="Install and enable fail2ban: 'apt-get install fail2ban && systemctl enable --now fail2ban'.",
+                    confidence=0.9,
+                )
+            )
 
         if not has_hids:
-            findings.append(make_finding(
-                title="No active Host Intrusion Detection System (HIDS) resolved",
-                description="No active Wazuh or OSSEC agent processes were discovered. System events, files modifications, and security logs are not being monitored or reported in real time.",
-                severity="medium",
-                category="vulnerability",
-                source_stage="monitoring_security",
-                target=target_str,
-                evidence="No Wazuh or OSSEC process active",
-                recommendation="Install and register a central SIEM/HIDS agent (e.g. Wazuh agent).",
-                confidence=0.85,
-            ))
+            findings.append(
+                make_finding(
+                    title="No active Host Intrusion Detection System (HIDS) resolved",
+                    description="No active Wazuh or OSSEC agent processes were discovered. System events, files modifications, and security logs are not being monitored or reported in real time.",
+                    severity="medium",
+                    category="vulnerability",
+                    source_stage="monitoring_security",
+                    target=target_str,
+                    evidence="No Wazuh or OSSEC process active",
+                    recommendation="Install and register a central SIEM/HIDS agent (e.g. Wazuh agent).",
+                    confidence=0.85,
+                )
+            )
 
         primary = cr_f2b or cr_wz or self._empty_command_result()
 

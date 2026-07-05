@@ -57,17 +57,19 @@ class SslCertsModule:
                     open_keys.append(f"{key_path} ({perms})")
 
         if open_keys:
-            findings.append(make_finding(
-                title="SSL/TLS private keys have insecure permissions",
-                description="Private key files under /etc/ssl/private are readable by unauthorized local accounts, exposing secret cryptographic materials.",
-                severity="high",
-                category="permissions",
-                source_stage="crypto_security",
-                target=target_str,
-                evidence="\n".join(open_keys),
-                recommendation="Set restrictive permissions (600 or 640) on private key files.",
-                confidence=0.95,
-            ))
+            findings.append(
+                make_finding(
+                    title="SSL/TLS private keys have insecure permissions",
+                    description="Private key files under /etc/ssl/private are readable by unauthorized local accounts, exposing secret cryptographic materials.",
+                    severity="high",
+                    category="permissions",
+                    source_stage="crypto_security",
+                    target=target_str,
+                    evidence="\n".join(open_keys),
+                    recommendation="Set restrictive permissions (600 or 640) on private key files.",
+                    confidence=0.95,
+                )
+            )
 
         cat_cmd = self.config.tool_bin("cat", "cat")
         cr_openssl = await self.context.runner.run(cat_cmd, ["/etc/ssl/openssl.cnf"], timeout_seconds=5)
@@ -75,17 +77,19 @@ class SslCertsModule:
         if cr_openssl.succeeded and cr_openssl.stdout.strip():
             content = cr_openssl.stdout
             if "MinProtocol = TLSv1" in content or "MinProtocol = SSL" in content:
-                findings.append(make_finding(
-                    title="OpenSSL configured with legacy TLS/SSL protocol support",
-                    description="OpenSSL system-wide configuration permits legacy protocols like TLS 1.0, TLS 1.1, or SSLv3, exposing clients to protocol downgrade attacks.",
-                    severity="medium",
-                    category="misconfiguration",
-                    source_stage="crypto_security",
-                    target=target_str,
-                    evidence="MinProtocol configured to TLSv1 or lower",
-                    recommendation="Set MinProtocol = TLSv1.2 or MinProtocol = TLSv1.3 in /etc/ssl/openssl.cnf.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title="OpenSSL configured with legacy TLS/SSL protocol support",
+                        description="OpenSSL system-wide configuration permits legacy protocols like TLS 1.0, TLS 1.1, or SSLv3, exposing clients to protocol downgrade attacks.",
+                        severity="medium",
+                        category="misconfiguration",
+                        source_stage="crypto_security",
+                        target=target_str,
+                        evidence="MinProtocol configured to TLSv1 or lower",
+                        recommendation="Set MinProtocol = TLSv1.2 or MinProtocol = TLSv1.3 in /etc/ssl/openssl.cnf.",
+                        confidence=0.9,
+                    )
+                )
 
         primary = cr_find or cr_openssl or self._empty_command_result()
 

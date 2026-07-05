@@ -210,8 +210,7 @@ class TestAllRules(unittest.TestCase):
         for rule in ALL_RULES:
             with self.subTest(rule_id=rule.rule_id):
                 self.assertTrue(
-                    any(rule.rule_id.startswith(p) for p in prefixes),
-                    f"Unexpected prefix in {rule.rule_id}",
+                    any(rule.rule_id.startswith(p) for p in prefixes), f"Unexpected prefix in {rule.rule_id}"
                 )
 
 
@@ -598,11 +597,7 @@ class EnrichmentEngineEdgeCaseTests(unittest.TestCase):
         self.assertEqual(enriched.explanation, "Custom explanation")
 
         non_matching = make_finding(
-            title="This does not match",
-            severity="info",
-            category="other",
-            source_stage="test",
-            target="localhost",
+            title="This does not match", severity="info", category="other", source_stage="test", target="localhost"
         )
         enriched2 = engine.enrich_finding(non_matching)
         self.assertFalse(enriched2.has_enrichment())

@@ -147,7 +147,4 @@ class AuthSecurityModule:
         )
 
 
-__all__ = [
-    "AuthSecurityModule",
-    "AuthSecurityResult",
-]
+__all__ = ["AuthSecurityModule", "AuthSecurityResult"]

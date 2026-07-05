@@ -20,13 +20,7 @@ def _esc_md(text: str) -> str:
 
 def _severity_badge(sev: str) -> str:
     sev_lower = sev.lower()
-    colors = {
-        "critical": "#e11d48",
-        "high": "#f97316",
-        "medium": "#eab308",
-        "low": "#3b82f6",
-        "info": "#6b7280",
-    }
+    colors = {"critical": "#e11d48", "high": "#f97316", "medium": "#eab308", "low": "#3b82f6", "info": "#6b7280"}
     color = colors.get(sev_lower, "#6b7280")
     return f"[{sev.upper()}]({color})"
 
@@ -40,13 +34,7 @@ def _chain_lines(chain: list[str]) -> str:
 
 
 def _severity_color_md(sev: str) -> str:
-    colors = {
-        "critical": "ff4444",
-        "high": "ff8800",
-        "medium": "ffcc00",
-        "low": "4488ff",
-        "info": "888888",
-    }
+    colors = {"critical": "ff4444", "high": "ff8800", "medium": "ffcc00", "low": "4488ff", "info": "888888"}
     return colors.get(sev.lower(), "888888")
 
 
@@ -86,9 +74,7 @@ def _render_executive_summary(lines: list[str], stats: AggregatorStats, target: 
 
 
 def _render_executive_vulnerability_summary(
-    lines: list[str],
-    vmatches: list[VulnerabilityMatch],
-    vuln_stats: VulnStats | None,
+    lines: list[str], vmatches: list[VulnerabilityMatch], vuln_stats: VulnStats | None
 ) -> None:
     if vmatches:
         vs = vuln_stats
@@ -116,11 +102,7 @@ def _render_executive_vulnerability_summary(
         lines.append("")
 
 
-def _render_executive_attack_summary(
-    lines: list[str],
-    stats: AggregatorStats,
-    paths: list[AttackPath],
-) -> None:
+def _render_executive_attack_summary(lines: list[str], stats: AggregatorStats, paths: list[AttackPath]) -> None:
     if stats.attack_paths_total > 0:
         lines.append("")
         lines.append("### Executive Attack Summary")
@@ -221,9 +203,7 @@ def _render_attack_paths(lines: list[str], paths: list[AttackPath]) -> None:
 
 
 def _render_exploitability_assessments(
-    lines: list[str],
-    exp_assessments: list[ExploitabilityAssessment],
-    exp_summary: ExploitabilitySummary | None,
+    lines: list[str], exp_assessments: list[ExploitabilityAssessment], exp_summary: ExploitabilitySummary | None
 ) -> None:
     if exp_assessments:
         lines.append("## Exploitability Analysis")

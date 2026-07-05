@@ -45,21 +45,27 @@ class TimeSyncModule:
         synced = False
         if cr_td.succeeded and cr_td.stdout.strip():
             content = cr_td.stdout
-            if "System clock synchronized: yes" in content or "NTP service: active" in content or "NTP synchronized: yes" in content:
+            if (
+                "System clock synchronized: yes" in content
+                or "NTP service: active" in content
+                or "NTP synchronized: yes" in content
+            ):
                 synced = True
 
         if not synced:
-            findings.append(make_finding(
-                title="System time synchronization is inactive",
-                description="Time synchronization (NTP/Chrony/timesyncd) is disabled or not synchronized. Clock drift can compromise security token validation and prevent accurate event correlation during security incidents.",
-                severity="medium",
-                category="vulnerability",
-                source_stage="monitoring_security",
-                target=target_str,
-                evidence="timedatectl indicates no active synchronization",
-                recommendation="Enable systemd-timesyncd or Chrony: 'systemctl enable --now systemd-timesyncd'.",
-                confidence=0.9,
-            ))
+            findings.append(
+                make_finding(
+                    title="System time synchronization is inactive",
+                    description="Time synchronization (NTP/Chrony/timesyncd) is disabled or not synchronized. Clock drift can compromise security token validation and prevent accurate event correlation during security incidents.",
+                    severity="medium",
+                    category="vulnerability",
+                    source_stage="monitoring_security",
+                    target=target_str,
+                    evidence="timedatectl indicates no active synchronization",
+                    recommendation="Enable systemd-timesyncd or Chrony: 'systemctl enable --now systemd-timesyncd'.",
+                    confidence=0.9,
+                )
+            )
 
         result = TimeSyncResult(
             target=target,

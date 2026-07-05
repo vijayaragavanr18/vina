@@ -43,17 +43,19 @@ class AuditingModule:
         cr_auditd = await self.context.runner.run(pgrep_cmd, ["-x", "auditd"], timeout_seconds=5)
 
         if not cr_auditd.succeeded:
-            findings.append(make_finding(
-                title="auditd auditing daemon is not running",
-                description="The auditd daemon is not active. The system cannot perform kernel-level auditing of file access, privilege execution, or user actions.",
-                severity="high",
-                category="vulnerability",
-                source_stage="monitoring_security",
-                target=target_str,
-                evidence="auditd process not running",
-                recommendation="Enable and start auditd: 'systemctl enable --now auditd'.",
-                confidence=0.9,
-            ))
+            findings.append(
+                make_finding(
+                    title="auditd auditing daemon is not running",
+                    description="The auditd daemon is not active. The system cannot perform kernel-level auditing of file access, privilege execution, or user actions.",
+                    severity="high",
+                    category="vulnerability",
+                    source_stage="monitoring_security",
+                    target=target_str,
+                    evidence="auditd process not running",
+                    recommendation="Enable and start auditd: 'systemctl enable --now auditd'.",
+                    confidence=0.9,
+                )
+            )
         else:
             auditctl_cmd = self.config.tool_bin("auditctl", "auditctl")
             cr_rules = await self.context.runner.run(auditctl_cmd, ["-l"], timeout_seconds=5)
@@ -63,17 +65,19 @@ class AuditingModule:
                 rules_str = cr_rules.stdout
 
             if "-a always,exit" not in rules_str or "execve" not in rules_str:
-                findings.append(make_finding(
-                    title="Audit rules do not track process execution (execve)",
-                    description="No audit rules were found for auditing the execve system call. This prevents tracking what commands users or attackers run on the host.",
-                    severity="medium",
-                    category="misconfiguration",
-                    source_stage="monitoring_security",
-                    target=target_str,
-                    evidence="Missing execve audit rules in loaded config",
-                    recommendation="Add '-a always,exit -F arch=b64 -S execve' to /etc/audit/rules.d/audit.rules.",
-                    confidence=0.85,
-                ))
+                findings.append(
+                    make_finding(
+                        title="Audit rules do not track process execution (execve)",
+                        description="No audit rules were found for auditing the execve system call. This prevents tracking what commands users or attackers run on the host.",
+                        severity="medium",
+                        category="misconfiguration",
+                        source_stage="monitoring_security",
+                        target=target_str,
+                        evidence="Missing execve audit rules in loaded config",
+                        recommendation="Add '-a always,exit -F arch=b64 -S execve' to /etc/audit/rules.d/audit.rules.",
+                        confidence=0.85,
+                    )
+                )
 
         cat_cmd = self.config.tool_bin("cat", "cat")
         cr_j = await self.context.runner.run(cat_cmd, ["/etc/systemd/journald.conf"], timeout_seconds=5)
@@ -89,17 +93,19 @@ class AuditingModule:
                         storage_persistent = True
 
             if not storage_persistent:
-                findings.append(make_finding(
-                    title="Systemd journald storage is not persistent",
-                    description="Journald is configured to use volatile storage (in-memory) or auto storage. Logs will be lost on system reboot, hindering post-incident forensics.",
-                    severity="medium",
-                    category="misconfiguration",
-                    source_stage="monitoring_security",
-                    target=target_str,
-                    evidence="Storage is not set to persistent in journald.conf",
-                    recommendation="Configure 'Storage=persistent' in /etc/systemd/journald.conf.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title="Systemd journald storage is not persistent",
+                        description="Journald is configured to use volatile storage (in-memory) or auto storage. Logs will be lost on system reboot, hindering post-incident forensics.",
+                        severity="medium",
+                        category="misconfiguration",
+                        source_stage="monitoring_security",
+                        target=target_str,
+                        evidence="Storage is not set to persistent in journald.conf",
+                        recommendation="Configure 'Storage=persistent' in /etc/systemd/journald.conf.",
+                        confidence=0.9,
+                    )
+                )
 
         primary = cr_auditd or cr_j or self._empty_command_result()
 

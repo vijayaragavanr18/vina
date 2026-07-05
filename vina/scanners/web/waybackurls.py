@@ -51,11 +51,7 @@ class WaybackurlsModule:
         self.config = config
         self.context = context
 
-    async def run(
-        self,
-        alive_hosts: list[str],
-        target: TargetInput,
-    ) -> WaybackurlsResult:
+    async def run(self, alive_hosts: list[str], target: TargetInput) -> WaybackurlsResult:
         """Execute Waybackurls against target hosts and return historical URLs.
 
         Parameters
@@ -79,10 +75,7 @@ class WaybackurlsModule:
             wayback_urls: list[WaybackUrl] = []
         else:
             command_result = await self.context.runner.run(
-                executable,
-                [],
-                timeout_seconds=self.context.timeout_seconds,
-                input_text="\n".join(hostnames) + "\n",
+                executable, [], timeout_seconds=self.context.timeout_seconds, input_text="\n".join(hostnames) + "\n"
             )
             wayback_urls = self._parse_output(command_result.stdout, warnings)
 
@@ -117,11 +110,7 @@ class WaybackurlsModule:
         self._print_summary(result)
         return result
 
-    def _parse_output(
-        self,
-        output: str,
-        warnings: list[str],
-    ) -> list[WaybackUrl]:
+    def _parse_output(self, output: str, warnings: list[str]) -> list[WaybackUrl]:
         """Parse Waybackurls line-based output into typed records."""
         wayback_urls: list[WaybackUrl] = []
 
@@ -136,12 +125,7 @@ class WaybackurlsModule:
 
         return wayback_urls
 
-    def _parse_url_line(
-        self,
-        line: str,
-        line_number: int,
-        warnings: list[str],
-    ) -> WaybackUrl | None:
+    def _parse_url_line(self, line: str, line_number: int, warnings: list[str]) -> WaybackUrl | None:
         """Parse a single URL line into a WaybackUrl."""
         candidate = line if "://" in line else f"//{line}"
         parsed = urlparse(candidate)
@@ -167,12 +151,7 @@ class WaybackurlsModule:
             params = [name for name, _ in parse_qsl(query, keep_blank_values=True) if name]
 
         return WaybackUrl(
-            url=line,
-            host=host,
-            path=path,
-            query_string=query,
-            file_extension=ext,
-            parameter_names=params,
+            url=line, host=host, path=path, query_string=query, file_extension=ext, parameter_names=params
         )
 
     @staticmethod
@@ -205,9 +184,7 @@ class WaybackurlsModule:
         return normalized
 
     @staticmethod
-    def _deduplicate(
-        wayback_urls: list[WaybackUrl],
-    ) -> list[WaybackUrl]:
+    def _deduplicate(wayback_urls: list[WaybackUrl]) -> list[WaybackUrl]:
         """Deduplicate WaybackUrl records by normalized URL."""
         seen: set[str] = set()
         deduped: list[WaybackUrl] = []
@@ -219,9 +196,7 @@ class WaybackurlsModule:
         return deduped
 
     @staticmethod
-    def _count_unique_params(
-        wayback_urls: list[WaybackUrl],
-    ) -> int:
+    def _count_unique_params(wayback_urls: list[WaybackUrl]) -> int:
         """Count unique parameter names across all URLs."""
         seen: set[str] = set()
         for url_obj in wayback_urls:
@@ -282,8 +257,4 @@ class WaybackurlsModule:
         )
 
 
-__all__ = [
-    "WaybackUrl",
-    "WaybackurlsModule",
-    "WaybackurlsResult",
-]
+__all__ = ["WaybackUrl", "WaybackurlsModule", "WaybackurlsResult"]

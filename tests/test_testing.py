@@ -6,12 +6,7 @@ from pathlib import Path
 
 from vina.models.findings import Severity
 from vina.models.stages import StageState
-from vina.testing.benchmark import (
-    BenchmarkProfile,
-    BenchmarkRunner,
-    get_benchmark_profiles,
-    register_benchmark_profile,
-)
+from vina.testing.benchmark import BenchmarkProfile, BenchmarkRunner, get_benchmark_profiles, register_benchmark_profile
 from vina.testing.datasets import (
     DVWA_SCENARIO,
     JUICE_SHOP_SCENARIO,
@@ -23,12 +18,7 @@ from vina.testing.datasets import (
     MOCK_NVD_RESPONSE,
     MOCK_OSV_RESPONSE,
 )
-from vina.testing.fixtures import (
-    MockCommandRunner,
-    MockFindingFactory,
-    make_mock_finding,
-    make_mock_stage_result,
-)
+from vina.testing.fixtures import MockCommandRunner, MockFindingFactory, make_mock_finding, make_mock_stage_result
 from vina.testing.integration import IntegrationTestResult, IntegrationTestSuite, run_integration_suite
 from vina.testing.metrics import BenchmarkMetrics, MetricsCollector, compare_cves, compute_metrics
 from vina.testing.runner import TestPipelineRunner, TestResult
@@ -568,8 +558,7 @@ class TestTestPipelineRunner:
         runner = TestPipelineRunner(output_dir=Path("/tmp/vina-report-test"))
         findings = MockFindingFactory.suid_findings(1)
         reports = runner.run_report_generation(
-            findings=findings,
-            stage_results=[make_mock_stage_result(name="test", record_count=1)],
+            findings=findings, stage_results=[make_mock_stage_result(name="test", record_count=1)]
         )
         assert len(reports) == 3  # json, markdown, html
         for fmt, path in reports.items():

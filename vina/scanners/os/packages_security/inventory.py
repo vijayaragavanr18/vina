@@ -37,10 +37,7 @@ class InventoryModule:
         self.context = context
 
     async def run(
-        self,
-        target: TargetInput,
-        packages: list[SbomPackage],
-        repositories: list[RepositoryEntry]
+        self, target: TargetInput, packages: list[SbomPackage], repositories: list[RepositoryEntry]
     ) -> InventoryResult:
         started_at = time.perf_counter()
         warnings: list[str] = []
@@ -48,27 +45,31 @@ class InventoryModule:
 
         sbom_packages = []
         for pkg in packages:
-            sbom_packages.append({
-                "name": pkg.name,
-                "version": pkg.version,
-                "manager": pkg.manager,
-                "architecture": pkg.architecture,
-                "vendor": pkg.vendor,
-                "installation_source": pkg.installation_source,
-            })
+            sbom_packages.append(
+                {
+                    "name": pkg.name,
+                    "version": pkg.version,
+                    "manager": pkg.manager,
+                    "architecture": pkg.architecture,
+                    "vendor": pkg.vendor,
+                    "installation_source": pkg.installation_source,
+                }
+            )
 
             if pkg.name == "openssl" and pkg.version.startswith("1.1."):
-                findings.append(make_finding(
-                    title="End-of-Life (EOL) Software: OpenSSL 1.1.1",
-                    description="OpenSSL 1.1.1 has reached its End of Life (EOL) and no longer receives security updates.",
-                    severity="high",
-                    category="vulnerability",
-                    source_stage="packages_security",
-                    target=target.normalized,
-                    evidence=f"Installed version: {pkg.version}",
-                    recommendation="Upgrade to OpenSSL 3.x.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title="End-of-Life (EOL) Software: OpenSSL 1.1.1",
+                        description="OpenSSL 1.1.1 has reached its End of Life (EOL) and no longer receives security updates.",
+                        severity="high",
+                        category="vulnerability",
+                        source_stage="packages_security",
+                        target=target.normalized,
+                        evidence=f"Installed version: {pkg.version}",
+                        recommendation="Upgrade to OpenSSL 3.x.",
+                        confidence=0.9,
+                    )
+                )
 
             if pkg.name == "python3" and pkg.version:
                 parts = pkg.version.split(".")
@@ -77,17 +78,19 @@ class InventoryModule:
                         major = int(parts[0])
                         minor = int(parts[1])
                         if major == 3 and minor <= 8:
-                            findings.append(make_finding(
-                                title=f"End-of-Life (EOL) Software: Python {pkg.version}",
-                                description=f"Python {pkg.version} has reached its End of Life (EOL) and no longer receives security updates.",
-                                severity="medium",
-                                category="vulnerability",
-                                source_stage="packages_security",
-                                target=target.normalized,
-                                evidence=f"Installed version: {pkg.version}",
-                                recommendation="Upgrade Python to version 3.9 or newer.",
-                                confidence=0.85,
-                            ))
+                            findings.append(
+                                make_finding(
+                                    title=f"End-of-Life (EOL) Software: Python {pkg.version}",
+                                    description=f"Python {pkg.version} has reached its End of Life (EOL) and no longer receives security updates.",
+                                    severity="medium",
+                                    category="vulnerability",
+                                    source_stage="packages_security",
+                                    target=target.normalized,
+                                    evidence=f"Installed version: {pkg.version}",
+                                    recommendation="Upgrade Python to version 3.9 or newer.",
+                                    confidence=0.85,
+                                )
+                            )
                     except ValueError:
                         pass
 
@@ -98,17 +101,19 @@ class InventoryModule:
             if "ubuntu" in content.lower():
                 for ver in ("14.04", "16.04", "18.04"):
                     if ver in content:
-                        findings.append(make_finding(
-                            title=f"End-of-Life (EOL) Operating System: Ubuntu {ver}",
-                            description=f"The operating system Ubuntu {ver} is past its standard End of Life (EOL) date and does not receive public security updates.",
-                            severity="critical",
-                            category="vulnerability",
-                            source_stage="packages_security",
-                            target=target.normalized,
-                            evidence=f"Ubuntu version {ver} detected",
-                            recommendation="Upgrade the operating system to a supported LTS release (e.g. Ubuntu 22.04 LTS or 24.04 LTS).",
-                            confidence=0.9,
-                        ))
+                        findings.append(
+                            make_finding(
+                                title=f"End-of-Life (EOL) Operating System: Ubuntu {ver}",
+                                description=f"The operating system Ubuntu {ver} is past its standard End of Life (EOL) date and does not receive public security updates.",
+                                severity="critical",
+                                category="vulnerability",
+                                source_stage="packages_security",
+                                target=target.normalized,
+                                evidence=f"Ubuntu version {ver} detected",
+                                recommendation="Upgrade the operating system to a supported LTS release (e.g. Ubuntu 22.04 LTS or 24.04 LTS).",
+                                confidence=0.9,
+                            )
+                        )
 
         payload: dict[str, Any] = {
             "target": target.normalized,
@@ -120,10 +125,10 @@ class InventoryModule:
                     "type": r.type,
                     "distribution": r.distribution,
                     "components": r.components,
-                    "source_file": r.source_file
+                    "source_file": r.source_file,
                 }
                 for r in repositories
-            ]
+            ],
         }
         self.context.store.save("os/sbom.json", payload)
 

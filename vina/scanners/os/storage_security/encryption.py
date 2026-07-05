@@ -49,17 +49,19 @@ class EncryptionModule:
                 has_encryption = True
 
         if not has_encryption:
-            findings.append(make_finding(
-                title="System lacks full-disk encryption (LUKS)",
-                description="No encrypted partitions (LUKS/dm-crypt) were resolved. If physical disks are lost or stolen, all system and user data can be retrieved by third parties.",
-                severity="medium",
-                category="vulnerability",
-                source_stage="storage_security",
-                target=target_str,
-                evidence="lsblk shows no crypt/LUKS partitions",
-                recommendation="Enforce LUKS full-disk encryption on root and home partition mappings.",
-                confidence=0.9,
-            ))
+            findings.append(
+                make_finding(
+                    title="System lacks full-disk encryption (LUKS)",
+                    description="No encrypted partitions (LUKS/dm-crypt) were resolved. If physical disks are lost or stolen, all system and user data can be retrieved by third parties.",
+                    severity="medium",
+                    category="vulnerability",
+                    source_stage="storage_security",
+                    target=target_str,
+                    evidence="lsblk shows no crypt/LUKS partitions",
+                    recommendation="Enforce LUKS full-disk encryption on root and home partition mappings.",
+                    confidence=0.9,
+                )
+            )
 
         cat_cmd = self.config.tool_bin("cat", "cat")
         cr_swaps = await self.context.runner.run(cat_cmd, ["/proc/swaps"], timeout_seconds=5)
@@ -78,21 +80,27 @@ class EncryptionModule:
             cr_crypttab = await self.context.runner.run(cat_cmd, ["/etc/crypttab"], timeout_seconds=5)
             swap_encrypted = False
 
-            if "dm-" in swap_path or "crypt" in swap_path.lower() or (cr_crypttab.succeeded and cr_crypttab.stdout.strip() and "swap" in cr_crypttab.stdout.lower()):
+            if (
+                "dm-" in swap_path
+                or "crypt" in swap_path.lower()
+                or (cr_crypttab.succeeded and cr_crypttab.stdout.strip() and "swap" in cr_crypttab.stdout.lower())
+            ):
                 swap_encrypted = True
 
             if not swap_encrypted:
-                findings.append(make_finding(
-                    title="Unencrypted swap space configured",
-                    description="Active swap space is not encrypted. Sensible kernel memory pages containing secrets, password hashes, or TLS keys can be written in plain text to swap disks, enabling offline memory retrieval.",
-                    severity="high",
-                    category="vulnerability",
-                    source_stage="storage_security",
-                    target=target_str,
-                    evidence=f"Swap path: {swap_path}",
-                    recommendation="Enable swap space encryption using dm-crypt or configure a transient swap key in crypttab.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title="Unencrypted swap space configured",
+                        description="Active swap space is not encrypted. Sensible kernel memory pages containing secrets, password hashes, or TLS keys can be written in plain text to swap disks, enabling offline memory retrieval.",
+                        severity="high",
+                        category="vulnerability",
+                        source_stage="storage_security",
+                        target=target_str,
+                        evidence=f"Swap path: {swap_path}",
+                        recommendation="Enable swap space encryption using dm-crypt or configure a transient swap key in crypttab.",
+                        confidence=0.9,
+                    )
+                )
 
         primary = cr_lsblk or cr_swaps or self._empty_command_result()
 

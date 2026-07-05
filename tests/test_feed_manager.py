@@ -111,10 +111,7 @@ OSV_SAMPLE = {
             "aliases": ["CVE-2024-0001"],
             "severity": [{"type": "CVSS_V3", "score": "7.5"}],
             "affected": [
-                {
-                    "package": {"name": "test-pkg"},
-                    "ranges": [{"events": [{"introduced": "1.0"}, {"fixed": "2.0"}]}],
-                }
+                {"package": {"name": "test-pkg"}, "ranges": [{"events": [{"introduced": "1.0"}, {"fixed": "2.0"}]}]}
             ],
             "references": [{"url": "https://osv.dev/test"}],
             "published": "2024-01-01T00:00:00Z",
@@ -132,10 +129,7 @@ GITHUB_ADVISORY_SAMPLE = [
         "identifiers": [{"type": "CVE", "value": "CVE-2024-0001"}],
         "references": [{"url": "https://github.com/advisories/test"}],
         "vulnerabilities": [
-            {
-                "package": {"ecosystem": "npm", "name": "test-pkg"},
-                "vulnerableVersionRange": ">=1.0.0, <2.0.0",
-            }
+            {"package": {"ecosystem": "npm", "name": "test-pkg"}, "vulnerableVersionRange": ">=1.0.0, <2.0.0"}
         ],
         "published_at": "2024-01-01T00:00:00Z",
         "updated_at": "2024-06-01T00:00:00Z",
@@ -222,10 +216,7 @@ class TestFeedCache:
         assert tmp_cache.count_entries("osv") == 0
 
     def test_batch_upsert(self, tmp_cache: FeedCache):
-        entries = [
-            ("CVE-2024-0001", "nvd", {"cvss_v3": 9.8}),
-            ("CVE-2024-0002", "nvd", {"cvss_v3": 7.5}),
-        ]
+        entries = [("CVE-2024-0001", "nvd", {"cvss_v3": 9.8}), ("CVE-2024-0002", "nvd", {"cvss_v3": 7.5})]
         added, updated = tmp_cache.batch_upsert(entries)
         assert added == 2
         assert updated == 0
@@ -356,14 +347,7 @@ class TestFeedMetadata:
 
 class TestFeedEntry:
     def test_to_vulnerability(self):
-        entry = FeedEntry(
-            cve="CVE-2024-0001",
-            title="Test",
-            severity="critical",
-            cvss_v3=9.8,
-            kev=True,
-            source="nvd",
-        )
+        entry = FeedEntry(cve="CVE-2024-0001", title="Test", severity="critical", cvss_v3=9.8, kev=True, source="nvd")
         v = entry.to_vulnerability()
         assert v["cve"] == "CVE-2024-0001"
         assert v["severity"] == "critical"
@@ -691,9 +675,7 @@ class TestFeedUpdater:
 
 class TestFeedScheduler:
     def test_update_all_skips_disabled(self, tmp_cache: FeedCache):
-        sources = [
-            FeedSource(name="nvd", feed_type=FeedType.NVD, url="http://example.com/nvd", enabled=False),
-        ]
+        sources = [FeedSource(name="nvd", feed_type=FeedType.NVD, url="http://example.com/nvd", enabled=False)]
         scheduler = FeedScheduler(tmp_cache, sources)
         # With disabled feeds and no HTTP, should skip
         results = scheduler.update_all()

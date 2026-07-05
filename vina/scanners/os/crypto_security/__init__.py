@@ -120,7 +120,4 @@ class CryptoSecurityModule:
         )
 
 
-__all__ = [
-    "CryptoSecurityModule",
-    "CryptoSecurityResult",
-]
+__all__ = ["CryptoSecurityModule", "CryptoSecurityResult"]

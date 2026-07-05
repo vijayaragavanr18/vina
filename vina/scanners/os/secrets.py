@@ -30,16 +30,9 @@ _KEY_FILE_PATTERNS = [
     "/root/.ssh/config",
 ]
 
-_ENV_FILE_PATTERNS = [
-    "/root/.env",
-    "/root/.env.local",
-    "/root/.env.production",
-]
+_ENV_FILE_PATTERNS = ["/root/.env", "/root/.env.local", "/root/.env.production"]
 
-_CERT_FILE_PATTERNS = [
-    "/etc/ssl/private/",
-    "/etc/letsencrypt/live/",
-]
+_CERT_FILE_PATTERNS = ["/etc/ssl/private/", "/etc/letsencrypt/live/"]
 
 _PASSWORD_PATTERNS = [
     re.compile(r"password\s*[=:]\s*\S+", re.IGNORECASE),

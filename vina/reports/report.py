@@ -54,10 +54,7 @@ def _pipeline_overview(stage_results: list[StageResult]) -> dict[str, Any]:
     for sr in stage_results:
         status = sr.status.value if hasattr(sr.status, "value") else str(sr.status)
         stages_by_status[status] = stages_by_status.get(status, 0) + 1
-    return {
-        "total_stages": len(stage_results),
-        "stages_by_status": stages_by_status,
-    }
+    return {"total_stages": len(stage_results), "stages_by_status": stages_by_status}
 
 
 def _stage_rows(stage_results: list[StageResult]) -> list[dict[str, Any]]:
@@ -174,11 +171,7 @@ def generate_json_report(
     return result
 
 
-def _write_report(
-    output_dir: Path,
-    filename: str,
-    content: str,
-) -> Path:
+def _write_report(output_dir: Path, filename: str, content: str) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / filename
     path.write_text(content, encoding="utf-8")
@@ -327,7 +320,4 @@ def generate_reports(
     return generated
 
 
-__all__ = [
-    "generate_json_report",
-    "generate_reports",
-]
+__all__ = ["generate_json_report", "generate_reports"]

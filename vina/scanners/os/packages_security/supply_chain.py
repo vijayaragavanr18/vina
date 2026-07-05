@@ -21,12 +21,48 @@ from .managers import SbomPackage
 logger = logging.getLogger(__name__)
 
 _POPULAR_PACKAGES = {
-    "requests", "urllib3", "numpy", "pandas", "ansible", "cryptography",
-    "jinja2", "pytest", "scipy", "docker", "boto3", "yaml", "pip",
-    "lodash", "react", "express", "request", "chalk", "commander", "async",
-    "debug", "axios", "typescript", "vue", "npm", "webpack",
-    "cargo", "serde", "tokio", "rand", "syn", "quote", "libc", "log",
-    "openssl", "openssh", "sudo", "systemd", "bash", "curl", "wget", "git"
+    "requests",
+    "urllib3",
+    "numpy",
+    "pandas",
+    "ansible",
+    "cryptography",
+    "jinja2",
+    "pytest",
+    "scipy",
+    "docker",
+    "boto3",
+    "yaml",
+    "pip",
+    "lodash",
+    "react",
+    "express",
+    "request",
+    "chalk",
+    "commander",
+    "async",
+    "debug",
+    "axios",
+    "typescript",
+    "vue",
+    "npm",
+    "webpack",
+    "cargo",
+    "serde",
+    "tokio",
+    "rand",
+    "syn",
+    "quote",
+    "libc",
+    "log",
+    "openssl",
+    "openssh",
+    "sudo",
+    "systemd",
+    "bash",
+    "curl",
+    "wget",
+    "git",
 }
 
 
@@ -73,17 +109,19 @@ class SupplyChainModule:
             for pop_pkg in _POPULAR_PACKAGES:
                 dist = _levenshtein_distance(name_lower, pop_pkg)
                 if len(name_lower) > 3 and 0 < dist <= 2:
-                    findings.append(make_finding(
-                        title=f"Potential typosquatting package: {pkg.name}",
-                        description=f"The package '{pkg.name}' (manager: {pkg.manager}) is very similar to popular package '{pop_pkg}'.",
-                        severity="high",
-                        category="vulnerability",
-                        source_stage="packages_security",
-                        target=target.normalized,
-                        evidence=f"Installed: {pkg.name}={pkg.version} (similarity to {pop_pkg})",
-                        recommendation=f"Verify if '{pkg.name}' is legitimate or a typosquatted malicious package.",
-                        confidence=0.8,
-                    ))
+                    findings.append(
+                        make_finding(
+                            title=f"Potential typosquatting package: {pkg.name}",
+                            description=f"The package '{pkg.name}' (manager: {pkg.manager}) is very similar to popular package '{pop_pkg}'.",
+                            severity="high",
+                            category="vulnerability",
+                            source_stage="packages_security",
+                            target=target.normalized,
+                            evidence=f"Installed: {pkg.name}={pkg.version} (similarity to {pop_pkg})",
+                            recommendation=f"Verify if '{pkg.name}' is legitimate or a typosquatted malicious package.",
+                            confidence=0.8,
+                        )
+                    )
                     break
 
         cat_cmd = self.config.tool_bin("cat", "cat")
@@ -96,17 +134,19 @@ class SupplyChainModule:
             if line and not line.startswith("#"):
                 for tld in suspicious_tlds:
                     if tld in line.lower():
-                        findings.append(make_finding(
-                            title="Suspicious repository TLD/domain detected",
-                            description=f"A package repository uses a suspicious domain/TLD ({tld}): {line[:120]}",
-                            severity="high",
-                            category="misconfiguration",
-                            source_stage="packages_security",
-                            target=target.normalized,
-                            evidence=line,
-                            recommendation="Remove the suspicious repository from sources configuration.",
-                            confidence=0.85,
-                        ))
+                        findings.append(
+                            make_finding(
+                                title="Suspicious repository TLD/domain detected",
+                                description=f"A package repository uses a suspicious domain/TLD ({tld}): {line[:120]}",
+                                severity="high",
+                                category="misconfiguration",
+                                source_stage="packages_security",
+                                target=target.normalized,
+                                evidence=line,
+                                recommendation="Remove the suspicious repository from sources configuration.",
+                                confidence=0.85,
+                            )
+                        )
                         break
 
         ls_cmd = self.config.tool_bin("ls", "ls")
@@ -121,37 +161,43 @@ class SupplyChainModule:
                 if not cr_check.succeeded:
                     untracked.append(fpath)
             if untracked:
-                findings.append(make_finding(
-                    title=f"Manually installed binaries in system path ({len(untracked)} found)",
-                    description="Binaries in /usr/local/bin are not tracked by the system package manager. These manually installed binaries do not receive automatic security updates.",
-                    severity="low",
-                    category="misconfiguration",
-                    source_stage="packages_security",
-                    target=target.normalized,
-                    evidence="Untracked binaries:\n" + "\n".join(untracked[:5]),
-                    recommendation="Ensure manually installed binaries are audited, updated regularly, or replaced with managed packages.",
-                    confidence=0.9,
-                ))
+                findings.append(
+                    make_finding(
+                        title=f"Manually installed binaries in system path ({len(untracked)} found)",
+                        description="Binaries in /usr/local/bin are not tracked by the system package manager. These manually installed binaries do not receive automatic security updates.",
+                        severity="low",
+                        category="misconfiguration",
+                        source_stage="packages_security",
+                        target=target.normalized,
+                        evidence="Untracked binaries:\n" + "\n".join(untracked[:5]),
+                        recommendation="Ensure manually installed binaries are audited, updated regularly, or replaced with managed packages.",
+                        confidence=0.9,
+                    )
+                )
 
         history_files = ["/root/.bash_history", "/root/.zsh_history"]
         for hist in history_files:
             cr_hist = await self.context.runner.run(cat_cmd, [hist], timeout_seconds=5)
             if cr_hist.succeeded and cr_hist.stdout.strip():
                 content = cr_hist.stdout
-                matches = re.findall(r'(curl\s+.*?\|\s*(?:bash|sh|zsh))|(wget\s+.*?\|\s*(?:bash|sh|zsh))', content, re.IGNORECASE)
+                matches = re.findall(
+                    r"(curl\s+.*?\|\s*(?:bash|sh|zsh))|(wget\s+.*?\|\s*(?:bash|sh|zsh))", content, re.IGNORECASE
+                )
                 if matches:
                     matched_lines = [m[0] or m[1] for m in matches[:5]]
-                    findings.append(make_finding(
-                        title="Untrusted shell installer command execution detected",
-                        description="Execution of piped shell installer scripts (e.g. 'curl | bash') was found in user history. This pattern bypasses package manager safeguards.",
-                        severity="medium",
-                        category="misconfiguration",
-                        source_stage="packages_security",
-                        target=target.normalized,
-                        evidence="Installer commands found:\n" + "\n".join(matched_lines),
-                        recommendation="Avoid running installer scripts directly from the internet. Download, inspect, and execute locally, or prefer package repositories.",
-                        confidence=0.85,
-                    ))
+                    findings.append(
+                        make_finding(
+                            title="Untrusted shell installer command execution detected",
+                            description="Execution of piped shell installer scripts (e.g. 'curl | bash') was found in user history. This pattern bypasses package manager safeguards.",
+                            severity="medium",
+                            category="misconfiguration",
+                            source_stage="packages_security",
+                            target=target.normalized,
+                            evidence="Installer commands found:\n" + "\n".join(matched_lines),
+                            recommendation="Avoid running installer scripts directly from the internet. Download, inspect, and execute locally, or prefer package repositories.",
+                            confidence=0.85,
+                        )
+                    )
                     break
 
         primary = cr_sources or cr_usr_local or self._empty_command_result()

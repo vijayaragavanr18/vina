@@ -47,20 +47,24 @@ class PolkitModule:
             owner = parts[1] if len(parts) >= 2 else ""
 
             if owner != "root":
-                findings.append(make_finding(
-                    title="pkexec binary is not owned by root",
-                    description="The pkexec privilege escalation utility is not owned by root. This is a critical permission bypass.",
-                    severity="critical",
-                    category="permissions",
-                    source_stage="gui_security",
-                    target=target_str,
-                    evidence=f"Owner: {owner}",
-                    recommendation="Change owner of pkexec to root: 'chown root /usr/bin/pkexec'.",
-                    confidence=0.95,
-                ))
+                findings.append(
+                    make_finding(
+                        title="pkexec binary is not owned by root",
+                        description="The pkexec privilege escalation utility is not owned by root. This is a critical permission bypass.",
+                        severity="critical",
+                        category="permissions",
+                        source_stage="gui_security",
+                        target=target_str,
+                        evidence=f"Owner: {owner}",
+                        recommendation="Change owner of pkexec to root: 'chown root /usr/bin/pkexec'.",
+                        confidence=0.95,
+                    )
+                )
 
         find_cmd = self.config.tool_bin("find", "find")
-        cr_find = await self.context.runner.run(find_cmd, ["/etc/polkit-1/rules.d/", "-type", "f", "-name", "*.rules"], timeout_seconds=5)
+        cr_find = await self.context.runner.run(
+            find_cmd, ["/etc/polkit-1/rules.d/", "-type", "f", "-name", "*.rules"], timeout_seconds=5
+        )
 
         rules_files = []
         if cr_find.succeeded and cr_find.stdout.strip():
@@ -73,17 +77,19 @@ class PolkitModule:
                 content = cr_rule.stdout
 
                 if "polkit.Result.YES" in content and "auth_admin" not in content and "auth_self" not in content:
-                    findings.append(make_finding(
-                        title=f"Polkit rule allows passwordless privilege escalation in {path}",
-                        description=f"Polkit rule file '{path}' contains an authorization rule that returns 'polkit.Result.YES' without requiring administrative authentication.",
-                        severity="high",
-                        category="misconfiguration",
-                        source_stage="gui_security",
-                        target=target_str,
-                        evidence="polkit.Result.YES configured without auth check",
-                        recommendation="Review the custom polkit rule and require auth_admin or auth_self validation.",
-                        confidence=0.85,
-                    ))
+                    findings.append(
+                        make_finding(
+                            title=f"Polkit rule allows passwordless privilege escalation in {path}",
+                            description=f"Polkit rule file '{path}' contains an authorization rule that returns 'polkit.Result.YES' without requiring administrative authentication.",
+                            severity="high",
+                            category="misconfiguration",
+                            source_stage="gui_security",
+                            target=target_str,
+                            evidence="polkit.Result.YES configured without auth check",
+                            recommendation="Review the custom polkit rule and require auth_admin or auth_self validation.",
+                            confidence=0.85,
+                        )
+                    )
 
         primary = cr_pk or cr_find or self._empty_command_result()
 

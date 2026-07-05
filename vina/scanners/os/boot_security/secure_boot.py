@@ -44,17 +44,19 @@ class SecureBootModule:
         booted_efi = efi_dir.exists()
 
         if not booted_efi:
-            findings.append(make_finding(
-                title="System booted in Legacy BIOS mode (no Secure Boot)",
-                description="The system firmware is configured for Legacy BIOS mode instead of UEFI. Secure Boot cannot be enforced or validated in this mode.",
-                severity="medium",
-                category="misconfiguration",
-                source_stage="boot_security",
-                target=target_str,
-                evidence="Directory /sys/firmware/efi does not exist",
-                recommendation="Reboot the system, enable UEFI boot mode in firmware settings, and configure Secure Boot.",
-                confidence=0.9,
-            ))
+            findings.append(
+                make_finding(
+                    title="System booted in Legacy BIOS mode (no Secure Boot)",
+                    description="The system firmware is configured for Legacy BIOS mode instead of UEFI. Secure Boot cannot be enforced or validated in this mode.",
+                    severity="medium",
+                    category="misconfiguration",
+                    source_stage="boot_security",
+                    target=target_str,
+                    evidence="Directory /sys/firmware/efi does not exist",
+                    recommendation="Reboot the system, enable UEFI boot mode in firmware settings, and configure Secure Boot.",
+                    confidence=0.9,
+                )
+            )
             return SecureBootResult(
                 target=target,
                 command_result=self._empty_command_result(),
@@ -77,28 +79,32 @@ class SecureBootModule:
                 sb_enabled = True
 
         if not sb_enabled:
-            findings.append(make_finding(
-                title="UEFI Secure Boot is disabled",
-                description="UEFI Secure Boot is disabled. This allows the system to load unsigned boot loaders, kernels, and kernel modules, exposing the OS to bootkit/rootkit tampering.",
-                severity="high",
-                category="vulnerability",
-                source_stage="boot_security",
-                target=target_str,
-                evidence="Secure Boot state: disabled",
-                recommendation="Enable UEFI Secure Boot in the system UEFI firmware settings.",
-                confidence=0.9,
-            ))
+            findings.append(
+                make_finding(
+                    title="UEFI Secure Boot is disabled",
+                    description="UEFI Secure Boot is disabled. This allows the system to load unsigned boot loaders, kernels, and kernel modules, exposing the OS to bootkit/rootkit tampering.",
+                    severity="high",
+                    category="vulnerability",
+                    source_stage="boot_security",
+                    target=target_str,
+                    evidence="Secure Boot state: disabled",
+                    recommendation="Enable UEFI Secure Boot in the system UEFI firmware settings.",
+                    confidence=0.9,
+                )
+            )
         else:
-            findings.append(make_finding(
-                title="UEFI Secure Boot is enabled",
-                description="UEFI Secure Boot is active, preventing the execution of unsigned bootloaders or kernels.",
-                severity="info",
-                category="security_control",
-                source_stage="boot_security",
-                target=target_str,
-                evidence="Secure Boot state: enabled",
-                confidence=0.9,
-            ))
+            findings.append(
+                make_finding(
+                    title="UEFI Secure Boot is enabled",
+                    description="UEFI Secure Boot is active, preventing the execution of unsigned bootloaders or kernels.",
+                    severity="info",
+                    category="security_control",
+                    source_stage="boot_security",
+                    target=target_str,
+                    evidence="Secure Boot state: enabled",
+                    confidence=0.9,
+                )
+            )
 
         efibootmgr_cmd = self.config.tool_bin("efibootmgr", "efibootmgr")
         cr_eb = await self.context.runner.run(efibootmgr_cmd, [], timeout_seconds=5)
@@ -114,25 +120,22 @@ class SecureBootModule:
 
         cr_pk = await self.context.runner.run(mokutil_cmd, ["--pk"], timeout_seconds=5)
         custom_keys = False
-        if (
-            cr_pk.succeeded
-            and cr_pk.stdout.strip()
-            and "No PK is defined" not in cr_pk.stdout
-            and "PK" in cr_pk.stdout
-        ):
+        if cr_pk.succeeded and cr_pk.stdout.strip() and "No PK is defined" not in cr_pk.stdout and "PK" in cr_pk.stdout:
             custom_keys = True
 
         if custom_keys:
-            findings.append(make_finding(
-                title="Custom UEFI Secure Boot keys configured",
-                description="The system uses custom platform keys (PK) or enrollment keys rather than the default factory certificates.",
-                severity="info",
-                category="information",
-                source_stage="boot_security",
-                target=target_str,
-                evidence="Platform Key (PK) certificates are registered",
-                confidence=0.8,
-            ))
+            findings.append(
+                make_finding(
+                    title="Custom UEFI Secure Boot keys configured",
+                    description="The system uses custom platform keys (PK) or enrollment keys rather than the default factory certificates.",
+                    severity="info",
+                    category="information",
+                    source_stage="boot_security",
+                    target=target_str,
+                    evidence="Platform Key (PK) certificates are registered",
+                    confidence=0.8,
+                )
+            )
 
         primary = cr_sb or cr_eb or self._empty_command_result()
 

@@ -73,14 +73,7 @@ class SummaryAnalyzer:
     """Analyze scan summaries and generate evidence-based triage reports."""
 
     def __init__(self) -> None:
-        self._severity_weights = {
-            "critical": 100,
-            "high": 80,
-            "medium": 60,
-            "low": 35,
-            "info": 15,
-            "unknown": 20,
-        }
+        self._severity_weights = {"critical": 100, "high": 80, "medium": 60, "low": 35, "info": 15, "unknown": 20}
 
     def analyze(self, summary: str | Path | Mapping[str, Any]) -> AnalysisReport:
         """Analyze a ``summary.json`` file or parsed summary mapping.
@@ -132,10 +125,7 @@ class SummaryAnalyzer:
         return self.analyze(Path(summary_path))
 
     def save_reports(
-        self,
-        report: AnalysisReport,
-        output_dir: str | Path,
-        stem: str = "summary-analysis",
+        self, report: AnalysisReport, output_dir: str | Path, stem: str = "summary-analysis"
     ) -> tuple[Path, Path]:
         """Persist Markdown and HTML reports to ``output_dir``."""
 
@@ -566,9 +556,7 @@ def analyze_summary(summary: str | Path | Mapping[str, Any]) -> AnalysisReport:
 
 
 def save_analysis_reports(
-    summary: str | Path | Mapping[str, Any],
-    output_dir: str | Path,
-    stem: str = "summary-analysis",
+    summary: str | Path | Mapping[str, Any], output_dir: str | Path, stem: str = "summary-analysis"
 ) -> tuple[AnalysisReport, Path, Path]:
     """Analyze summary data and persist Markdown and HTML reports."""
 
