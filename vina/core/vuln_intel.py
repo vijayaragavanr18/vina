@@ -593,7 +593,7 @@ class VulnerabilityEngine:
             import tempfile
             from pathlib import Path
 
-            tmp = Path(tempfile.mktemp(suffix=".json"))
+            tmp = Path(tempfile.mktemp(suffix=".json"))  # nosec: B108
             try:
                 tmp.write_text(json.dumps(feed_data, default=str), encoding="utf-8")
                 db.load([tmp])

@@ -51,7 +51,7 @@ class MountsModule:
                     mp = parts[1]
                     opts = parts[3].split(",")
 
-                    if mp == "/tmp":
+                    if mp == "/tmp":  # nosec: B108
                         missing = []
                         if "noexec" not in opts:
                             missing.append("noexec")
@@ -74,7 +74,7 @@ class MountsModule:
                                 )
                             )
 
-                    elif mp == "/dev/shm":
+                    elif mp == "/dev/shm":  # nosec: B108
                         missing = []
                         if "noexec" not in opts:
                             missing.append("noexec")

@@ -43,7 +43,7 @@ _SUSPICIOUS_BINARIES = (
     "stratum",
 )
 
-_SUSPICIOUS_PATHS = ("/tmp", "/dev/shm", "/var/tmp", "/home/")
+_SUSPICIOUS_PATHS = ("/tmp", "/dev/shm", "/var/tmp", "/home/")  # nosec: B108
 
 
 @dataclass(slots=True)

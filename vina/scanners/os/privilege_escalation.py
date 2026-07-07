@@ -20,7 +20,7 @@ from ...modules.common import ModuleContext
 logger = logging.getLogger(__name__)
 
 _INTERESTING_WRITABLE_PREFIXES = ("/etc", "/usr", "/opt", "/root", "/var", "/home")
-_UNINTERESTING_PREFIXES = ("/proc", "/sys", "/dev", "/run", "/tmp")
+_UNINTERESTING_PREFIXES = ("/proc", "/sys", "/dev", "/run", "/tmp")  # nosec: B108
 
 
 @dataclass(slots=True)
