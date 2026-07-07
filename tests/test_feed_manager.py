@@ -802,7 +802,9 @@ class TestFeedManager:
         results = manager.update(force=True)
 
         # At least NVD should have succeeded
-        assert results.get("nvd").status == UpdateStatus.SUCCESS
+        nvd_result = results.get("nvd")
+        assert nvd_result is not None
+        assert nvd_result.status == UpdateStatus.SUCCESS
         assert manager.total_entries > 0
         assert not manager.is_offline
 

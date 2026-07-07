@@ -83,11 +83,11 @@ class TestDoctor:
         from vina.core.vuln_intel import get_default_db
         from vina.plugins.registry import get_registry
 
-        assert AppConfig
-        assert DependencyChecker
-        assert FeedManager
-        assert get_default_db
-        assert get_registry
+        assert AppConfig is not None
+        assert DependencyChecker is not None
+        assert FeedManager is not None
+        assert get_default_db is not None
+        assert get_registry is not None
 
 
 # =========================================================================

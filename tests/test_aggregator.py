@@ -5,6 +5,7 @@ from __future__ import annotations
 import unittest
 
 from vina.core.aggregator import AggregatorStats, FindingAggregator
+from vina.models.common import TargetInput
 from vina.models.findings import Finding, make_finding
 from vina.pipeline.aggregator import Aggregator
 
@@ -212,13 +213,14 @@ class AggregatorStatsDataclassTests(unittest.TestCase):
         from vina.scanners.web.whatweb import WhatWebResult
 
         cr = CommandResult(command="test", args=(), returncode=0, stdout="", stderr="", duration_seconds=0.0)
-        subfinder = WebReconResult(target="example.com", command_result=cr, subdomains=["example.com"])
-        httpx = HttpxResult(target="example.com", command_result=cr, records=[], alive_hosts=["https://example.com"])
-        naabu = NaabuResult(target="example.com", command_result=cr, open_ports=[])
-        nmap = NmapResult(target="example.com", command_result=cr, hosts=[], services=[])
-        whatweb = WhatWebResult(target="example.com", command_result=cr, hosts=[])
-        katana = KatanaResult(target="example.com", command_result=cr, endpoints=[])
-        gau = GauResult(target="example.com", command_result=cr, urls=[])
+        target_input = TargetInput.from_raw("example.com")
+        subfinder = WebReconResult(target=target_input, command_result=cr, subdomains=["example.com"])
+        httpx = HttpxResult(target=target_input, command_result=cr, records=[], alive_hosts=["https://example.com"])
+        naabu = NaabuResult(target=target_input, command_result=cr, open_ports=[])
+        nmap = NmapResult(target=target_input, command_result=cr, hosts=[], services=[])
+        whatweb = WhatWebResult(target=target_input, command_result=cr, hosts=[])
+        katana = KatanaResult(target=target_input, command_result=cr, endpoints=[])
+        gau = GauResult(target=target_input, command_result=cr, urls=[])
 
         hosts = Aggregator._merge_hosts(subfinder, httpx, naabu, nmap, whatweb, katana, gau)
         self.assertIsInstance(hosts, list)

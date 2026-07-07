@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import tempfile
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -112,7 +113,7 @@ class TestPipelineRunner:
 
     def __init__(self, config: AppConfig | None = None, output_dir: Path | None = None) -> None:
         self.config = config or AppConfig()
-        self.output_dir = (output_dir or Path("/tmp/vina-benchmark")) / "output"
+        self.output_dir = (output_dir or Path(tempfile.gettempdir()) / "vina-benchmark") / "output"
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self._metrics = MetricsCollector()
 

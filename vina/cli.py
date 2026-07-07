@@ -32,7 +32,9 @@ console = Console()
 @app.command()
 def scan(
     target: str = typer.Argument(..., help="Target domain or URL to scan"),
-    output_dir: Path | None = typer.Option(None, "--output-dir", help="Directory for generated artifacts"),
+    output_dir: Path | None = typer.Option(  # noqa: B008
+        None, "--output-dir", help="Directory for generated artifacts"
+    ),
     config_path: Path | None = typer.Option(None, "--config", help="Optional JSON config override"),  # noqa: B008
 ) -> None:
     """Run the legacy VINA pipeline for a target."""
@@ -42,7 +44,9 @@ def scan(
 @app.command()
 def scan_web(
     target: str = typer.Argument(..., help="Target domain or URL to scan"),
-    output_dir: Path | None = typer.Option(None, "--output-dir", help="Directory for generated artifacts"),
+    output_dir: Path | None = typer.Option(  # noqa: B008
+        None, "--output-dir", help="Directory for generated artifacts"
+    ),
     config_path: Path | None = typer.Option(None, "--config", help="Optional YAML/JSON config override"),  # noqa: B008
     resume: bool = typer.Option(False, "--resume", help="Resume from last checkpoint"),
     force: bool = typer.Option(False, "--force", help="Re-run all stages, ignoring cache and checkpoints"),
@@ -56,7 +60,9 @@ def scan_web(
 
 @app.command()
 def scan_os(
-    output_dir: Path | None = typer.Option(None, "--output-dir", help="Directory for generated artifacts"),
+    output_dir: Path | None = typer.Option(  # noqa: B008
+        None, "--output-dir", help="Directory for generated artifacts"
+    ),
     config_path: Path | None = typer.Option(None, "--config", help="Optional YAML/JSON config override"),  # noqa: B008
 ) -> None:
     """Run the OS-level enumeration pipeline on the local host.

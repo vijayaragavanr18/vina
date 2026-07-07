@@ -6,6 +6,7 @@ benchmarks can run without real subprocess execution or network access.
 
 from __future__ import annotations
 
+import tempfile
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -112,7 +113,7 @@ class MockPipelineContext:
 
     findings: list[Finding] = field(default_factory=list)
     stage_results: list[StageResult] = field(default_factory=list)
-    output_dir: Path = field(default_factory=lambda: Path("/tmp/vina-test-output"))
+    output_dir: Path = field(default_factory=lambda: Path(tempfile.gettempdir()) / "vina-test-output")
     command_runner: MockCommandRunner = field(default_factory=MockCommandRunner)
 
 

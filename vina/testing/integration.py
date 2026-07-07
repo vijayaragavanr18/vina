@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import tempfile
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -262,7 +263,7 @@ def _get_feed_tests(
                     return cm
 
                 mock_urlopen.side_effect = side_effect
-                fm = FeedManager(feed_dir=(output_dir or Path("/tmp/vina-test-feeds")) / "feeds")
+                fm = FeedManager(feed_dir=(output_dir or Path(tempfile.gettempdir()) / "vina-test-feeds") / "feeds")
                 results = fm.update(force=True)
                 tr.success = any(r.status.value == "success" for r in results.values())
         except Exception as exc:

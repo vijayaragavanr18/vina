@@ -114,7 +114,7 @@ class DependencyCheckerTests(unittest.TestCase):
         python_path = sys.executable
         version = DependencyChecker._detect_version(python_path)
         self.assertIsNotNone(version)
-        self.assertGreater(len(version), 0)
+        self.assertGreater(len(version or ""), 0)
 
     def test_version_detection_missing_path(self) -> None:
         """_detect_version returns None for a non-existent path."""
