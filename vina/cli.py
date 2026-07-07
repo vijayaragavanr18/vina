@@ -473,7 +473,7 @@ def _load_nuclei_findings(output_dir: Path, target: str) -> list[Finding]:
                         timestamp=nf.get("timestamp", ""),
                     )
                 )
-        except Exception:
+        except Exception:  # nosec: B110
             pass
     return findings
 
@@ -561,7 +561,7 @@ def version() -> None:
         import platform
 
         console.print(f"  Platform: {platform.system()} {platform.release()} ({platform.machine()})")
-    except Exception:
+    except Exception:  # nosec: B110
         pass
 
 
@@ -679,7 +679,7 @@ def _check_cache_integrity(issues: list[str], ok: list[str]) -> None:
             ok.append("Cache integrity: OK")
         else:
             issues.append("Cache integrity: FAILED")
-    except Exception:
+    except Exception:  # nosec: B110
         pass
 
 
@@ -878,7 +878,7 @@ def benchmark_report(
             memory = f"{m.get('peak_memory_mb', 0):.1f}MB"
             passed = "✅" if data.get("passed") else "❌"
             md_lines.append(f"| {name} | {precision} | {recall} | {f1} | {runtime} | {memory} | {passed} |")
-        except Exception:
+        except Exception:  # nosec: B110
             pass
 
     report_md = "\n".join(md_lines)

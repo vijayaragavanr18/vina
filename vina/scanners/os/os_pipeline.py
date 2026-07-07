@@ -485,7 +485,7 @@ class OSPipeline:
 
                 feed_meta = get_feed_status()
             except Exception:
-                pass
+                feed_meta = None
             vuln_stats = compute_vuln_stats(vuln_matches, len(inventory), feed_metadata=feed_meta)
         registry.run_hook(
             HookPoint.AFTER_VULNERABILITY_LOOKUP, findings=findings, vuln_matches=vuln_matches, vuln_stats=vuln_stats

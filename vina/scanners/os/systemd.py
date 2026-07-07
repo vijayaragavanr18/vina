@@ -159,9 +159,8 @@ class SystemdModule:
 
         # Check for writable-looking services (running from /tmp, /dev/shm, /var/tmp)
         for s in services:
-            if s.exec_start and any(
-                s.exec_start.startswith(p) for p in ("/tmp", "/dev/shm", "/var/tmp")
-            ):  # nosec: B108
+            suspicious_prefixes = ("/tmp", "/dev/shm", "/var/tmp")  # nosec: B108
+            if s.exec_start and any(s.exec_start.startswith(p) for p in suspicious_prefixes):
                 findings.append(
                     make_finding(
                         title=f"Suspicious ExecStart: {s.exec_start}",

@@ -94,8 +94,8 @@ class ListeningServicesModule:
                         continue
                     port = int(port_str)
 
-                    is_wildcard = addr_part in ("0.0.0.0", "::", "*")
-                    is_ipv6 = ":" in addr_part and addr_part != "0.0.0.0"
+                    is_wildcard = addr_part in ("0.0.0.0", "::", "*")  # nosec: B104
+                    is_ipv6 = ":" in addr_part and addr_part != "0.0.0.0"  # nosec: B104
 
                     process = "unknown"
                     pid = None

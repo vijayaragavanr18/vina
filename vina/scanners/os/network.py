@@ -429,14 +429,14 @@ class NetworkModule:
                 gateway = parts[1]
                 mask = parts[2]
                 iface = parts[7]
-                if mask and mask != "0.0.0.0" and dest != "0.0.0.0":
+                if mask and mask != "0.0.0.0" and dest != "0.0.0.0":  # nosec: B104
                     dest = f"{dest}/{mask}"
-                elif mask == "0.0.0.0" and dest == "0.0.0.0":
+                elif mask == "0.0.0.0" and dest == "0.0.0.0":  # nosec: B104
                     dest = "default"
                 routes.append(
                     RouteEntry(
                         destination=dest,
-                        gateway=gateway if gateway != "0.0.0.0" else None,
+                        gateway=gateway if gateway != "0.0.0.0" else None,  # nosec: B104
                         interface=iface,
                         source_command="route -n",
                     )

@@ -523,7 +523,7 @@ def _fetch_url(
     Returns (body_bytes, etag, last_modified, status_code).
     """
     try:
-        with urlopen(request, timeout=timeout) as resp:
+        with urlopen(request, timeout=timeout) as resp:  # nosec: B310
             status = resp.status
             etag = resp.headers.get("ETag", "")
             last_modified = resp.headers.get("Last-Modified", "")

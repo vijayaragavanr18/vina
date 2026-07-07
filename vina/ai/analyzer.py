@@ -419,7 +419,7 @@ class SummaryAnalyzer:
             token in title for token in ("exposed", "leak", "xss", "sqli", "rce", "ssrf", "auth", "path", "cmd")
         ):
             return True
-        return bool(target in {"localhost", "127.0.0.1", "0.0.0.0", "unknown"} and not evidence)
+        return bool(target in {"localhost", "127.0.0.1", "0.0.0.0", "unknown"} and not evidence)  # nosec: B104
 
     def _build_recommendation(self, finding: FindingRecord) -> Recommendation:
         score = self._score(finding)

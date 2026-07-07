@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import logging
 import time
-import xml.etree.ElementTree as ET
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
+
+from defusedxml import ElementTree as DefusedElementTree
 
 from ...core.config import AppConfig
 from ...core.runner import CommandResult
@@ -164,8 +165,8 @@ class NmapModule:
             return hosts, services
 
         try:
-            root = ET.fromstring(xml_text)
-        except ET.ParseError as exc:
+            root = DefusedElementTree.fromstring(xml_text)
+        except DefusedElementTree.ParseError as exc:
             msg = f"Malformed XML: {exc}"
             logger.warning(msg)
             warnings.append(msg)
@@ -191,29 +192,29 @@ class NmapModule:
         return hosts, services
 
     @staticmethod
-    def _extract_hostname(host_elem: ET.Element) -> str | None:
+    def _extract_hostname(host_elem: DefusedElementTree.Element) -> str | None:
         """Extract the primary hostname from a host element."""
         hostnames_elem = host_elem.find("hostnames")
         if hostnames_elem is not None:
             hn = hostnames_elem.find("hostname")
             if hn is not None:
                 name = hn.get("name")
-                if name:
+                if isinstance(name, str) and name:
                     return name.strip().lower()
         return None
 
     @staticmethod
-    def _extract_ip(host_elem: ET.Element) -> str | None:
+    def _extract_ip(host_elem: DefusedElementTree.Element) -> str | None:
         """Extract the IP address from a host element."""
         addr = host_elem.find("address")
         if addr is not None:
             ip = addr.get("addr")
-            if ip:
+            if isinstance(ip, str) and ip:
                 return ip.strip()
         return None
 
     @staticmethod
-    def _parse_port(hostname: str, ip: str | None, port_elem: ET.Element) -> NmapService | None:
+    def _parse_port(hostname: str, ip: str | None, port_elem: DefusedElementTree.Element) -> NmapService | None:
         """Parse a single port element into an NmapService."""
         protocol = port_elem.get("protocol", "tcp")
         port_str = port_elem.get("portid")

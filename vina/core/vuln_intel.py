@@ -7,9 +7,9 @@ matching, risk scoring, and external feed provider interfaces.
 
 from __future__ import annotations
 
-import contextlib
 import json
 import re
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import Lock
@@ -590,16 +590,12 @@ class VulnerabilityEngine:
             db = VulnerabilityDatabase()
             # Load directly into the database
             import json
-            import tempfile
             from pathlib import Path
 
-            tmp = Path(tempfile.mktemp(suffix=".json"))  # nosec: B108
-            try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                tmp = Path(temp_dir) / "feed.json"
                 tmp.write_text(json.dumps(feed_data, default=str), encoding="utf-8")
                 db.load([tmp])
-            finally:
-                with contextlib.suppress(OSError):
-                    tmp.unlink()
             return db
         return get_default_db()
 
@@ -722,7 +718,7 @@ class FeedCache:
     """Simple file-based cache for external vulnerability feeds."""
 
     def __init__(self, cache_dir: Path | None = None) -> None:
-        self._cache_dir = cache_dir or Path("/tmp/vina_vuln_cache")
+        self._cache_dir = cache_dir or Path(tempfile.gettempdir()) / "vina_vuln_cache"
         self._cache_dir.mkdir(parents=True, exist_ok=True)
 
     def get(self, key: str) -> list[dict[str, Any]] | None:

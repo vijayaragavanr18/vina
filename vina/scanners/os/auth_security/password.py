@@ -83,8 +83,8 @@ class PasswordModule:
             cr = await self.context.runner.run(executable, args, timeout_seconds=self.context.timeout_seconds)
             results[name] = cr
 
-        passwd_lines = ""
-        shadow_lines = ""
+        passwd_lines = ""  # nosec: B105
+        shadow_lines = ""  # nosec: B105
         if results.get("passwd") and results["passwd"].succeeded:
             passwd_lines = results["passwd"].stdout
         if results.get("shadow") and results["shadow"].succeeded:
@@ -188,7 +188,7 @@ class PasswordModule:
                     warn_days=sh[5] if sh else -1,
                     inactive_days=sh[6] if sh else -1,
                     expiration_days=sh[7] if sh else -1,
-                    shell=shell,
+                    shell=shell,  # nosec: B604
                 )
             )
 

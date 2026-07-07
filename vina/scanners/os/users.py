@@ -208,7 +208,7 @@ class UsersModule:
                         username=username,
                         uid=uid,
                         gid=gid,
-                        shell=shell or None,
+                        shell=shell or None,  # nosec: B604
                         home_directory=home or None,
                         is_system_user=is_system,
                         source_command=source,

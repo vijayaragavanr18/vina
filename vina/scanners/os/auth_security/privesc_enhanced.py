@@ -181,9 +181,8 @@ class PrivescEnhancedModule:
                     perm = stat_cr.stdout.strip()
                     if perm and len(perm) >= 3:
                         world_writable = int(perm[-1]) % 2 == 1
-                        if world_writable and any(
-                            pdir.startswith(p) for p in ("/", "/home", "/tmp", "/var/tmp")
-                        ):  # nosec: B108
+                        suspicious_prefixes = ("/", "/home", "/tmp", "/var/tmp")  # nosec: B108
+                        if world_writable and any(pdir.startswith(p) for p in suspicious_prefixes):
                             writable_dirs.append(pdir)
 
             if writable_dirs:
